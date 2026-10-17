@@ -1,6 +1,7 @@
 package com.rentkeeper.landlord.application;
 
 import com.rentkeeper.landlord.domain.AuthProvider;
+import com.rentkeeper.landlord.domain.Landlord;
 import com.rentkeeper.landlord.domain.LandlordStatus;
 
 /**
@@ -13,6 +14,9 @@ import com.rentkeeper.landlord.domain.LandlordStatus;
  */
 public record LandlordAccount(long id, String email, String name, boolean emailVerified, LandlordStatus status,
 		AuthProvider authProvider, String kakaoId) {
+
+	/** 이름(호칭) 최대 길이. 다른 모듈은 엔티티(Landlord) 대신 이 값을 쓴다 (ADR-020) */
+	public static final int NAME_MAX_LENGTH = Landlord.NAME_MAX_LENGTH;
 
 	public boolean isKakao() {
 		return authProvider == AuthProvider.KAKAO;

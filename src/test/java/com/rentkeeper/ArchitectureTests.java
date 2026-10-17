@@ -1,0 +1,141 @@
+package com.rentkeeper;
+
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideOutsideOfPackage;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZonedDateTime;
+
+import org.springframework.data.repository.Repository;
+import org.springframework.stereotype.Controller;
+
+import com.tngtech.archunit.core.domain.Dependency;
+import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.importer.ImportOption;
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.ArchCondition;
+import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.ConditionEvents;
+import com.tngtech.archunit.lang.SimpleConditionEvent;
+
+import jakarta.persistence.Entity;
+
+/**
+ * 모듈 의존 방향과 시간 규칙 (ADR-020, PRD 10장).
+ *
+ * <pre>
+ * lease → property → landlord ← auth → consent → site
+ *            (모두) → common          config → (모두)
+ * </pre>
+ *
+ * 도메인 모듈(property·lease)의 화면은 로그인 정보(auth.security)만 쓸 수 있다. 다른 모듈의 엔티티·리포지토리는
+ * 쓰지 않는다(서비스와 값 타입·예외만).
+ */
+@AnalyzeClasses(packages = "com.rentkeeper", importOptions = ImportOption.DoNotIncludeTests.class)
+class ArchitectureTests {
+
+	private static final String ROOT = "com.rentkeeper.";
+
+	// ---------------------------------------------------------------- 의존 방향
+
+	@ArchTest
+	static final ArchRule commonDependsOnNoModule = noClasses().that().resideInAPackage(ROOT + "common..").should()
+			.dependOnClassesThat()
+			.resideInAnyPackage(modules("auth", "landlord", "property", "lease", "consent", "site", "config"))
+			.because("common은 모든 모듈이 쓰는 공통 부품이다");
+
+	@ArchTest
+	static final ArchRule landlordDependsOnlyOnCommon = noClasses().that().resideInAPackage(ROOT + "landlord..")
+			.should().dependOnClassesThat()
+			.resideInAnyPackage(modules("auth", "property", "lease", "consent", "site", "config"))
+			.because("임대인 계정은 다른 도메인이 기대는 맨 아래 모듈이다");
+
+	@ArchTest
+	static final ArchRule propertyDoesNotDependOnUpperModules = noClasses().that().resideInAPackage(ROOT + "property..")
+			.should().dependOnClassesThat().resideInAnyPackage(modules("lease", "consent", "site", "config"))
+			.because("호실 상태 계산처럼 계약 정보가 필요하면 lease가 property를 부르거나 조회 결과를 넘긴다")
+			// property·lease 패키지가 생기기 전(M2 커밋 3·4)까지만 대상이 비어 있어도 통과
+			.allowEmptyShould(true);
+
+	@ArchTest
+	static final ArchRule leaseDoesNotDependOnUpperModules = noClasses().that().resideInAPackage(ROOT + "lease..")
+			.should().dependOnClassesThat().resideInAnyPackage(modules("consent", "site", "config"))
+			.allowEmptyShould(true);
+
+	@ArchTest
+	static final ArchRule domainModulesUseOnlyLoginInfoFromAuth = noClasses().that()
+			.resideInAnyPackage(modules("property", "lease")).should()
+			.dependOnClassesThat(
+					resideInAPackage(ROOT + "auth..").and(resideOutsideOfPackage(ROOT + "auth.security..")))
+			.because("화면에서 로그인한 임대인(LandlordPrincipal)만 쓴다").allowEmptyShould(true);
+
+	@ArchTest
+	static final ArchRule nothingDependsOnConfig = noClasses().that().resideOutsideOfPackage(ROOT + "config..").should()
+			.dependOnClassesThat().resideInAPackage(ROOT + "config..").because("config는 조립만 한다. 상수가 필요하면 그 모듈로 옮긴다");
+
+	// ---------------------------------------------------------------- 모듈 경계
+
+	@ArchTest
+	static final ArchRule noEntityOrRepositoryOfOtherModule = noClasses().should(useEntityOrRepositoryOfOtherModule())
+			.because("다른 모듈은 서비스(application)와 값 타입·예외로만 쓴다 (PRD 10장)");
+
+	@ArchTest
+	static final ArchRule controllersDoNotUseRepositories = noClasses().that().areAnnotatedWith(Controller.class)
+			.should().dependOnClassesThat().areAssignableTo(Repository.class)
+			.because("controller → service → repository 단방향 (PRD 10장)");
+
+	// ---------------------------------------------------------------- 시간
+
+	@ArchTest
+	static final ArchRule noArgumentlessNow = noClasses().should().callMethod(LocalDate.class, "now").orShould()
+			.callMethod(LocalDateTime.class, "now").orShould().callMethod(LocalTime.class, "now").orShould()
+			.callMethod(Instant.class, "now").orShould().callMethod(ZonedDateTime.class, "now").orShould()
+			.callMethod(OffsetDateTime.class, "now").orShould().callMethod(YearMonth.class, "now").orShould()
+			.callMethod(Year.class, "now").because("현재 시각은 주입한 Clock으로만 얻는다: now(clock) (ADR-002)");
+
+	private static String[] modules(String... names) {
+		String[] packages = new String[names.length];
+		for (int i = 0; i < names.length; i++) {
+			packages[i] = ROOT + names[i] + "..";
+		}
+		return packages;
+	}
+
+	/** 출발 클래스와 다른 최상위 모듈의 @Entity 또는 Spring Data 리포지토리에 기대는 의존 */
+	private static ArchCondition<JavaClass> useEntityOrRepositoryOfOtherModule() {
+		return new ArchCondition<>("use an entity or repository of another module") {
+			@Override
+			public void check(JavaClass origin, ConditionEvents events) {
+				for (Dependency dependency : origin.getDirectDependenciesFromSelf()) {
+					JavaClass target = dependency.getTargetClass();
+					boolean entityOrRepository = target.isAnnotatedWith(Entity.class)
+							|| target.isAssignableTo(Repository.class);
+					String from = module(origin);
+					String to = module(target);
+					if (entityOrRepository && to != null && !to.equals(from)) {
+						events.add(SimpleConditionEvent.satisfied(origin, dependency.getDescription()));
+					}
+				}
+			}
+		};
+	}
+
+	private static String module(JavaClass javaClass) {
+		String name = javaClass.getPackageName();
+		if (!name.startsWith(ROOT)) {
+			return null;
+		}
+		String rest = name.substring(ROOT.length());
+		int dot = rest.indexOf('.');
+		return dot < 0 ? rest : rest.substring(0, dot);
+	}
+
+}
