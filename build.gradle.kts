@@ -64,8 +64,25 @@ dependencies {
 }
 
 tasks.withType<Test> {
-	useJUnitPlatform()
 	jvmArgs(seoulTimeZone)
+}
+
+// 처리량 측정(@Tag("perf"))은 오래 걸려 일반 빌드에서 뺀다. 필요할 때 perfTest로 따로 돌린다 (ADR-024)
+tasks.test {
+	useJUnitPlatform {
+		excludeTags("perf")
+	}
+}
+
+tasks.register<Test>("perfTest") {
+	description = "청구 배치 처리량 측정 (계약 2만 건)"
+	group = "verification"
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
+	useJUnitPlatform {
+		includeTags("perf")
+	}
+	testLogging.showStandardStreams = true
 }
 
 tasks.named<BootRun>("bootRun") {
