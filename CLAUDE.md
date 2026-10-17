@@ -38,6 +38,7 @@ Thymeleaf+HTMX+Tailwind, Spring Security(세션), JUnit5+Testcontainers
   (`-f`로 하위 폴더를 지정하면 compose가 `.env`를 `docker\`에서 찾으므로 `--env-file`을 명시한다. 최초 1회 `Copy-Item .env.example .env` 후 값 수정)
 - 로컬 DB 중지: `docker compose --env-file .env -f docker\docker-compose.yml down`
 - 실행: `.\gradlew.bat bootRun`
+- 화면 개발 중 CSS 자동 재빌드: 다른 터미널에서 `.\gradlew.bat tailwindWatch` (local 프로필은 템플릿·CSS 변경을 재시작 없이 반영)
 - 테스트: `.\gradlew.bat test` (Testcontainers 사용 → Docker Desktop 실행 필요)
 - 전체 빌드(포맷 검사 + 테스트): `.\gradlew.bat build`
 - 포맷: `.\gradlew.bat spotlessApply`

@@ -6,7 +6,7 @@
 | 마일스톤 | 상태 | 비고 |
 |---|---|---|
 | M0 프로젝트 세팅 | 로컬 완료, push 완료, **CI 결과 확인 대기** | Actions 결과를 개발자가 확인 후 알려 주기로 함 |
-| M1-a 보안 기본·이메일 가입/로그인·세션·레이아웃·정적 페이지 | 진행 중 (`feature/m1-a-auth`) | main 병합은 CI 확인 후 개발자 지시 |
+| M1-a 보안 기본·이메일 가입/로그인·세션·레이아웃·정적 페이지 | 구현 완료, **개발자 브라우저 확인 대기** (`feature/m1-a-auth`, push 안 함) | main 병합은 CI 확인 후 개발자 지시 |
 | M1-b 이메일 인증 배너·비밀번호 재설정·로그인 잠금/IP 제한·remember-me·재인증 | 대기 | |
 | M1-c 카카오 로그인·회원 탈퇴/파기 배치·동의 기록 | 대기 | |
 
@@ -38,6 +38,15 @@
 - 가입 폼: 이메일, 비밀번호, 비밀번호 확인, 이름(호칭), 약관·처리방침 필수 동의(검증만, 기록은 M1-c)
 - 흔한 비밀번호 목록은 직접 정리한 약 100개
 - 세션 principal 이름은 이메일이 아니라 landlord id
+
+### M1-a 구현 결과 메모 (2026-10-17)
+- 마이그레이션: V2 `landlord`, V3 Spring Session 테이블(공식 스크립트 그대로). ADR-005~009 작성.
+- 세션 설정은 `spring.session.timeout`과 `SessionCookieConfig`(CookieSerializer 빈) 한 곳에만 둔다. Boot가 MockMvc와 실제 실행에서 `server.servlet.session.*`를 다른 경로로 읽기 때문이다 (ADR-005). 실제 Tomcat 테스트는 `SessionCookieRealServerTests` 1개뿐.
+- `thymeleaf-extras-springsecurity6`는 Security 7.1.1에서 `sec:authorize`·`sec:authentication`이 동작하는 것을 테스트로 확인했다 → `@ControllerAdvice` 대체는 필요 없었다.
+- 기본 거부(`denyAll`) 때문에 비로그인 상태로 없는 주소에 가면 404가 아니라 로그인 화면으로 간다(로그인 상태면 403). 404 화면은 `/css/no-such.css`처럼 허용 경로 안의 없는 파일에서 보인다 (ADR-008).
+- Tailwind 4.3.3 Windows 바이너리는 이 PC에서 동작 확인. Linux 바이너리는 CI 첫 실행 때 확인 필요.
+- Windows의 `curl.exe`로 한글 폼 값을 명령줄에서 보내면 CP949로 바뀌어 Tomcat이 400을 준다. 브라우저(UTF-8)는 정상이다. curl로 시험할 때는 `%EA%B2%80`처럼 UTF-8 퍼센트 인코딩 값을 직접 넣는다.
+- 남은 확인: 개발자 브라우저 확인(가입→로그인→로그아웃, 쿠키 속성, 404 화면), CI 결과.
 
 ### b/c에서 추가할 스키마 (모두 추가만, M1-a 구조는 바꾸지 않음)
 - **M1-b**: `landlord.email_verified_at`, 이메일 인증 토큰 테이블, 비밀번호 재설정 토큰 테이블(30분, 1회용), 로그인 시도·IP 제한 테이블, `persistent_logins`(remember-me)
