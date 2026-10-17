@@ -84,6 +84,17 @@ public class LandlordService {
 				.map(landlord -> landlord.verifyEmail(verifiedAddress, clock.instant())).orElse(false);
 	}
 
+	@Transactional
+	public void changePassword(long landlordId, String newPasswordHash) {
+		landlordRepository.findById(landlordId).orElseThrow(() -> new IllegalArgumentException("landlord not found"))
+				.changePassword(newPasswordHash);
+	}
+
+	/** 지금 비밀번호 해시 (비밀번호 변경 화면의 "현재 비밀번호" 확인용, auth 모듈 전용) */
+	public Optional<String> findPasswordHash(long landlordId) {
+		return landlordRepository.findById(landlordId).map(Landlord::getPasswordHash);
+	}
+
 	private static LandlordAccount toAccount(Landlord landlord) {
 		return new LandlordAccount(landlord.getId(), landlord.getEmail(), landlord.getName(),
 				landlord.isEmailVerified(), landlord.getStatus());

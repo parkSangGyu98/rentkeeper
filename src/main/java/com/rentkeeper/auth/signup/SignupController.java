@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import com.rentkeeper.auth.security.LandlordPrincipal;
 import com.rentkeeper.auth.web.AuthenticatedSessionHelper;
+import com.rentkeeper.auth.web.PasswordMessages;
 import com.rentkeeper.common.ratelimit.RateLimitRule;
 import com.rentkeeper.common.ratelimit.RateLimiter;
 import com.rentkeeper.common.web.ClientIp;
@@ -77,7 +78,7 @@ public class SignupController {
 			result.rejectValue("email", "duplicate", "이미 가입된 이메일이에요. 로그인해 주세요");
 			return VIEW;
 		} catch (WeakPasswordException e) {
-			result.rejectValue("password", "weak", messageFor(e.getViolation()));
+			result.rejectValue("password", "weak", PasswordMessages.forViolation(e.getViolation()));
 			return VIEW;
 		} catch (InvalidNameException e) {
 			result.rejectValue("name", "invalid", "이름(호칭)을 1~50자로 입력해 주세요");
@@ -86,16 +87,6 @@ public class SignupController {
 
 		sessionHelper.login(principal, request, response);
 		return "redirect:/app";
-	}
-
-	static String messageFor(PasswordPolicy.Violation violation) {
-		return switch (violation) {
-			case TOO_SHORT -> "비밀번호는 8자 이상이어야 해요";
-			case TOO_LONG -> "비밀번호가 너무 길어요 (영문·숫자 72자, 한글 24자까지)";
-			case TOO_COMMON -> "너무 흔한 비밀번호예요. 다른 사람이 쉽게 짐작하기 어려운 비밀번호로 정해 주세요";
-			case SAME_AS_EMAIL -> "이메일과 같은 비밀번호는 쓸 수 없어요";
-			case REPEATED_CHARACTER -> "같은 글자만 반복한 비밀번호는 쓸 수 없어요";
-		};
 	}
 
 	private static boolean isLoggedIn(Authentication authentication) {

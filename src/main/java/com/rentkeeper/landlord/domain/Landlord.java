@@ -98,6 +98,17 @@ public class Landlord extends BaseTimeEntity {
 		return emailVerifiedAt != null;
 	}
 
+	/** 비밀번호를 바꾼다. 이미 해시된 값을 받는다 (평문은 auth 모듈 밖으로 나오지 않는다) */
+	public void changePassword(String newPasswordHash) {
+		if (authProvider != AuthProvider.LOCAL) {
+			throw new IllegalStateException("only LOCAL accounts have a password");
+		}
+		if (newPasswordHash == null || newPasswordHash.isBlank()) {
+			throw new IllegalArgumentException("passwordHash is required");
+		}
+		this.passwordHash = newPasswordHash;
+	}
+
 	static String normalizeName(String name) {
 		String stripped = name == null ? "" : name.strip();
 		if (stripped.isEmpty() || stripped.length() > NAME_MAX_LENGTH) {
