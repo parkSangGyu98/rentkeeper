@@ -37,9 +37,12 @@ public class PasswordChangeService {
 
 	private final EmailDispatcher emailDispatcher;
 
+	private final CurrentPasswordVerifier currentPasswordVerifier;
+
 	public PasswordChangeService(LandlordService landlordService, PasswordEncoder passwordEncoder,
 			PasswordPolicy passwordPolicy, LoginLockService lockService, AccountSessionTerminator sessionTerminator,
-			AccountEmails accountEmails, EmailDispatcher emailDispatcher) {
+			AccountEmails accountEmails, EmailDispatcher emailDispatcher,
+			CurrentPasswordVerifier currentPasswordVerifier) {
 		this.landlordService = landlordService;
 		this.passwordEncoder = passwordEncoder;
 		this.passwordPolicy = passwordPolicy;
@@ -47,6 +50,7 @@ public class PasswordChangeService {
 		this.sessionTerminator = sessionTerminator;
 		this.accountEmails = accountEmails;
 		this.emailDispatcher = emailDispatcher;
+		this.currentPasswordVerifier = currentPasswordVerifier;
 	}
 
 	public enum Failure {
@@ -90,15 +94,11 @@ public class PasswordChangeService {
 	@Transactional
 	public void change(long landlordId, String currentPassword, String newPassword, String currentSessionId) {
 		LandlordAccount account = landlordService.findAccount(landlordId).orElseThrow();
-		String currentHash = landlordService.findPasswordHash(landlordId).orElseThrow();
-		// 잠겨 있어도 비밀번호 비교는 먼저 한다 (로그인과 같은 순서)
-		boolean currentMatches = passwordEncoder.matches(currentPassword, currentHash);
-		if (lockService.isLocked(landlordId)) {
-			throw new PasswordChangeException(Failure.LOCKED);
-		}
-		if (!currentMatches) {
-			lockService.recordFailure(landlordId);
-			throw new PasswordChangeException(Failure.WRONG_CURRENT_PASSWORD);
+		switch (currentPasswordVerifier.verify(landlordId, currentPassword)) {
+			case LOCKED -> throw new PasswordChangeException(Failure.LOCKED);
+			case WRONG -> throw new PasswordChangeException(Failure.WRONG_CURRENT_PASSWORD);
+			case OK -> {
+			}
 		}
 		if (currentPassword.equals(newPassword)) {
 			throw new PasswordChangeException(Failure.SAME_AS_CURRENT);

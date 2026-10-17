@@ -90,6 +90,37 @@ public class LandlordService {
 				.changePassword(newPasswordHash);
 	}
 
+	public boolean isLocalEmailTaken(EmailAddress email) {
+		return landlordRepository.existsByAuthProviderAndEmail(AuthProvider.LOCAL, email.value());
+	}
+
+	/** 이메일 변경 결과: 이전 주소와 그 주소가 인증돼 있었는지 (이전 주소로 보안 안내를 보낼지 판단) */
+	public record EmailChanged(String previousEmail, boolean previousVerified) {
+	}
+
+	/**
+	 * 이메일을 바꾸고 인증된 것으로 표시한다 (새 주소의 확인 링크를 누른 뒤에만 호출).
+	 *
+	 * @throws DuplicateEmailException
+	 *             그 사이 다른 이메일 가입 계정이 같은 주소를 쓰게 된 경우
+	 */
+	@Transactional
+	public EmailChanged changeEmail(long landlordId, EmailAddress newEmail) {
+		Landlord landlord = landlordRepository.findById(landlordId)
+				.orElseThrow(() -> new IllegalArgumentException("landlord not found"));
+		EmailChanged previous = new EmailChanged(landlord.getEmail(), landlord.isEmailVerified());
+		landlord.changeEmail(newEmail, clock.instant());
+		try {
+			landlordRepository.saveAndFlush(landlord);
+		} catch (DataIntegrityViolationException e) {
+			if (isLocalEmailUniqueViolation(e)) {
+				throw new DuplicateEmailException(e);
+			}
+			throw e;
+		}
+		return previous;
+	}
+
 	/** 지금 비밀번호 해시 (비밀번호 변경 화면의 "현재 비밀번호" 확인용, auth 모듈 전용) */
 	public Optional<String> findPasswordHash(long landlordId) {
 		return landlordRepository.findById(landlordId).map(Landlord::getPasswordHash);

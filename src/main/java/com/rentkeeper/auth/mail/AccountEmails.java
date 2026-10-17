@@ -49,6 +49,34 @@ public class AccountEmails {
 				""".formatted(name, link));
 	}
 
+	public EmailMessage emailChangeConfirmation(String newEmail, String name, String token) {
+		String link = appProperties.tokenLink("/verify-email-change", token);
+		return new EmailMessage(newEmail, SUBJECT_PREFIX + "새 이메일 주소를 확인해 주세요", """
+				안녕하세요, %s님.
+
+				RentKeeper 로그인 이메일을 이 주소로 바꾸려고 하셨어요.
+				아래 링크를 누른 뒤, 열린 화면에서 [이메일 바꾸기 완료] 버튼을 눌러 주세요.
+				버튼을 누르기 전까지는 예전 이메일로 로그인해요.
+
+				%s
+
+				이 링크는 24시간 동안 쓸 수 있어요.
+				본인이 요청하지 않았다면 이 메일은 무시하셔도 됩니다.
+				""".formatted(name, link));
+	}
+
+	/** 이전 주소로 보내는 보안 안내. 이전 주소가 인증돼 있었을 때만 보낸다 */
+	public EmailMessage emailChanged(String previousEmail, String name, String newEmail) {
+		return new EmailMessage(previousEmail, SUBJECT_PREFIX + "로그인 이메일이 바뀌었어요", """
+				안녕하세요, %s님.
+
+				RentKeeper 로그인 이메일이 %s(으)로 바뀌었어요.
+				앞으로는 새 이메일로 로그인하고 알림도 새 이메일로 받아요.
+
+				본인이 바꾼 것이 아니라면 바로 문의해 주세요.
+				""".formatted(name, newEmail));
+	}
+
 	/** 보안 안내 메일. 인증된 주소로만 보낸다 (호출하는 쪽이 findVerifiedEmail로 주소를 얻는다) */
 	public EmailMessage passwordChanged(String to, String name) {
 		return new EmailMessage(to, SUBJECT_PREFIX + "비밀번호가 변경됐어요", """

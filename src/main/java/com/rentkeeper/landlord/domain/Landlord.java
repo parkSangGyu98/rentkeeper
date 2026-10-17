@@ -98,6 +98,15 @@ public class Landlord extends BaseTimeEntity {
 		return emailVerifiedAt != null;
 	}
 
+	/**
+	 * 이메일을 바꾼다. 새 주소로 보낸 확인 링크를 누른 뒤에만 호출되므로, 바꾸는 순간 인증된 것으로 본다 (M1-b 결정 7).
+	 */
+	public void changeEmail(EmailAddress newEmail, Instant verifiedAt) {
+		Objects.requireNonNull(newEmail, "newEmail");
+		this.email = newEmail.value();
+		this.emailVerifiedAt = verifiedAt;
+	}
+
 	/** 비밀번호를 바꾼다. 이미 해시된 값을 받는다 (평문은 auth 모듈 밖으로 나오지 않는다) */
 	public void changePassword(String newPasswordHash) {
 		if (authProvider != AuthProvider.LOCAL) {

@@ -55,7 +55,7 @@ public class SecurityConfig {
 	static final String[] PUBLIC_PATHS = {"/", "/login", "/signup", "/terms", "/privacy", "/error", "/css/**", "/js/**",
 			"/images/**", "/favicon.ico", "/actuator/health",
 			// 메일 링크는 다른 기기(로그인 안 된 상태)에서 열 수 있다
-			"/verify-email", "/password-reset", "/password-reset/confirm"};
+			"/verify-email", "/password-reset", "/password-reset/confirm", "/verify-email-change"};
 
 	static final int BCRYPT_STRENGTH = 12;
 
