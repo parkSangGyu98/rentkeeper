@@ -1,0 +1,29 @@
+# 로컬 개발용 PostgreSQL (PowerShell, 프로젝트 루트에서 실행)
+#   최초 1회: Copy-Item .env.example .env  (DB_PASSWORD 수정)
+#   기동:     docker compose --env-file .env -f docker\docker-compose.yml up -d
+#   중지:     docker compose --env-file .env -f docker\docker-compose.yml down
+# -f로 하위 폴더의 파일을 지정하면 compose는 .env를 docker\ 폴더에서 찾으므로 --env-file을 명시한다.
+name: rentkeeper
+
+services:
+  postgres:
+    # Testcontainers 테스트와 같은 이미지 태그를 쓴다 (TestcontainersConfiguration)
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-rentkeeper}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required (.env)}
+      # 비밀번호는 기본값을 두지 않는다. .env가 없으면 기동 단계에서 실패한다
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required (.env)}
+    ports:
+      # 127.0.0.1에만 바인딩해 같은 네트워크의 다른 기기에서 접속하지 못하게 한다
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
