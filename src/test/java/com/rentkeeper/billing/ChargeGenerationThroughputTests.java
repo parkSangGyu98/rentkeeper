@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.rentkeeper.TestcontainersConfiguration;
 import com.rentkeeper.billing.application.ChargeGenerator;
+import com.rentkeeper.billing.application.ChargeOverdueMarker;
 import com.rentkeeper.common.crypto.FieldEncryptor;
 import com.rentkeeper.config.ClockConfig;
 import com.rentkeeper.support.MutableClock;
@@ -38,6 +39,9 @@ class ChargeGenerationThroughputTests {
 
 	@Autowired
 	ChargeGenerator generator;
+
+	@Autowired
+	ChargeOverdueMarker marker;
 
 	@Autowired
 	JdbcTemplate jdbc;
@@ -68,6 +72,24 @@ class ChargeGenerationThroughputTests {
 		assertThat(first.failed()).isZero();
 		assertThat(second.created()).isZero();
 		assertThat(busyDay).isLessThan(Duration.ofMinutes(5));
+
+		// 납부일 지남: 2만 건 모두 11/8이 납부일 → 11/9 00:10에 모두 바뀐다
+		clock.set(LocalDateTime.parse("2026-11-09T00:10").atZone(ClockConfig.SEOUL).toInstant());
+		jdbc.execute("analyze charge");
+		System.out.println("THROUGHPUT overdue plan:%n".formatted() + String.join("%n".formatted(), jdbc.queryForList(
+				"explain analyze select id, landlord_id from charge where status in ('ISSUED', 'PARTIALLY_PAID') "
+						+ "and due_date < '2026-11-09' order by id",
+				String.class)));
+		startedAt = System.nanoTime();
+		ChargeOverdueMarker.Result overdue = marker.run();
+		Duration overdueDay = Duration.ofNanos(System.nanoTime() - startedAt);
+		startedAt = System.nanoTime();
+		ChargeOverdueMarker.Result overdueAgain = marker.run();
+		Duration overdueQuiet = Duration.ofNanos(System.nanoTime() - startedAt);
+		System.out.printf("THROUGHPUT overdue: %s for %s, rerun: %s for %s%n", overdueDay, overdue, overdueQuiet,
+				overdueAgain);
+		assertThat(overdue.marked()).isEqualTo(LANDLORDS * LEASES_PER_LANDLORD);
+		assertThat(overdueAgain.candidates()).isZero();
 		TestData.reset(jdbc);
 	}
 
