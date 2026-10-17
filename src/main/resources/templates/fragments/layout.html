@@ -28,6 +28,7 @@
 					<a th:href="@{/app}" class="hidden text-lg font-semibold text-gray-900 no-underline sm:inline">
 						<span sec:authentication="principal.displayName">홍길동</span>님
 					</a>
+					<a th:href="@{/app/settings}" class="text-lg font-semibold text-brand-700 underline">계정 설정</a>
 					<!-- 로그아웃은 POST만 받는다. th:action이 CSRF 토큰을 넣는다 -->
 					<form th:action="@{/logout}" method="post">
 						<button type="submit" class="btn btn-secondary">로그아웃</button>

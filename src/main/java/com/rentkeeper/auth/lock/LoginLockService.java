@@ -7,6 +7,7 @@ import java.time.Instant;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -46,7 +47,9 @@ public class LoginLockService {
 	 *
 	 * @return 이번 실패로 잠겼으면 true
 	 */
-	@Transactional
+	// 별도 트랜잭션: 호출한 쪽(예: 비밀번호 변경)이 실패해 롤백돼도 실패 기록은 남아야 한다.
+	// 같은 트랜잭션이면 "현재 비밀번호 틀림" 예외로 롤백될 때 기록도 사라져 무제한으로 맞춰 볼 수 있게 된다
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public boolean recordFailure(long landlordId) {
 		Instant now = clock.instant();
 		Timestamp nowTs = Timestamp.from(now);

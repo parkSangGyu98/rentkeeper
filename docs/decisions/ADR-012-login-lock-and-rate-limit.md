@@ -30,6 +30,8 @@
 - 로그인 화면에는 계정 상태가 아닌 **정책만** 항상 안내한다: "비밀번호를 5번 틀리면 15분 동안 로그인이 제한돼요."
 - `LockAwareAuthenticationProvider`가 유일한 `AuthenticationProvider` 빈이다. 기본 Dao 구현이 함께 등록되면 이 구현이 실패한 뒤 기본 구현이 다시 시도해 잠금이 우회된다. "잠긴 계정 + 맞는 비밀번호 = 실패" 테스트가 이를 지킨다.
 - 동시 실패는 `INSERT ... ON CONFLICT DO NOTHING` 뒤 `SELECT ... FOR UPDATE`로 행을 잠그고 세어 정확히 집계한다(10건 동시 → 정확히 5에서 잠김, 테스트).
+- 실패 기록(`recordFailure`)은 **별도 트랜잭션(REQUIRES_NEW)**으로 저장한다. 비밀번호 변경 화면처럼 트랜잭션 안에서 "현재 비밀번호 틀림" 예외로 롤백되는 경우에도 기록이 남아야 하기 때문이다. 같은 트랜잭션으로 두면 롤백과 함께 기록이 사라져 그 화면에서 무제한으로 비밀번호를 맞춰 볼 수 있다(M1-b 8a 구현 중 테스트로 발견).
+- 비밀번호 변경 화면의 "현재 비밀번호" 실패도 같은 횟수에 더한다. 로그인한 사용자에게는 잠김을 알려 준다("15분 뒤에 다시 시도해 주세요"). 이미 계정을 가진 사람이라 계정 존재 노출 문제가 없다.
 
 ### 3. 레이트 리미트: DB 고정 창
 - `rate_limit_bucket(bucket_key PK, window_started_at, hit_count, expires_at)`에 `INSERT ... ON CONFLICT DO UPDATE ... RETURNING hit_count` 한 문장으로 센다. 창이 끝났으면 1부터 다시 센다. 동시 요청 25건 → 정확히 한도만큼 허용(테스트).
