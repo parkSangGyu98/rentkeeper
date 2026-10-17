@@ -14,6 +14,18 @@ Thymeleaf+HTMX+Tailwind, Spring Security(세션), JUnit5+Testcontainers
 - 청구 생성·알림 발송은 멱등해야 한다 (UNIQUE 제약 + 테스트).
 - 상태 변경은 도메인 메서드로만, 전이 규칙은 테스트로 검증.
 - 스키마 변경은 Flyway 마이그레이션으로만. 기존 마이그레이션 파일 수정 금지.
+
+## DB 설명(COMMENT) 규칙
+- 새로 만드는 모든 테이블과 컬럼에 `COMMENT ON TABLE` / `COMMENT ON COLUMN`으로 **한글 설명**을 붙인다. 같은 마이그레이션 파일 안에 쓴다.
+  SQL 파일의 `--` 주석은 DB에 저장되지 않아 DBeaver 등에서 보이지 않는다.
+- 설명에는 "무엇을 담는지"와 함께, 헷갈릴 수 있는 컬럼은 "왜 필요한지"나 값의 뜻을 적는다.
+  - 상태·코드값: 각 값의 의미 (예: `ACTIVE=사용 중, WITHDRAWN=탈퇴 처리됨`)
+  - NULL의 의미 (예: `NULL=미인증`)
+  - 단위 (원, 초, 밀리초)
+  - 시각 컬럼: UTC로 저장한다는 점
+- 목적이 분명하지 않은 CHECK·UNIQUE 제약과 인덱스는 `COMMENT ON CONSTRAINT` / `COMMENT ON INDEX`로 짧게 설명한다.
+- 이미 적용·커밋한 마이그레이션은 설명을 추가하려고 고치지 않는다(Flyway 체크섬). 새 마이그레이션으로 추가한다.
+- `SchemaCommentsTests`가 설명이 빠진 테이블·컬럼을 찾으면 빌드가 실패한다 (`flyway_schema_history` 제외).
 - 비밀값 커밋 금지. .env.example만 커밋.
 - MVP 비목표(자동 입금확인, 앱, 전자계약, 결제 대행)는 만들지 않는다.
 
