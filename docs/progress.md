@@ -68,6 +68,9 @@
 - 모든 테이블·컬럼에 한글 COMMENT를 붙인다(CLAUDE.md "DB 설명(COMMENT) 규칙"). 기존 V2~V6 테이블은 V7에서 일괄 추가했다.
 - `SchemaCommentsTests`가 설명 없는 테이블·컬럼을 찾으면 빌드가 실패한다.
 
+### M1-c 확인할 것 (브라우저에서 실제 카카오 계정으로)
+- [ ] **실제 카카오 로그인에서 PKCE가 거부되는지.** Security 7.1.1 기본값대로 PKCE(`code_challenge`/`code_verifier`)를 보낸다. 카카오의 PKCE 지원 여부는 문서로 확인하지 못했다. **브라우저 확인에서 카카오 로그인이 실패하면 가장 먼저 의심할 항목이다.** 거부되면 `KakaoOAuth2Config`에 `requireProofKey(false)`를 넣어 끈다 (ADR-014).
+
 ### b/c에서 추가할 스키마 (모두 추가만, M1-a 구조는 바꾸지 않음)
 - **M1-b (완료)**: `landlord.email_verified_at`, `account_token`(인증·이메일 변경·재설정 토큰을 한 테이블에), `login_failure`, `rate_limit_bucket`, `persistent_logins`
 - **M1-c**: `landlord.kakao_id`(KAKAO 계정끼리 unique), `landlord.withdrawn_at`, KAKAO 계정이면 `kakao_id` 필수인 CHECK, `consent_log` 테이블

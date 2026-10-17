@@ -34,6 +34,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	// 카카오 로그인 (ADR-014). Boot 4부터 OAuth2 클라이언트 스타터 이름에 security가 붙는다
+	implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	// 템플릿의 sec:authorize. 이름은 springsecurity6이지만 Boot 4.1.1 BOM이 Security 7과 함께 관리하는 버전이다 (ADR-008)
 	implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6")

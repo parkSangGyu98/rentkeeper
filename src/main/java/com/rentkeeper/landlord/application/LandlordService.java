@@ -63,6 +63,13 @@ public class LandlordService {
 						landlord.getPasswordHash(), landlord.getName(), landlord.getStatus()));
 	}
 
+	/** 사용 중(ACTIVE)인 카카오 계정을 회원번호로 찾는다. 탈퇴 유예 중인 계정은 찾지 않는다 */
+	public Optional<LandlordAccount> findActiveKakaoAccount(String kakaoId) {
+		return landlordRepository
+				.findByAuthProviderAndKakaoIdAndStatus(AuthProvider.KAKAO, kakaoId, LandlordStatus.ACTIVE)
+				.map(LandlordService::toAccount);
+	}
+
 	public Optional<LandlordAccount> findAccount(long landlordId) {
 		return landlordRepository.findById(landlordId).map(LandlordService::toAccount);
 	}

@@ -1,6 +1,13 @@
 app:
   # 로그인 유지(remember-me) 키. 운영 필수(32자 이상), local은 비어 있으면 임시 키 (RememberMeKey, ADR-013)
   remember-me-key: ${APP_REMEMBER_ME_KEY:}
+  kakao:
+    # 카카오 로그인 (ADR-014). 셋 다 없으면 local·CI에서는 카카오 로그인을 끄고, 운영(prod)에서는 기동하지 않는다.
+    # 일부만 있으면 설정 실수로 보고 기동하지 않는다 (KakaoProperties)
+    client-id: ${KAKAO_CLIENT_ID:}
+    client-secret: ${KAKAO_CLIENT_SECRET:}
+    # 서비스 앱 어드민 키: 탈퇴 시 카카오 연결 끊기(unlink)에 쓴다. 서버에서만 쓰고 절대 화면·로그에 내보내지 않는다
+    admin-key: ${KAKAO_ADMIN_KEY:}
 
 spring:
   application:

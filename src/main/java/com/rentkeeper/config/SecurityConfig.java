@@ -4,6 +4,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -13,12 +14,16 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.NullSecurityContextRepository;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 
+import com.rentkeeper.auth.kakao.KakaoLoginSuccessHandler;
+import com.rentkeeper.auth.kakao.KakaoOAuth2UserService;
+import com.rentkeeper.auth.kakao.NoStoreAuthorizedClientRepository;
 import com.rentkeeper.auth.rememberme.HashingPersistentTokenRepository;
 import com.rentkeeper.auth.rememberme.HashingRememberMeServices;
 import com.rentkeeper.auth.rememberme.RememberMeKey;
@@ -55,7 +60,9 @@ public class SecurityConfig {
 	static final String[] PUBLIC_PATHS = {"/", "/login", "/signup", "/terms", "/privacy", "/error", "/css/**", "/js/**",
 			"/images/**", "/favicon.ico", "/actuator/health",
 			// 메일 링크는 다른 기기(로그인 안 된 상태)에서 열 수 있다
-			"/verify-email", "/password-reset", "/password-reset/confirm", "/verify-email-change"};
+			"/verify-email", "/password-reset", "/password-reset/confirm", "/verify-email-change",
+			// 카카오 로그인 시작과 카카오가 돌려보내는 주소 (Spring Security 필터가 처리)
+			"/oauth2/authorization/kakao", "/login/oauth2/code/kakao"};
 
 	static final int BCRYPT_STRENGTH = 12;
 
@@ -82,7 +89,8 @@ public class SecurityConfig {
 	@Bean
 	@Order(2)
 	SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimiter rateLimiter,
-			RememberMeServices rememberMeServices) throws Exception {
+			RememberMeServices rememberMeServices, ObjectProvider<ClientRegistrationRepository> clientRegistrations,
+			KakaoOAuth2UserService kakaoUserService, KakaoLoginSuccessHandler kakaoSuccessHandler) throws Exception {
 		// 로그인 시도 IP 한도 (ADR-012). 빈으로 등록하지 않는다: 빈이면 서블릿 필터로도 자동 등록되어 두 번 실행된다
 		http.addFilterBefore(new LoginRateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class);
 
@@ -102,6 +110,18 @@ public class SecurityConfig {
 
 		// CSRF가 켜져 있으면 로그아웃은 POST만 받는다 (다른 사이트의 링크·이미지로 강제 로그아웃되는 것을 막는다)
 		http.logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/login?logout"));
+
+		// 카카오 로그인 (ADR-014). 키가 없으면(local·CI) 등록이 없어 켜지 않는다
+		ClientRegistrationRepository kakaoRegistrations = clientRegistrations.getIfAvailable();
+		if (kakaoRegistrations != null) {
+			http.oauth2Login(oauth2 -> oauth2.loginPage("/login").clientRegistrationRepository(kakaoRegistrations)
+					// 액세스·리프레시 토큰을 저장하지 않는다
+					.authorizedClientRepository(new NoStoreAuthorizedClientRepository())
+					.userInfoEndpoint(userInfo -> userInfo.userService(kakaoUserService))
+					.successHandler(kakaoSuccessHandler)
+					// 동의 취소, state 불일치 등: 어떤 이유든 같은 안내
+					.failureUrl("/login?kakaoError"));
+		}
 
 		applySecurityHeaders(http);
 		return http.build();

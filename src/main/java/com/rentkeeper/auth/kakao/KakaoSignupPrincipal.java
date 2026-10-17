@@ -1,0 +1,65 @@
+package com.rentkeeper.auth.kakao;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+
+/**
+ * 카카오로 처음 온 사람이 가입 단계(/signup/kakao)를 마치기 전의 임시 로그인 정보 (ADR-014).
+ * <p>
+ * 동의 없이 계정이 생기지 않도록, 이 단계에서는 아직 landlord 행을 만들지 않는다. 권한은 ROLE_KAKAO_SIGNUP뿐이라
+ * /app/**에 들어갈 수 없다. 가입을 마치면 LandlordPrincipal로 바뀐다. 세션에 직렬화되어 저장되므로 필요한 값만
+ * 담는다.
+ */
+public final class KakaoSignupPrincipal implements OAuth2User, Serializable {
+
+	@Serial
+	private static final long serialVersionUID = 1L;
+
+	public static final String ROLE = "ROLE_KAKAO_SIGNUP";
+
+	private static final List<GrantedAuthority> AUTHORITIES = List.of(new SimpleGrantedAuthority(ROLE));
+
+	private final KakaoProfileData profile;
+
+	public KakaoSignupPrincipal(KakaoProfile profile) {
+		this.profile = new KakaoProfileData(profile.kakaoId(), profile.email(), profile.emailTrusted(),
+				profile.nickname());
+	}
+
+	public KakaoProfile profile() {
+		return new KakaoProfile(profile.kakaoId(), profile.email(), profile.emailTrusted(), profile.nickname());
+	}
+
+	@Override
+	public Map<String, Object> getAttributes() {
+		return Map.of("id", profile.kakaoId());
+	}
+
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		return AUTHORITIES;
+	}
+
+	/** 세션 principal 이름. landlord id(숫자)와 겹치지 않게 접두사를 붙인다 */
+	@Override
+	public String getName() {
+		return "kakao-signup:" + profile.kakaoId();
+	}
+
+	@Override
+	public String toString() {
+		return "KakaoSignupPrincipal[kakaoId=" + profile.kakaoId() + "]";
+	}
+
+	private record KakaoProfileData(String kakaoId, String email, boolean emailTrusted,
+			String nickname) implements Serializable {
+	}
+
+}
