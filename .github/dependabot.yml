@@ -37,5 +37,13 @@ updates:
       timezone: Asia/Seoul
     cooldown:
       default-days: 14
+    ignore:
+      # PRD는 PostgreSQL 16으로 정해져 있다. 16.x 마이너·패치는 받고, 메이저(17 이상)만 무시한다.
+      # 메이저 업그레이드는 데이터 덤프/복원이 필요해 계획을 세운 뒤 수동으로 한다.
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
+      # Docker 태그(-alpine)에서 위 semver 판정이 동작하는지 공식 문서로 확인하지 못해, 버전 범위로도 막는다
+      - dependency-name: "postgres"
+        versions: [">= 17"]
     commit-message:
       prefix: chore
