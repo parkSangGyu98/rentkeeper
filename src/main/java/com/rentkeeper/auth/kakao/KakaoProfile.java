@@ -2,8 +2,8 @@ package com.rentkeeper.auth.kakao;
 
 import java.util.Map;
 
+import com.rentkeeper.landlord.application.LandlordAccount;
 import com.rentkeeper.landlord.domain.EmailAddress;
-import com.rentkeeper.landlord.domain.Landlord;
 
 /**
  * 카카오 사용자 정보 중 우리가 쓰는 것만 (ADR-014, 최소 수집).
@@ -53,8 +53,8 @@ public record KakaoProfile(String kakaoId, String email, boolean emailTrusted, S
 		if (account.get("profile") instanceof Map<?, ?> profile && profile.get("nickname") instanceof String raw
 				&& !raw.isBlank()) {
 			String stripped = raw.strip();
-			nickname = stripped.codePointCount(0, stripped.length()) > Landlord.NAME_MAX_LENGTH
-					? stripped.substring(0, stripped.offsetByCodePoints(0, Landlord.NAME_MAX_LENGTH))
+			nickname = stripped.codePointCount(0, stripped.length()) > LandlordAccount.NAME_MAX_LENGTH
+					? stripped.substring(0, stripped.offsetByCodePoints(0, LandlordAccount.NAME_MAX_LENGTH))
 					: stripped;
 		}
 		return new KakaoProfile(kakaoId, email, emailTrusted, nickname);

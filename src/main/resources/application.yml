@@ -1,6 +1,12 @@
 app:
   # 로그인 유지(remember-me) 키. 운영 필수(32자 이상), local은 비어 있으면 임시 키 (RememberMeKey, ADR-013)
   remember-me-key: ${APP_REMEMBER_ME_KEY:}
+  encryption:
+    # 개인정보 암호화 키 (ADR-017). local 포함 필수, 없으면 기동 실패. 키를 잃으면 세입자 정보를 복구할 수 없다
+    key: ${APP_ENCRYPTION_KEY:}
+    key-version: ${APP_ENCRYPTION_KEY_VERSION:}
+    previous-keys: ${APP_ENCRYPTION_PREVIOUS_KEYS:}
+    hmac-key: ${APP_HMAC_KEY:}
   kakao:
     # 카카오 로그인 (ADR-014). 셋 다 없으면 local·CI에서는 카카오 로그인을 끄고, 운영(prod)에서는 기동하지 않는다.
     # 일부만 있으면 설정 실수로 보고 기동하지 않는다 (KakaoProperties)

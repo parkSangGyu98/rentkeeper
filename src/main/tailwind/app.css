@@ -58,6 +58,27 @@
 		@apply border-2 border-gray-400 bg-white text-gray-900 hover:bg-gray-100;
 	}
 
+	/* 호실 상태 표시. 색만으로 구분하지 않고 글자를 함께 쓴다 (PRD 6.3) */
+	.badge {
+		@apply inline-flex items-center rounded-full border-2 px-3 py-1 text-base font-semibold;
+	}
+
+	.badge-vacant {
+		@apply border-gray-400 bg-gray-100 text-gray-900;
+	}
+
+	.badge-occupied {
+		@apply border-green-700 bg-green-50 text-green-900;
+	}
+
+	.badge-upcoming {
+		@apply border-blue-700 bg-blue-50 text-blue-900;
+	}
+
+	.badge-overdue {
+		@apply border-danger-700 bg-red-50 text-red-900;
+	}
+
 	/* 되돌릴 수 없는 작업(회원 탈퇴 등) */
 	.btn-danger {
 		@apply bg-danger-700 text-white hover:bg-red-800;

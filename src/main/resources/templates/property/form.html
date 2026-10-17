@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>건물 정보 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-6 text-3xl font-bold" th:text="${editing} ? '건물 정보 바꾸기' : '건물 등록'">건물 등록</h1>
+
+		<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('${form.*}')}">입력한 내용을 확인해 주세요. 빨간 글씨로 안내한 칸을 고치면 돼요.</div>
+
+		<form th:action="${editing} ? @{/app/properties/{id}(id=${propertyId})} : @{/app/properties}" th:object="${form}"
+			method="post" class="space-y-6" novalidate>
+			<div>
+				<label for="name" class="form-label">건물 이름</label>
+				<p id="name-hint" class="mb-2 text-base text-gray-700">예: 행복빌라, 중앙상가</p>
+				<input id="name" type="text" th:field="*{name}" class="form-input" required
+					th:attr="aria-invalid=${#fields.hasErrors('name')},aria-describedby=${#fields.hasErrors('name')} ? 'name-hint name-error' : 'name-hint'">
+				<p id="name-error" class="form-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">이름 오류</p>
+			</div>
+
+			<div>
+				<label for="address" class="form-label">주소 (선택)</label>
+				<input id="address" type="text" th:field="*{address}" class="form-input" autocomplete="street-address"
+					th:attr="aria-invalid=${#fields.hasErrors('address')}">
+				<p class="form-error" th:if="${#fields.hasErrors('address')}" th:errors="*{address}">주소 오류</p>
+			</div>
+
+			<div>
+				<label for="memo" class="form-label">메모 (선택)</label>
+				<p id="memo-hint" class="mb-2 text-base text-gray-700">주민번호·계좌번호는 적지 마세요.</p>
+				<textarea id="memo" th:field="*{memo}" rows="3" class="form-input py-3" aria-describedby="memo-hint"></textarea>
+				<p class="form-error" th:if="${#fields.hasErrors('memo')}" th:errors="*{memo}">메모 오류</p>
+			</div>
+
+			<button type="submit" class="btn btn-primary w-full" th:text="${editing} ? '바꾸기' : '등록하기'">등록하기</button>
+		</form>
+
+		<p class="mt-8 text-lg">
+			<a th:href="${editing} ? @{/app/properties/{id}(id=${propertyId})} : @{/app/properties}"
+				class="font-semibold text-brand-700 underline">돌아가기</a>
+		</p>
+	</main>
+</body>
+</html>

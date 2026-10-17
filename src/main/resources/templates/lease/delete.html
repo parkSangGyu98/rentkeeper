@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>계약 지우기 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-4 text-3xl font-bold">계약을 지울까요?</h1>
+		<p class="mb-2 text-xl font-semibold"><span th:text="${lease.unit().displayName()}">행복빌라 101호</span> · <span th:text="${lease.tenantName()}">홍길동</span>님</p>
+		<ul class="mb-8 list-disc space-y-1 pl-6 text-lg text-gray-700">
+			<li>잘못 등록한 계약을 지울 때만 쓰세요. 세입자가 나갔다면 [계약 종료]를 쓰세요.</li>
+			<li>지우면 월세 변경 이력도 함께 지워지고 되돌릴 수 없어요.</li>
+		</ul>
+		<form th:action="@{/app/leases/{id}/delete(id=${lease.id()})}" method="post" class="mb-4">
+			<button type="submit" class="btn btn-danger w-full">네, 지울게요</button>
+		</form>
+		<a th:href="@{/app/leases/{id}(id=${lease.id()})}" class="btn btn-secondary w-full">지우지 않고 돌아가기</a>
+	</main>
+</body>
+</html>

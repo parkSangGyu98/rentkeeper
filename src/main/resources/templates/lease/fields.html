@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<!-- 계약 등록 확인 화면의 숨은 칸 (입력값을 다시 보낸다). th:object는 부르는 쪽 폼의 form -->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+	<th:block th:fragment="hidden">
+		<input type="hidden" name="unitId" th:value="${form.unitId}">
+		<input type="hidden" name="tenantName" th:value="${form.tenantName}">
+		<input type="hidden" name="tenantPhone" th:value="${form.tenantPhone}">
+		<input type="hidden" name="tenantMemo" th:value="${form.tenantMemo}">
+		<input type="hidden" name="deposit" th:value="${form.deposit}">
+		<input type="hidden" name="monthlyRent" th:value="${form.monthlyRent}">
+		<input type="hidden" name="maintenanceFee" th:value="${form.maintenanceFee}">
+		<input type="hidden" name="dueDay" th:value="${form.dueDay}">
+		<input type="hidden" name="startDate" th:value="${form.startDate}">
+		<input type="hidden" name="endDate" th:value="${form.endDate}">
+		<input type="hidden" name="bankName" th:value="${form.bankName}">
+		<input type="hidden" name="accountNumber" th:value="${form.accountNumber}">
+		<input type="hidden" name="accountHolder" th:value="${form.accountHolder}">
+		<input type="hidden" name="memo" th:value="${form.memo}">
+	</th:block>
+</body>
+</html>

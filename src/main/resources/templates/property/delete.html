@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>건물 지우기 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-4 text-3xl font-bold">건물을 지울까요?</h1>
+		<p class="mb-2 text-xl font-semibold" th:text="${property.name}">행복빌라</p>
+
+		<th:block th:if="${property.hasUnits()}">
+			<div class="alert alert-error" role="alert">
+				호실이 있는 건물은 지울 수 없어요. 호실을 먼저 지워 주세요.
+			</div>
+			<a th:href="@{/app/properties/{id}(id=${property.id})}" class="btn btn-primary">건물로 돌아가기</a>
+		</th:block>
+
+		<th:block th:unless="${property.hasUnits()}">
+			<p class="mb-8 text-lg text-gray-700">지우면 되돌릴 수 없어요.</p>
+			<form th:action="@{/app/properties/{id}/delete(id=${property.id})}" method="post" class="mb-4">
+				<button type="submit" class="btn btn-danger w-full">네, 지울게요</button>
+			</form>
+			<a th:href="@{/app/properties/{id}(id=${property.id})}" class="btn btn-secondary w-full">지우지 않고 돌아가기</a>
+		</th:block>
+	</main>
+</body>
+</html>
