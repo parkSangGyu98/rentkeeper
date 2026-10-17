@@ -1,5 +1,6 @@
 package com.rentkeeper.config;
 
+import java.time.Clock;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -30,6 +31,8 @@ import com.rentkeeper.auth.rememberme.HashingRememberMeServices;
 import com.rentkeeper.auth.rememberme.RememberMeKey;
 import com.rentkeeper.auth.rememberme.RememberMeUserDetailsService;
 import com.rentkeeper.auth.web.LoginRateLimitFilter;
+import com.rentkeeper.auth.withdrawal.KakaoReauthRequestResolver;
+import com.rentkeeper.auth.withdrawal.KakaoWithdrawalCallback;
 import com.rentkeeper.common.config.AppProperties;
 import com.rentkeeper.common.ratelimit.RateLimiter;
 import com.rentkeeper.landlord.application.LandlordService;
@@ -63,7 +66,9 @@ public class SecurityConfig {
 			// 메일 링크는 다른 기기(로그인 안 된 상태)에서 열 수 있다
 			"/verify-email", "/password-reset", "/password-reset/confirm", "/verify-email-change",
 			// 카카오 로그인 시작과 카카오가 돌려보내는 주소 (Spring Security 필터가 처리)
-			"/oauth2/authorization/kakao", "/login/oauth2/code/kakao"};
+			"/oauth2/authorization/kakao", "/login/oauth2/code/kakao",
+			// 탈퇴 완료 안내 (탈퇴하면 로그아웃된 상태로 보여 준다)
+			"/withdrawn"};
 
 	static final int BCRYPT_STRENGTH = 12;
 
@@ -91,7 +96,8 @@ public class SecurityConfig {
 	@Order(2)
 	SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimiter rateLimiter,
 			RememberMeServices rememberMeServices, ObjectProvider<ClientRegistrationRepository> clientRegistrations,
-			KakaoOAuth2UserService kakaoUserService, KakaoLoginSuccessHandler kakaoSuccessHandler) throws Exception {
+			KakaoOAuth2UserService kakaoUserService, KakaoLoginSuccessHandler kakaoSuccessHandler,
+			KakaoWithdrawalCallback kakaoWithdrawalCallback, Clock clock) throws Exception {
 		// 로그인 시도 IP 한도 (ADR-012). 빈으로 등록하지 않는다: 빈이면 서블릿 필터로도 자동 등록되어 두 번 실행된다
 		http.addFilterBefore(new LoginRateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class);
 
@@ -117,12 +123,24 @@ public class SecurityConfig {
 		ClientRegistrationRepository kakaoRegistrations = clientRegistrations.getIfAvailable();
 		if (kakaoRegistrations != null) {
 			http.oauth2Login(oauth2 -> oauth2.loginPage("/login").clientRegistrationRepository(kakaoRegistrations)
+					// 탈퇴 재인증 중이면 prompt=login을 붙인다 (ADR-015)
+					.authorizationEndpoint(endpoint -> endpoint
+							.authorizationRequestResolver(new KakaoReauthRequestResolver(kakaoRegistrations, clock)))
 					// 액세스·리프레시 토큰을 저장하지 않는다
 					.authorizedClientRepository(new NoStoreAuthorizedClientRepository())
 					.userInfoEndpoint(userInfo -> userInfo.userService(kakaoUserService))
-					.successHandler(kakaoSuccessHandler)
+					// 탈퇴 재인증 콜백이면 탈퇴를 마무리하고, 아니면 보통 로그인
+					.successHandler((request, response, authentication) -> {
+						if (!kakaoWithdrawalCallback.onSuccess(request, response, authentication)) {
+							kakaoSuccessHandler.onAuthenticationSuccess(request, response, authentication);
+						}
+					})
 					// 동의 취소, state 불일치 등: 어떤 이유든 같은 안내
-					.failureUrl("/login?kakaoError"));
+					.failureHandler((request, response, exception) -> {
+						if (!kakaoWithdrawalCallback.onFailure(request, response)) {
+							response.sendRedirect(request.getContextPath() + "/login?kakaoError");
+						}
+					}));
 		}
 
 		applySecurityHeaders(http);

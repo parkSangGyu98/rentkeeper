@@ -26,7 +26,7 @@ import jakarta.servlet.http.Cookie;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, RecordingEmailSenderConfiguration.class})
+@Import({TestcontainersConfiguration.class, RecordingEmailSenderConfiguration.class, MutableClockConfiguration.class})
 public abstract class KakaoIntegrationTest {
 
 	protected static final FakeKakaoServer kakao = FakeKakaoServer.start();

@@ -33,6 +33,10 @@ interface AccountTokenRepository extends JpaRepository<AccountToken, Long> {
 			""")
 	int consume(@Param("id") long id, @Param("now") Instant now);
 
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("delete from AccountToken t where t.landlordId = :landlordId")
+	int deleteByLandlord(@Param("landlordId") long landlordId);
+
 	@Modifying
 	@Query("delete from AccountToken t where t.expiresAt < :cutoff")
 	int deleteExpiredBefore(@Param("cutoff") Instant cutoff);

@@ -58,6 +58,11 @@
 		@apply border-2 border-gray-400 bg-white text-gray-900 hover:bg-gray-100;
 	}
 
+	/* 되돌릴 수 없는 작업(회원 탈퇴 등) */
+	.btn-danger {
+		@apply bg-danger-700 text-white hover:bg-red-800;
+	}
+
 	.form-label {
 		@apply mb-2 block text-lg font-semibold;
 	}

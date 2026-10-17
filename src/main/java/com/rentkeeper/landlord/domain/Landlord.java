@@ -63,6 +63,10 @@ public class Landlord extends BaseTimeEntity {
 	@Column(name = "withdrawn_at")
 	private Instant withdrawnAt;
 
+	// 카카오 연결 끊기 성공 시각. 탈퇴한 카카오 계정만. NULL이면 아직 못 끊음 → 파기 배치가 다시 시도 (ADR-015)
+	@Column(name = "kakao_unlinked_at")
+	private Instant kakaoUnlinkedAt;
+
 	protected Landlord() {
 	}
 
@@ -125,6 +129,28 @@ public class Landlord extends BaseTimeEntity {
 			throw new IllegalStateException("verified email change is not supported yet (P1)");
 		}
 		this.email = Objects.requireNonNull(newEmail, "newEmail").value();
+	}
+
+	/**
+	 * 탈퇴 처리한다 (ADR-015): 사용 중(ACTIVE) → 탈퇴(WITHDRAWN). 되돌리는 전이는 없다 (유예 중 복구 미지원,
+	 * M1-c 결정 1). 개인정보는 30일 뒤 파기 배치가 행째 지운다.
+	 */
+	public void withdraw(Instant now) {
+		if (status != LandlordStatus.ACTIVE) {
+			throw new IllegalStateException("only ACTIVE accounts can withdraw");
+		}
+		this.status = LandlordStatus.WITHDRAWN;
+		this.withdrawnAt = Objects.requireNonNull(now, "now");
+	}
+
+	/** 카카오 연결 끊기에 성공했음을 기록한다. 탈퇴한 카카오 계정만 (V10 ck_landlord_kakao_unlinked) */
+	public void markKakaoUnlinked(Instant now) {
+		if (authProvider != AuthProvider.KAKAO || status != LandlordStatus.WITHDRAWN) {
+			throw new IllegalStateException("only WITHDRAWN KAKAO accounts can be unlinked");
+		}
+		if (kakaoUnlinkedAt == null) {
+			this.kakaoUnlinkedAt = Objects.requireNonNull(now, "now");
+		}
 	}
 
 	/**
@@ -209,6 +235,10 @@ public class Landlord extends BaseTimeEntity {
 
 	public Instant getWithdrawnAt() {
 		return withdrawnAt;
+	}
+
+	public Instant getKakaoUnlinkedAt() {
+		return kakaoUnlinkedAt;
 	}
 
 	public static class InvalidNameException extends BusinessException {

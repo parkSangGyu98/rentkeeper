@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>회원 탈퇴 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-6 text-3xl font-bold">회원 탈퇴</h1>
+
+		<section class="mb-6 rounded-lg border-2 border-danger-700 bg-white p-5" aria-labelledby="notice-heading">
+			<h2 id="notice-heading" class="mb-3 text-xl font-bold">탈퇴하기 전에 꼭 읽어 주세요</h2>
+			<ul class="list-disc space-y-2 pl-6 text-lg">
+				<li>탈퇴하면 바로 모든 기기에서 로그아웃되고, 다시 로그인할 수 없어요.</li>
+				<li>계정 정보는 30일 뒤에 완전히 지워요. 탈퇴를 되돌리는 기능은 없어요.</li>
+				<li>다시 이용하시려면 언제든 새로 가입하실 수 있어요 (예전 정보는 이어지지 않아요).</li>
+				<li th:if="${account.kakao}">카카오 계정과 RentKeeper의 연결도 끊어요.</li>
+			</ul>
+		</section>
+
+		<div class="alert alert-error" role="alert" th:if="${error}" th:text="${error}">오류</div>
+
+		<!-- 이메일 가입 계정: 지금 비밀번호로 본인 확인 -->
+		<form th:unless="${account.kakao}" th:action="@{/app/settings/withdraw}" method="post" class="space-y-6" novalidate>
+			<div>
+				<label for="currentPassword" class="form-label">지금 비밀번호</label>
+				<p id="current-password-hint" class="mb-2 text-base text-gray-700">본인 확인을 위해 입력해 주세요.</p>
+				<input id="currentPassword" name="currentPassword" type="password" class="form-input"
+					autocomplete="current-password" aria-describedby="current-password-hint" required>
+			</div>
+			<div class="flex items-start gap-3">
+				<input id="confirm" name="confirm" type="checkbox" value="true" class="mt-1 h-6 w-6 shrink-0">
+				<label for="confirm" class="text-lg">위 내용을 확인했고, 탈퇴할게요</label>
+			</div>
+			<button type="submit" class="btn btn-danger w-full">탈퇴하기</button>
+		</form>
+
+		<!-- 카카오 계정 1단계: 탈퇴 의사 확인 -->
+		<form th:if="${account.kakao and kakaoReauthReady == null}" th:action="@{/app/settings/withdraw/kakao}" method="post"
+			class="space-y-6" novalidate>
+			<p class="text-lg">다음 단계에서 카카오 계정으로 다시 로그인해 본인 확인을 해요.</p>
+			<div class="flex items-start gap-3">
+				<input id="confirm" name="confirm" type="checkbox" value="true" class="mt-1 h-6 w-6 shrink-0">
+				<label for="confirm" class="text-lg">위 내용을 확인했고, 탈퇴할게요</label>
+			</div>
+			<button type="submit" class="btn btn-danger w-full">다음</button>
+		</form>
+
+		<!-- 카카오 계정 2단계: 10분 안에 카카오 재로그인. 카카오 주소로는 폼을 보낼 수 없어(CSP) 링크로 이동한다 -->
+		<th:block th:if="${account.kakao and kakaoReauthReady != null}">
+			<p class="mb-4 text-lg">아래 버튼을 눌러 카카오 계정으로 다시 로그인하면 바로 탈퇴가 처리돼요. 10분 안에 해 주세요.</p>
+			<div class="alert alert-info" role="status" th:if="${inAppBrowser}">
+				카카오톡 안에서 열린 화면에서는 본인 확인이 제대로 되지 않을 수 있어요.
+				오른쪽 위 메뉴에서 <strong>다른 브라우저로 열기</strong>를 누른 뒤 다시 진행해 주세요.
+			</div>
+			<a th:href="@{/oauth2/authorization/kakao}" class="btn btn-kakao w-full">카카오로 본인 확인하고 탈퇴하기</a>
+		</th:block>
+
+		<p class="mt-8 text-lg"><a th:href="@{/app/settings}" class="font-semibold text-brand-700 underline">탈퇴하지 않고 계정 설정으로 돌아가기</a></p>
+	</main>
+</body>
+</html>

@@ -89,6 +89,20 @@ public class LandlordService {
 				.setUnverifiedNotificationEmail(email);
 	}
 
+	/** 탈퇴 처리한다 (ADR-015). 이미 탈퇴했으면 IllegalStateException */
+	@Transactional
+	public void withdraw(long landlordId) {
+		landlordRepository.findById(landlordId).orElseThrow(() -> new IllegalArgumentException("landlord not found"))
+				.withdraw(clock.instant());
+	}
+
+	/** 탈퇴한 카카오 계정의 연결 끊기 성공을 기록한다 */
+	@Transactional
+	public void markKakaoUnlinked(long landlordId) {
+		landlordRepository.findById(landlordId).orElseThrow(() -> new IllegalArgumentException("landlord not found"))
+				.markKakaoUnlinked(clock.instant());
+	}
+
 	public Optional<LandlordCredentials> findLocalCredentials(EmailAddress email) {
 		return landlordRepository
 				.findByAuthProviderAndEmailAndStatus(AuthProvider.LOCAL, email.value(), LandlordStatus.ACTIVE)
