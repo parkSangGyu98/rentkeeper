@@ -2,6 +2,7 @@ package com.rentkeeper;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideOutsideOfPackage;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import java.time.Instant;
@@ -14,6 +15,7 @@ import java.time.YearMonth;
 import java.time.ZonedDateTime;
 
 import org.springframework.data.repository.Repository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 
 import com.tngtech.archunit.core.domain.Dependency;
@@ -27,6 +29,7 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 
 import jakarta.persistence.Entity;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 /**
  * 모듈 의존 방향과 시간 규칙 (ADR-020, PRD 10장).
@@ -88,6 +91,13 @@ class ArchitectureTests {
 	static final ArchRule controllersDoNotUseRepositories = noClasses().that().areAnnotatedWith(Controller.class)
 			.should().dependOnClassesThat().areAssignableTo(Repository.class)
 			.because("controller → service → repository 단방향 (PRD 10장)");
+
+	// ---------------------------------------------------------------- 배치
+
+	@ArchTest
+	static final ArchRule scheduledMethodsAreLocked = methods().that().areAnnotatedWith(Scheduled.class).should()
+			.beAnnotatedWith(SchedulerLock.class).andShould().bePublic()
+			.because("서버가 여러 대여도 배치는 한 곳에서만 돈다. 잠금 프록시가 확실히 가로채도록 public (ADR-022)");
 
 	// ---------------------------------------------------------------- 시간
 

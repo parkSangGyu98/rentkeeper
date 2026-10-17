@@ -46,6 +46,9 @@ dependencies {
 	implementation("org.flywaydb:flyway-database-postgresql")
 	// 세션을 DB에 저장한다 (ADR-005). 서버 재시작·증설에도 로그인이 유지된다
 	implementation("org.springframework.boot:spring-boot-starter-session-jdbc")
+	// 배치 중복 실행 방지 잠금 (ADR-022). Boot BOM에 없어 버전을 직접 적는다. 7.10.1은 Boot 4.1.1·Spring 7.0.9로 빌드·테스트된 릴리스다
+	implementation("net.javacrumbs.shedlock:shedlock-spring:7.10.1")
+	implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:7.10.1")
 	runtimeOnly("org.postgresql:postgresql")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

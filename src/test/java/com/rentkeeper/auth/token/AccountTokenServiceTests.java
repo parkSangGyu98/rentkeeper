@@ -28,6 +28,7 @@ import com.rentkeeper.landlord.application.LandlordService;
 import com.rentkeeper.landlord.domain.EmailAddress;
 import com.rentkeeper.support.MutableClock;
 import com.rentkeeper.support.MutableClockConfiguration;
+import com.rentkeeper.support.TestData;
 
 /**
  * 1회용 계정 토큰: 해시 저장, 만료, 1회 사용, 재발급 시 이전 토큰 무효, 동시 사용, 정리 (ADR-011).
@@ -56,6 +57,8 @@ class AccountTokenServiceTests {
 	@BeforeEach
 	void setUp() {
 		clock.set(MutableClockConfiguration.START);
+		// 정리 작업은 배치 잠금이 걸려 있어 다른 테스트가 1분 안에 불렀으면 건너뛴다 (ADR-022)
+		TestData.unlockScheduledJobs(jdbcTemplate);
 		jdbcTemplate.update("delete from landlord");
 		landlordId = landlordService.registerLocal(EmailAddress.of("kim@example.com"), "{bcrypt}hash", "김임대");
 	}
