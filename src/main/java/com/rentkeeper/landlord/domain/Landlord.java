@@ -87,6 +87,47 @@ public class Landlord extends BaseTimeEntity {
 	}
 
 	/**
+	 * 카카오 계정을 만든다 (ADR-014). 비밀번호는 없다.
+	 *
+	 * @param notificationEmail
+	 *            알림 받을 이메일. 없으면 null(나중에 입력)
+	 * @param emailVerifiedAt
+	 *            카카오가 인증한 이메일을 그대로 쓰면 그 시각, 아니면 null(우리 인증 메일로 확인)
+	 */
+	public static Landlord registerKakao(String kakaoId, String name, EmailAddress notificationEmail,
+			Instant emailVerifiedAt) {
+		if (kakaoId == null || !kakaoId.matches("[0-9]+")) {
+			throw new IllegalArgumentException("kakaoId must be numeric");
+		}
+		if (notificationEmail == null && emailVerifiedAt != null) {
+			throw new IllegalArgumentException("cannot be verified without email");
+		}
+		Landlord landlord = new Landlord();
+		landlord.kakaoId = kakaoId;
+		landlord.email = notificationEmail == null ? null : notificationEmail.value();
+		landlord.emailVerifiedAt = emailVerifiedAt;
+		landlord.authProvider = AuthProvider.KAKAO;
+		landlord.name = normalizeName(name);
+		landlord.status = LandlordStatus.ACTIVE;
+		landlord.plan = Plan.FREE;
+		return landlord;
+	}
+
+	/**
+	 * 카카오 계정의 <strong>아직 인증되지 않은</strong> 알림 이메일을 넣거나 고친다 (M1-c 결정 11). 인증된 주소를 바꾸는
+	 * 것은 P1이다. 이메일 가입 계정은 이메일이 로그인 ID라 이 방법으로 바꿀 수 없다 (재인증이 있는 이메일 변경을 쓴다).
+	 */
+	public void setUnverifiedNotificationEmail(EmailAddress newEmail) {
+		if (authProvider != AuthProvider.KAKAO) {
+			throw new IllegalStateException("only KAKAO accounts can set notification email this way");
+		}
+		if (emailVerifiedAt != null) {
+			throw new IllegalStateException("verified email change is not supported yet (P1)");
+		}
+		this.email = Objects.requireNonNull(newEmail, "newEmail").value();
+	}
+
+	/**
 	 * 지금 이메일이 인증 메일을 보낸 주소와 같을 때만 인증 처리한다. 인증 메일을 보낸 뒤 이메일이 바뀌었다면 예전 주소의 링크로 새 주소가
 	 * 인증되면 안 된다.
 	 *

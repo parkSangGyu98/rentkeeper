@@ -33,9 +33,13 @@ public class AccountSettingsController {
 
 	private final PasswordChangeService passwordChangeService;
 
-	public AccountSettingsController(LandlordService landlordService, PasswordChangeService passwordChangeService) {
+	private final LocalAccountGuard localAccountGuard;
+
+	public AccountSettingsController(LandlordService landlordService, PasswordChangeService passwordChangeService,
+			LocalAccountGuard localAccountGuard) {
 		this.landlordService = landlordService;
 		this.passwordChangeService = passwordChangeService;
+		this.localAccountGuard = localAccountGuard;
 	}
 
 	@GetMapping("/app/settings")
@@ -45,7 +49,8 @@ public class AccountSettingsController {
 	}
 
 	@GetMapping("/app/settings/password")
-	public String passwordForm() {
+	public String passwordForm(@AuthenticationPrincipal LandlordPrincipal principal) {
+		localAccountGuard.requireLocal(principal.getLandlordId());
 		return PASSWORD_VIEW;
 	}
 
@@ -55,6 +60,7 @@ public class AccountSettingsController {
 			@RequestParam(name = "newPassword", defaultValue = "") String newPassword,
 			@RequestParam(name = "newPasswordConfirm", defaultValue = "") String newPasswordConfirm, Model model,
 			HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirect) {
+		localAccountGuard.requireLocal(principal.getLandlordId());
 		if (!newPassword.equals(newPasswordConfirm)) {
 			return withError(model, "새 비밀번호가 서로 달라요. 같은 비밀번호를 두 번 입력해 주세요");
 		}

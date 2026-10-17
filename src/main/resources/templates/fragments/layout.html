@@ -24,7 +24,7 @@
 					<a th:href="@{/login}" class="btn btn-secondary">로그인</a>
 					<a th:href="@{/signup}" class="btn btn-primary">가입하기</a>
 				</th:block>
-				<th:block sec:authorize="isAuthenticated()">
+				<th:block sec:authorize="hasRole('LANDLORD')">
 					<a th:href="@{/app}" class="hidden text-lg font-semibold text-gray-900 no-underline sm:inline">
 						<span sec:authentication="principal.displayName">홍길동</span>님
 					</a>
@@ -34,17 +34,32 @@
 						<button type="submit" class="btn btn-secondary">로그아웃</button>
 					</form>
 				</th:block>
+				<!-- 카카오 가입 단계(아직 계정 없음)에서는 그만두기만 보여 준다 -->
+				<th:block sec:authorize="hasAuthority('ROLE_KAKAO_SIGNUP')">
+					<form th:action="@{/logout}" method="post">
+						<button type="submit" class="btn btn-secondary">가입 그만두기</button>
+					</form>
+				</th:block>
 			</nav>
 		</div>
 	</header>
 
-	<!-- 이메일 미인증 안내 띠 (EmailVerificationBannerAdvice). 인증 전에도 쓸 수 있지만 알림은 인증된 주소로만 간다 -->
-	<div class="border-b-2 border-yellow-500 bg-yellow-50" role="status" th:if="${emailVerificationPending}">
+	<!-- 이메일 안내 띠 (EmailVerificationBannerAdvice). 인증 전에도 쓸 수 있지만 알림은 인증된 주소로만 간다 -->
+	<div class="border-b-2 border-yellow-500 bg-yellow-50" role="status" th:if="${emailBanner != null and emailBanner.missing}">
+		<div class="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-3 px-4 py-3 text-base">
+			<p class="flex-1">알림 받을 이메일이 아직 없어요. 이메일을 넣고 인증해야 월세 알림을 받을 수 있어요.</p>
+			<a th:href="@{/app/settings/notification-email}" class="btn btn-secondary">이메일 넣기</a>
+		</div>
+	</div>
+	<div class="border-b-2 border-yellow-500 bg-yellow-50" role="status" th:if="${emailBanner != null and emailBanner.unverified}">
 		<div class="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-3 px-4 py-3 text-base">
 			<p class="flex-1">이메일 인증이 아직 끝나지 않았어요. 인증해야 월세 알림을 이메일로 받을 수 있어요.</p>
 			<form th:action="@{/app/email-verification/resend}" method="post">
 				<button type="submit" class="btn btn-secondary">인증 메일 다시 받기</button>
 			</form>
+			<!-- 카카오 계정은 주소를 잘못 넣었을 때 여기서 고친다 (일반 계정은 계정 설정의 이메일 바꾸기) -->
+			<a th:if="${emailBanner.editable}" th:href="@{/app/settings/notification-email}"
+				class="text-lg font-semibold text-brand-700 underline">주소 고치기</a>
 		</div>
 	</div>
 

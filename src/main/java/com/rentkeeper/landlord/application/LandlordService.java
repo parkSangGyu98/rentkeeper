@@ -23,6 +23,8 @@ public class LandlordService {
 
 	static final String LOCAL_EMAIL_UNIQUE_CONSTRAINT = "uk_landlord_local_email";
 
+	static final String KAKAO_ID_UNIQUE_CONSTRAINT = "uk_landlord_kakao_id";
+
 	private final LandlordRepository landlordRepository;
 
 	private final Clock clock;
@@ -54,6 +56,37 @@ public class LandlordService {
 			}
 			throw e;
 		}
+	}
+
+	/**
+	 * 카카오 계정을 만들고 id를 돌려준다 (ADR-014).
+	 *
+	 * @param notificationEmail
+	 *            알림 받을 이메일, 없으면 null
+	 * @param emailTrusted
+	 *            카카오가 인증한 이메일을 그대로 쓰는 경우 true → 인증된 것으로 저장
+	 * @throws DuplicateKakaoAccountException
+	 *             같은 카카오 회원번호의 사용 중인 계정이 이미 있을 때 (다른 창에서 동시에 가입한 경우 등)
+	 */
+	@Transactional
+	public long registerKakao(String kakaoId, String name, EmailAddress notificationEmail, boolean emailTrusted) {
+		Landlord landlord = Landlord.registerKakao(kakaoId, name, notificationEmail,
+				notificationEmail != null && emailTrusted ? clock.instant() : null);
+		try {
+			return landlordRepository.saveAndFlush(landlord).getId();
+		} catch (DataIntegrityViolationException e) {
+			if (hasConstraint(e, KAKAO_ID_UNIQUE_CONSTRAINT)) {
+				throw new DuplicateKakaoAccountException(e);
+			}
+			throw e;
+		}
+	}
+
+	/** 카카오 계정의 아직 인증되지 않은 알림 이메일을 넣거나 고친다. 인증 메일은 호출한 쪽이 보낸다 */
+	@Transactional
+	public void setUnverifiedNotificationEmail(long landlordId, EmailAddress email) {
+		landlordRepository.findById(landlordId).orElseThrow(() -> new IllegalArgumentException("landlord not found"))
+				.setUnverifiedNotificationEmail(email);
 	}
 
 	public Optional<LandlordCredentials> findLocalCredentials(EmailAddress email) {
@@ -139,13 +172,17 @@ public class LandlordService {
 
 	private static LandlordAccount toAccount(Landlord landlord) {
 		return new LandlordAccount(landlord.getId(), landlord.getEmail(), landlord.getName(),
-				landlord.isEmailVerified(), landlord.getStatus());
+				landlord.isEmailVerified(), landlord.getStatus(), landlord.getAuthProvider(), landlord.getKakaoId());
 	}
 
 	static boolean isLocalEmailUniqueViolation(Throwable e) {
+		return hasConstraint(e, LOCAL_EMAIL_UNIQUE_CONSTRAINT);
+	}
+
+	private static boolean hasConstraint(Throwable e, String constraintName) {
 		for (Throwable t = e; t != null; t = t.getCause()) {
 			if (t instanceof ConstraintViolationException cve
-					&& LOCAL_EMAIL_UNIQUE_CONSTRAINT.equalsIgnoreCase(cve.getConstraintName())) {
+					&& constraintName.equalsIgnoreCase(cve.getConstraintName())) {
 				return true;
 			}
 		}

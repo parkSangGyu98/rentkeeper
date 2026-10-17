@@ -23,6 +23,7 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 
 import com.rentkeeper.auth.kakao.KakaoLoginSuccessHandler;
 import com.rentkeeper.auth.kakao.KakaoOAuth2UserService;
+import com.rentkeeper.auth.kakao.KakaoSignupPrincipal;
 import com.rentkeeper.auth.kakao.NoStoreAuthorizedClientRepository;
 import com.rentkeeper.auth.rememberme.HashingPersistentTokenRepository;
 import com.rentkeeper.auth.rememberme.HashingRememberMeServices;
@@ -100,8 +101,9 @@ public class SecurityConfig {
 		http.authorizeHttpRequests(authorize -> authorize
 				// 오류 화면 전달(/error)과 내부 forward는 원래 요청에서 이미 권한 검사를 거쳤다
 				.dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
-				.requestMatchers(PUBLIC_PATHS).permitAll().requestMatchers("/app/**").hasRole("LANDLORD").anyRequest()
-				.denyAll());
+				.requestMatchers(PUBLIC_PATHS).permitAll().requestMatchers("/app/**").hasRole("LANDLORD")
+				// 카카오로 처음 온 사람의 가입 단계. 아직 계정이 없어 /app은 못 쓴다 (ADR-014)
+				.requestMatchers("/signup/kakao").hasAuthority(KakaoSignupPrincipal.ROLE).anyRequest().denyAll());
 
 		http.formLogin(form -> form.loginPage("/login").usernameParameter("email").passwordParameter("password")
 				.defaultSuccessUrl("/app", true)
