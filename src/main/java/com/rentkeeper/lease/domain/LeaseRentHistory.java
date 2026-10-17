@@ -69,6 +69,15 @@ public class LeaseRentHistory extends BaseTimeEntity {
 		return history;
 	}
 
+	/** 금액을 바꾼다. 언제 바꿀 수 있는지는 RentSchedule이 정한다 */
+	void changeAmounts(long monthlyRent, long maintenanceFee, String reason) {
+		requireAmount(monthlyRent, "monthlyRent");
+		requireAmount(maintenanceFee, "maintenanceFee");
+		this.monthlyRent = monthlyRent;
+		this.maintenanceFee = maintenanceFee;
+		this.reason = reason == null || reason.isBlank() ? null : reason.strip();
+	}
+
 	/** 월세·관리비 범위 (PRD 4.3: 0 이상 1억 이하) */
 	public static void requireAmount(long amount, String field) {
 		if (amount < 0 || amount > AMOUNT_MAX) {

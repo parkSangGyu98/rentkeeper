@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>월세 바꾸기 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<p class="mb-2 text-lg"><a th:href="@{/app/leases/{id}(id=${view.leaseId()})}" class="font-semibold text-brand-700 underline">계약으로 돌아가기</a></p>
+		<h1 class="mb-1 text-3xl font-bold">월세 바꾸기</h1>
+		<p class="mb-6 text-lg text-gray-700"><span th:text="${view.unitName()}">행복빌라 101호</span> · <span th:text="${view.tenantName()}">홍길동</span>님</p>
+
+		<p th:if="${view.months().isEmpty()}" class="alert alert-info" role="status">
+			바꿀 수 있는 달이 없어요. 계약이 이번 달에 끝나거나, 첫 달 금액을 고치려면 [계약 고치기]를 쓰세요.
+		</p>
+
+		<form th:unless="${view.months().isEmpty()}" th:action="@{/app/leases/{id}/rent-change(id=${view.leaseId()})}" th:object="${form}" method="post" class="space-y-6" novalidate>
+			<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('*')}">입력한 내용을 확인해 주세요.</div>
+			<div>
+				<label for="effectiveMonth" class="form-label">몇 월부터 바꿀까요?</label>
+				<p id="month-hint" class="mb-2 text-base text-gray-700">고른 달부터 새 금액으로 받아요. 그 전 달은 그대로예요. 아직 오지 않은 달에 이미 정해 둔 변경이 있으면 새 금액으로 바뀌어요.</p>
+				<select id="effectiveMonth" name="effectiveMonth" class="form-input" aria-describedby="month-hint">
+					<option th:each="m : ${view.months()}" th:value="${m}" th:text="${m.year} + '년 ' + ${m.monthValue} + '월부터'"
+						th:selected="${form.effectiveMonth == m.toString()}">2027년 1월부터</option>
+				</select>
+				<p class="form-error" th:if="${#fields.hasErrors('effectiveMonth')}" th:errors="*{effectiveMonth}">오류</p>
+			</div>
+			<div>
+				<label for="monthlyRent" class="form-label">새 월세 (원)</label>
+				<input id="monthlyRent" type="text" inputmode="numeric" th:field="*{monthlyRent}" class="form-input">
+				<p class="form-error" th:if="${#fields.hasErrors('monthlyRent')}" th:errors="*{monthlyRent}">오류</p>
+			</div>
+			<div>
+				<label for="maintenanceFee" class="form-label">새 관리비 (원, 없으면 비워 두세요)</label>
+				<input id="maintenanceFee" type="text" inputmode="numeric" th:field="*{maintenanceFee}" class="form-input">
+				<p class="form-error" th:if="${#fields.hasErrors('maintenanceFee')}" th:errors="*{maintenanceFee}">오류</p>
+			</div>
+			<div>
+				<label for="reason" class="form-label">바꾸는 이유 (선택)</label>
+				<input id="reason" type="text" th:field="*{reason}" class="form-input">
+				<p class="form-error" th:if="${#fields.hasErrors('reason')}" th:errors="*{reason}">오류</p>
+			</div>
+			<button type="submit" class="btn btn-primary w-full">바꾸기</button>
+		</form>
+	</main>
+</body>
+</html>

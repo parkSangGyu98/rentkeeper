@@ -23,6 +23,9 @@ public interface LeaseRepository extends Repository<Lease, Long> {
 	/** 호실의 모든 계약 (종료 포함), 들어오는 날 최근 순 */
 	List<Lease> findByUnitIdAndLandlordIdOrderByStartDateDesc(long unitId, long landlordId);
 
+	/** 한 세입자의 계약들 (같은 사람이 여러 호실을 빌린 경우) */
+	List<Lease> findByTenantIdAndLandlordId(long tenantId, long landlordId);
+
 	List<Lease> findByLandlordIdAndStatusAndUnitIdIn(long landlordId, LeaseStatus status, Collection<Long> unitIds);
 
 	/** 같은 임대인의 가장 최근 계약 (계좌 미리 채우기, M2 결정 20) */

@@ -27,4 +27,6 @@ public enum ErrorCode {
 
 	EXISTING_TENANT,
 
+	LEASE_ENDED,
+
 }

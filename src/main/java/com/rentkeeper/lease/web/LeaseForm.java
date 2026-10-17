@@ -1,16 +1,12 @@
 package com.rentkeeper.lease.web;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 
 import org.springframework.validation.BindingResult;
 
-import com.rentkeeper.common.money.Won;
 import com.rentkeeper.lease.application.LeaseViews.AccountPrefill;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRegistration;
 import com.rentkeeper.lease.domain.AccountNumber;
-import com.rentkeeper.lease.domain.InvalidLeaseValueException;
-import com.rentkeeper.lease.domain.LeaseRentHistory;
 import com.rentkeeper.lease.domain.LeaseTerms;
 import com.rentkeeper.lease.domain.PersonName;
 import com.rentkeeper.lease.domain.PhoneNumber;
@@ -75,93 +71,28 @@ public class LeaseForm {
 	 * @return 오류가 하나라도 있으면 null (오류는 result에 칸별로 넣는다)
 	 */
 	LeaseRegistration toRegistration(BindingResult result) {
-		PersonName name = field(result, "tenantName", "세입자 이름을 1~50자로 입력해 주세요", () -> new PersonName(tenantName));
-		PhoneNumber phone = field(result, "tenantPhone", "휴대폰 번호를 다시 확인해 주세요 (예: 010-1234-5678)",
-				() -> PhoneNumber.parse(tenantPhone));
-		PrivateMemo tenantMemoValue = field(result, "tenantMemo", "메모는 500자 이하로 입력해 주세요",
-				() -> PrivateMemo.ofNullable(tenantMemo));
-
-		Long depositValue = amount(result, "deposit", deposit, false, LeaseTerms.DEPOSIT_MAX,
-				"보증금을 숫자로 입력해 주세요 (없으면 0)", "보증금은 100억 원 이하로 입력해 주세요");
-		Long rent = amount(result, "monthlyRent", monthlyRent, false, LeaseRentHistory.AMOUNT_MAX,
-				"월세를 숫자로 입력해 주세요 (예: 500000)", "월세는 1억 원 이하로 입력해 주세요");
-		Long fee = amount(result, "maintenanceFee", maintenanceFee, true, LeaseRentHistory.AMOUNT_MAX,
-				"관리비를 숫자로 입력해 주세요 (없으면 비워 두세요)", "관리비는 1억 원 이하로 입력해 주세요");
-		Integer day = dueDay == null || !dueDay.strip().matches("[0-9]{1,2}") ? null : Integer.valueOf(dueDay.strip());
-		if (day == null || day < 1 || day > 31) {
-			result.rejectValue("dueDay", "invalid", "매달 받는 날을 1~31일 중에서 골라 주세요");
-		}
-
-		LocalDate start = date(result, "startDate", startDate, "들어오는 날을 입력해 주세요");
-		LocalDate end = date(result, "endDate", endDate, "나가는 날을 입력해 주세요");
+		PersonName name = LeaseFields.tenantName(result, tenantName);
+		PhoneNumber phone = LeaseFields.phone(result, tenantPhone);
+		PrivateMemo tenantMemoValue = LeaseFields.tenantMemo(result, tenantMemo);
+		Long depositValue = LeaseFields.deposit(result, deposit);
+		Long rent = LeaseFields.rent(result, "monthlyRent", monthlyRent);
+		Long fee = LeaseFields.fee(result, "maintenanceFee", maintenanceFee);
+		Integer day = LeaseFields.dueDay(result, dueDay);
+		LocalDate start = LeaseFields.date(result, "startDate", startDate, "들어오는 날을 입력해 주세요");
+		LocalDate end = LeaseFields.date(result, "endDate", endDate, "나가는 날을 입력해 주세요");
 		if (start != null && end != null && !end.isAfter(start)) {
 			result.rejectValue("endDate", "beforeStart", "나가는 날은 들어오는 날보다 뒤여야 해요");
-			end = null;
 		}
-
-		String bank = bankName == null ? "" : bankName.strip();
-		if (bank.isEmpty() || bank.codePointCount(0, bank.length()) > LeaseTerms.BANK_NAME_MAX_LENGTH) {
-			result.rejectValue("bankName", "invalid", "은행 이름을 1~50자로 입력해 주세요 (예: 국민은행)");
-		}
-		AccountNumber account = field(result, "accountNumber", "계좌번호를 숫자로 입력해 주세요 (6~30자리, - 는 빼도 돼요)",
-				() -> AccountNumber.parse(accountNumber));
-		PersonName holder = field(result, "accountHolder", "예금주 이름을 1~50자로 입력해 주세요",
-				() -> new PersonName(accountHolder));
-		String leaseMemo = memo == null ? "" : memo.strip();
-		if (leaseMemo.codePointCount(0, leaseMemo.length()) > LeaseTerms.MEMO_MAX_LENGTH) {
-			result.rejectValue("memo", "tooLong", "메모는 500자 이하로 입력해 주세요");
-		}
+		String bank = LeaseFields.bankName(result, bankName);
+		AccountNumber account = LeaseFields.account(result, accountNumber);
+		PersonName holder = LeaseFields.accountHolder(result, accountHolder);
+		String leaseMemo = LeaseFields.plainMemo(result, "memo", memo, LeaseTerms.MEMO_MAX_LENGTH);
 
 		if (result.hasErrors()) {
 			return null;
 		}
 		LeaseTerms terms = new LeaseTerms(depositValue, day, start, end, bank, account, holder, leaseMemo);
 		return new LeaseRegistration(unitId, name, phone, tenantMemoValue, rent, fee, terms, useExistingTenant);
-	}
-
-	private interface Parser<T> {
-
-		T parse();
-
-	}
-
-	private static <T> T field(BindingResult result, String field, String message, Parser<T> parser) {
-		try {
-			return parser.parse();
-		} catch (InvalidLeaseValueException e) {
-			result.rejectValue(field, "invalid", message);
-			return null;
-		}
-	}
-
-	private static Long amount(BindingResult result, String field, String raw, boolean blankIsZero, long max,
-			String invalidMessage, String tooLargeMessage) {
-		if (blankIsZero && (raw == null || raw.isBlank())) {
-			return 0L;
-		}
-		Long value = Won.parse(raw);
-		if (value == null) {
-			result.rejectValue(field, "invalid", invalidMessage);
-			return null;
-		}
-		if (value > max) {
-			result.rejectValue(field, "tooLarge", tooLargeMessage);
-			return null;
-		}
-		return value;
-	}
-
-	private static LocalDate date(BindingResult result, String field, String raw, String message) {
-		try {
-			return raw == null || raw.isBlank() ? reject(result, field, message) : LocalDate.parse(raw.strip());
-		} catch (DateTimeParseException e) {
-			return reject(result, field, message);
-		}
-	}
-
-	private static LocalDate reject(BindingResult result, String field, String message) {
-		result.rejectValue(field, "invalid", message);
-		return null;
 	}
 
 	public Long getUnitId() {

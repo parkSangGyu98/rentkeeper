@@ -1,6 +1,7 @@
 package com.rentkeeper.lease.domain;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 import com.rentkeeper.common.jpa.BaseTimeEntity;
 
@@ -94,6 +95,65 @@ public class Lease extends BaseTimeEntity {
 		this.accountNumber = terms.accountNumber();
 		this.accountHolder = terms.accountHolder();
 		this.memo = terms.memo();
+	}
+
+	/**
+	 * 계약 조건을 고친다 (M2 결정 12): 보증금, 받는 날, 나가는 날(연장·단축), 계좌, 메모. 호실과 들어오는 날은 바꿀 수 없다.
+	 * 진행 중 계약만.
+	 *
+	 * @throws LeaseStateException
+	 *             종료한 계약일 때
+	 */
+	public void changeTerms(LeaseTerms terms) {
+		requireActive();
+		if (!terms.startDate().equals(startDate)) {
+			throw new IllegalArgumentException("startDate cannot be changed");
+		}
+		apply(terms);
+	}
+
+	/**
+	 * 계약을 종료한다 (LEASE-3): ACTIVE → ENDED. 되돌릴 수 없다. 실제로 끝난 날은 들어오는 날 이후 ~ 오늘까지 (M2
+	 * 결정 3: 미래 퇴거는 나가는 날을 고쳐서 처리한다).
+	 *
+	 * @param today
+	 *            서울 날짜 (주입한 Clock 기준)
+	 * @throws LeaseStateException
+	 *             이미 종료한 계약일 때
+	 * @throws InvalidLeaseValueException
+	 *             끝난 날이 들어오는 날 전이거나 오늘보다 뒤일 때 (field = endedOn)
+	 */
+	public void end(LocalDate endedOn, LocalDate today) {
+		requireActive();
+		if (endedOn == null || endedOn.isBefore(startDate) || endedOn.isAfter(today)) {
+			throw new InvalidLeaseValueException("endedOn");
+		}
+		this.status = LeaseStatus.ENDED;
+		this.endedOn = endedOn;
+	}
+
+	public boolean isActive() {
+		return status == LeaseStatus.ACTIVE;
+	}
+
+	/** 계약 기간에 하루라도 들어가는 마지막 달 (나가는 날은 기간 밖이라 그 전날의 달) */
+	public YearMonth lastMonth() {
+		return YearMonth.from(endDate.minusDays(1));
+	}
+
+	private void requireActive() {
+		if (status != LeaseStatus.ACTIVE) {
+			throw new LeaseStateException();
+		}
+	}
+
+	/** 종료한 계약은 고칠 수 없다 */
+	public static class LeaseStateException extends IllegalStateException {
+
+		LeaseStateException() {
+			super("lease is not active");
+		}
+
 	}
 
 	/** 오늘 기준 기간 안인지: 들어오는 날 ≤ 오늘 < 나가는 날 ([) 범위) */

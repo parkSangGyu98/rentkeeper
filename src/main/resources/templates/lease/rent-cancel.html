@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>월세 변경 취소 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-4 text-3xl font-bold">예정된 월세 변경을 취소할까요?</h1>
+		<p class="mb-2 text-xl font-semibold">
+			<span th:text="${change.monthText()}">2027년 1월부터</span>
+			월세 <span th:text="${change.rentText()}">550,000원</span>, 관리비 <span th:text="${change.feeText()}">50,000원</span>
+		</p>
+		<p class="mb-8 text-lg text-gray-700">취소하면 그 달에도 지금 금액을 그대로 받아요.</p>
+		<form th:action="@{/app/leases/{id}/rent-history/{h}/cancel(id=${leaseId}, h=${change.id()})}" method="post" class="mb-4">
+			<button type="submit" class="btn btn-danger w-full">네, 취소할게요</button>
+		</form>
+		<a th:href="@{/app/leases/{id}(id=${leaseId})}" class="btn btn-secondary w-full">취소하지 않고 돌아가기</a>
+	</main>
+</body>
+</html>

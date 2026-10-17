@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>계약 고치기 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<p class="mb-2 text-lg"><a th:href="@{/app/leases/{id}(id=${view.leaseId()})}" class="font-semibold text-brand-700 underline">계약으로 돌아가기</a></p>
+		<h1 class="mb-1 text-3xl font-bold">계약 고치기</h1>
+		<p class="mb-6 text-lg text-gray-700">
+			<span th:text="${view.unitName()}">행복빌라 101호</span> ·
+			들어오는 날 <span th:text="${#temporals.format(view.startDate(), 'yyyy년 M월 d일')}">2026년 1월 1일</span> (호실과 들어오는 날은 바꿀 수 없어요)
+		</p>
+
+		<form th:action="@{/app/leases/{id}(id=${view.leaseId()})}" th:object="${form}" method="post" class="space-y-8" novalidate>
+			<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('*')}">입력한 내용을 확인해 주세요. 빨간 글씨로 안내한 칸을 고치면 돼요.</div>
+
+			<fieldset class="space-y-5 rounded-lg border-2 border-gray-200 bg-white p-5">
+				<legend class="px-2 text-xl font-bold">세입자</legend>
+				<p class="text-base text-gray-700" th:if="${view.otherLeasesOfTenant() > 0}">
+					이 세입자의 다른 계약 <span th:text="${view.otherLeasesOfTenant()}">1</span>건에도 함께 바뀌어요 (같은 사람).
+				</p>
+				<div>
+					<label for="tenantName" class="form-label">이름</label>
+					<input id="tenantName" type="text" th:field="*{tenantName}" class="form-input" autocomplete="off">
+					<p class="form-error" th:if="${#fields.hasErrors('tenantName')}" th:errors="*{tenantName}">오류</p>
+				</div>
+				<div>
+					<label for="tenantPhone" class="form-label">휴대폰 번호</label>
+					<input id="tenantPhone" type="tel" inputmode="tel" th:field="*{tenantPhone}" class="form-input" autocomplete="off">
+					<p class="form-error" th:if="${#fields.hasErrors('tenantPhone')}" th:errors="*{tenantPhone}">오류</p>
+				</div>
+				<div>
+					<label for="tenantMemo" class="form-label">세입자 메모 (선택)</label>
+					<textarea id="tenantMemo" th:field="*{tenantMemo}" rows="2" class="form-input py-3"></textarea>
+					<p class="form-error" th:if="${#fields.hasErrors('tenantMemo')}" th:errors="*{tenantMemo}">오류</p>
+				</div>
+			</fieldset>
+
+			<fieldset class="space-y-5 rounded-lg border-2 border-gray-200 bg-white p-5">
+				<legend class="px-2 text-xl font-bold">금액</legend>
+				<div>
+					<label for="deposit" class="form-label">보증금 (원)</label>
+					<input id="deposit" type="text" inputmode="numeric" th:field="*{deposit}" class="form-input">
+					<p class="form-error" th:if="${#fields.hasErrors('deposit')}" th:errors="*{deposit}">오류</p>
+				</div>
+				<p class="text-base text-gray-700">아래 월세·관리비는 <strong>첫 달(들어오는 달)</strong> 금액이에요. 잘못 넣었을 때만 고치세요. 앞으로 월세를 올리거나 내리려면 계약 화면의 [월세 바꾸기]를 쓰세요.</p>
+				<div>
+					<label for="firstMonthlyRent" class="form-label">첫 달 월세 (원)</label>
+					<input id="firstMonthlyRent" type="text" inputmode="numeric" th:field="*{firstMonthlyRent}" class="form-input">
+					<p class="form-error" th:if="${#fields.hasErrors('firstMonthlyRent')}" th:errors="*{firstMonthlyRent}">오류</p>
+				</div>
+				<div>
+					<label for="firstMaintenanceFee" class="form-label">첫 달 관리비 (원)</label>
+					<input id="firstMaintenanceFee" type="text" inputmode="numeric" th:field="*{firstMaintenanceFee}" class="form-input">
+					<p class="form-error" th:if="${#fields.hasErrors('firstMaintenanceFee')}" th:errors="*{firstMaintenanceFee}">오류</p>
+				</div>
+				<div>
+					<label for="dueDay" class="form-label">매달 월세 받는 날</label>
+					<select id="dueDay" name="dueDay" class="form-input">
+						<option th:each="d : ${#numbers.sequence(1, 31)}" th:value="${d}" th:text="${d} + '일'"
+							th:selected="${form.dueDay == #strings.toString(d)}">1일</option>
+					</select>
+					<p class="form-error" th:if="${#fields.hasErrors('dueDay')}" th:errors="*{dueDay}">오류</p>
+				</div>
+			</fieldset>
+
+			<fieldset class="space-y-5 rounded-lg border-2 border-gray-200 bg-white p-5">
+				<legend class="px-2 text-xl font-bold">기간</legend>
+				<div>
+					<label for="endDate" class="form-label">나가는 날</label>
+					<p id="end-hint" class="mb-2 text-base text-gray-700">늘리거나 당길 수 있어요. 이미 나갔다면 [계약 종료]를 쓰세요.</p>
+					<input id="endDate" type="date" th:field="*{endDate}" class="form-input" aria-describedby="end-hint">
+					<p class="form-error" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}">오류</p>
+				</div>
+			</fieldset>
+
+			<fieldset class="space-y-5 rounded-lg border-2 border-gray-200 bg-white p-5">
+				<legend class="px-2 text-xl font-bold">월세 받을 계좌</legend>
+				<div>
+					<label for="bankName" class="form-label">은행</label>
+					<input id="bankName" type="text" th:field="*{bankName}" class="form-input">
+					<p class="form-error" th:if="${#fields.hasErrors('bankName')}" th:errors="*{bankName}">오류</p>
+				</div>
+				<div>
+					<label for="accountNumber" class="form-label">계좌번호</label>
+					<input id="accountNumber" type="text" inputmode="numeric" th:field="*{accountNumber}" class="form-input" autocomplete="off">
+					<p class="form-error" th:if="${#fields.hasErrors('accountNumber')}" th:errors="*{accountNumber}">오류</p>
+				</div>
+				<div>
+					<label for="accountHolder" class="form-label">예금주</label>
+					<input id="accountHolder" type="text" th:field="*{accountHolder}" class="form-input" autocomplete="off">
+					<p class="form-error" th:if="${#fields.hasErrors('accountHolder')}" th:errors="*{accountHolder}">오류</p>
+				</div>
+				<div>
+					<label for="memo" class="form-label">계약 메모 (선택)</label>
+					<p id="memo-hint" class="mb-2 text-base text-gray-700">주민번호·계좌번호는 적지 마세요.</p>
+					<textarea id="memo" th:field="*{memo}" rows="2" class="form-input py-3" aria-describedby="memo-hint"></textarea>
+					<p class="form-error" th:if="${#fields.hasErrors('memo')}" th:errors="*{memo}">오류</p>
+				</div>
+			</fieldset>
+
+			<button type="submit" class="btn btn-primary w-full">고치기</button>
+		</form>
+	</main>
+</body>
+</html>

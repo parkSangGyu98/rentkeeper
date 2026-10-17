@@ -7,7 +7,16 @@
 	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
 		<p class="mb-2 text-lg"><a th:href="@{/app/units/{id}(id=${lease.unit().id()})}" class="font-semibold text-brand-700 underline" th:text="${lease.unit().displayName()}">행복빌라 101호</a></p>
 		<h1 class="mb-1 text-3xl font-bold"><span th:text="${lease.tenantName()}">홍길동</span>님 계약</h1>
-		<p class="mb-6 text-lg font-semibold" th:text="${lease.active()} ? '진행 중' : '종료됨'">진행 중</p>
+		<p class="mb-4 text-lg font-semibold" th:text="${lease.active()} ? '진행 중' : '종료됨'">진행 중</p>
+
+		<!-- 진행 중인 계약만 고칠 수 있다. 종료한 계약은 보기만 (M2 결정) -->
+		<div class="mb-6 flex flex-wrap gap-3" th:if="${lease.active()}">
+			<a th:href="@{/app/leases/{id}/edit(id=${lease.id()})}" class="btn btn-secondary">계약 고치기</a>
+			<a th:href="@{/app/leases/{id}/rent-change(id=${lease.id()})}" class="btn btn-secondary">월세 바꾸기</a>
+			<a th:href="@{/app/leases/{id}/end(id=${lease.id()})}" class="btn btn-secondary">계약 종료</a>
+			<a th:href="@{/app/leases/{id}/delete(id=${lease.id()})}" class="btn btn-secondary">잘못 등록한 계약 지우기</a>
+		</div>
+		<p class="mb-6 text-base text-gray-700" th:unless="${lease.active()}">종료한 계약은 고칠 수 없어요.</p>
 
 		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="tenant-heading">
 			<h2 id="tenant-heading" class="mb-3 text-xl font-bold">세입자</h2>
@@ -32,7 +41,11 @@
 			<div class="mt-4" th:unless="${lease.upcomingRent().isEmpty()}">
 				<p class="font-semibold">앞으로 바뀌는 금액</p>
 				<ul class="list-disc pl-6">
-					<li th:each="r : ${lease.upcomingRent()}" th:text="${r.monthText()} + ' 월세 ' + ${r.rentText()} + ', 관리비 ' + ${r.feeText()}">2027년 1월부터 ...</li>
+					<li th:each="r : ${lease.upcomingRent()}">
+						<span th:text="${r.monthText()} + ' 월세 ' + ${r.rentText()} + ', 관리비 ' + ${r.feeText()}">2027년 1월부터 ...</span>
+						<a th:if="${r.cancellable()}" th:href="@{/app/leases/{id}/rent-history/{h}/cancel(id=${lease.id()}, h=${r.id()})}"
+							class="ml-2 font-semibold text-brand-700 underline">취소</a>
+					</li>
 				</ul>
 			</div>
 		</section>

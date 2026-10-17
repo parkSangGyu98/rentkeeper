@@ -156,10 +156,14 @@ public class LeaseService {
 		Tenant tenant = tenants.findByIdAndLandlordId(lease.getTenantId(), landlordId)
 				.orElseThrow(() -> new ResourceNotFoundException("tenant"));
 		UnitView unit = propertyService.unit(landlordId, lease.getUnitId());
-		List<RentRow> rows = histories.findByLeaseIdAndLandlordIdOrderByEffectiveFromAsc(leaseId, landlordId).stream()
-				.map(h -> new RentRow(h.effectiveMonth(), h.getMonthlyRent(), h.getMaintenanceFee(), h.getReason()))
-				.toList();
 		YearMonth thisMonth = YearMonth.now(clock);
+		List<LeaseRentHistory> history = histories.findByLeaseIdAndLandlordIdOrderByEffectiveFromAsc(leaseId,
+				landlordId);
+		List<RentRow> rows = history.stream()
+				.map(h -> new RentRow(h.getId(), h.effectiveMonth(), h.getMonthlyRent(), h.getMaintenanceFee(),
+						h.getReason(),
+						lease.isActive() && h != history.get(0) && h.effectiveMonth().isAfter(thisMonth)))
+				.toList();
 		// 이번 달 금액: 이번 달 이하에서 가장 최근 행. 아직 들어오기 전 계약이면 첫 행
 		RentRow current = rows.stream().filter(r -> !r.effectiveMonth().isAfter(thisMonth))
 				.reduce((first, second) -> second).orElse(rows.isEmpty() ? null : rows.get(0));
@@ -170,6 +174,20 @@ public class LeaseService {
 				lease.getStartDate(), lease.getEndDate(), lease.getStatus(), lease.getEndedOn(), lease.getBankName(),
 				lease.getAccountNumber().digits(), lease.getAccountHolder().value(), lease.getMemo(), current, rows,
 				upcoming);
+	}
+
+	/**
+	 * 진행 중인 계약의 상세 (종료 확인 화면 등)
+	 *
+	 * @throws com.rentkeeper.lease.application.LeaseExceptions.LeaseEndedException
+	 *             종료한 계약
+	 */
+	public LeaseDetail activeDetail(long landlordId, long leaseId) {
+		LeaseDetail detail = detail(landlordId, leaseId);
+		if (!detail.active()) {
+			throw new LeaseExceptions.LeaseEndedException();
+		}
+		return detail;
 	}
 
 	/** 호실 화면: 상태, 현재 계약, 지난 계약까지 모두 (ADR-019) */

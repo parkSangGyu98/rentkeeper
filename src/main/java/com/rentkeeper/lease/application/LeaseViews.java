@@ -76,7 +76,12 @@ public final class LeaseViews {
 	}
 
 	/** 월세 이력 한 줄 */
-	public record RentRow(YearMonth effectiveMonth, long monthlyRent, long maintenanceFee, String reason) {
+	/**
+	 * @param cancellable
+	 *            아직 시작하지 않은 변경이라 취소할 수 있는지 (첫 행은 항상 false)
+	 */
+	public record RentRow(long id, YearMonth effectiveMonth, long monthlyRent, long maintenanceFee, String reason,
+			boolean cancellable) {
 
 		public String monthText() {
 			return effectiveMonth.getYear() + "년 " + effectiveMonth.getMonthValue() + "월부터";
