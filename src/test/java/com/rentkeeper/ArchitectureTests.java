@@ -61,13 +61,12 @@ class ArchitectureTests {
 	@ArchTest
 	static final ArchRule propertyDoesNotDependOnUpperModules = noClasses().that().resideInAPackage(ROOT + "property..")
 			.should().dependOnClassesThat().resideInAnyPackage(modules("lease", "consent", "site", "config"))
-			.because("호실 상태 계산처럼 계약 정보가 필요하면 lease가 property를 부르거나 조회 결과를 넘긴다")
-			// property·lease 패키지가 생기기 전(M2 커밋 3·4)까지만 대상이 비어 있어도 통과
-			.allowEmptyShould(true);
+			.because("호실 상태 계산처럼 계약 정보가 필요하면 lease가 property를 부르거나 조회 결과를 넘긴다");
 
 	@ArchTest
 	static final ArchRule leaseDoesNotDependOnUpperModules = noClasses().that().resideInAPackage(ROOT + "lease..")
 			.should().dependOnClassesThat().resideInAnyPackage(modules("consent", "site", "config"))
+			// lease 패키지가 생기기 전(M2 커밋 4)까지만 대상이 비어 있어도 통과
 			.allowEmptyShould(true);
 
 	@ArchTest
@@ -75,7 +74,7 @@ class ArchitectureTests {
 			.resideInAnyPackage(modules("property", "lease")).should()
 			.dependOnClassesThat(
 					resideInAPackage(ROOT + "auth..").and(resideOutsideOfPackage(ROOT + "auth.security..")))
-			.because("화면에서 로그인한 임대인(LandlordPrincipal)만 쓴다").allowEmptyShould(true);
+			.because("화면에서 로그인한 임대인(LandlordPrincipal)만 쓴다");
 
 	@ArchTest
 	static final ArchRule nothingDependsOnConfig = noClasses().that().resideOutsideOfPackage(ROOT + "config..").should()
