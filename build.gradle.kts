@@ -34,6 +34,8 @@ dependencies {
 	// Boot 4부터 Flyway 자동 구성은 전용 스타터가 있어야 동작한다
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.flywaydb:flyway-database-postgresql")
+	// 세션을 DB에 저장한다 (ADR-005). 서버 재시작·증설에도 로그인이 유지된다
+	implementation("org.springframework.boot:spring-boot-starter-session-jdbc")
 	runtimeOnly("org.postgresql:postgresql")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
