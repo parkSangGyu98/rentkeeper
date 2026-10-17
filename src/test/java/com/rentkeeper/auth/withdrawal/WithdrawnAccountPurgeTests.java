@@ -272,11 +272,47 @@ class WithdrawnAccountPurgeTests extends KakaoIntegrationTest {
 	@Test
 	void rejectedAlertsOnFirstFailure(CapturedOutput output) {
 		insertPending(KAKAO_ID);
-		kakao.unlinkStatus(400);
+		kakao.unlinkResponse(400, "{\"msg\": \"invalid param\", \"code\": -2}");
 
 		purger.run();
 
-		assertThat(output).contains("rejected=1").contains("kakao unlink failed: status=400 kakaoCode=-1");
+		assertThat(failureType(KAKAO_ID)).isEqualTo("REJECTED");
+		assertThat(output).contains("rejected=1").contains("kakao unlink failed: status=400 kakaoCode=-2")
+				.doesNotContain("invalid param");
+	}
+
+	@Test
+	void notLinkedResponseIsTreatedAsAlreadyUnlinked(CapturedOutput output) {
+		// 이미 끊긴 회원을 다시 끊으면 실제 카카오는 400 + code -101을 준다 (개발자 확인, ADR-015)
+		long withdrawn = insertKakao(KAKAO_ID, "WITHDRAWN", NOW.minus(Duration.ofDays(3)), false);
+		jdbcTemplate.update(
+				"insert into kakao_unlink_pending (kakao_id, withdrawn_at, failure_count, last_failed_at, "
+						+ "last_failure_type) values (?, ?, 1, ?, 'TRANSIENT')",
+				KAKAO_ID, Timestamp.from(NOW.minus(Duration.ofDays(3))), Timestamp.from(NOW.minus(Duration.ofDays(1))));
+		kakao.unlinkResponse(400, "{\"msg\": \"NotRegisteredUserException\", \"code\": -101}");
+
+		WithdrawnAccountPurger.Result result = purger.run();
+
+		assertThat(result.unlinked()).isOne();
+		assertThat(count("kakao_unlink_pending")).isZero();
+		assertThat(jdbcTemplate.queryForObject("select kakao_unlinked_at from landlord where id = ?", Timestamp.class,
+				withdrawn)).isEqualTo(Timestamp.from(NOW));
+		assertThat(output).doesNotContain("KAKAO_UNLINK_ALERT").doesNotContain("kakao unlink failed")
+				.contains("status=400 kakaoCode=-101").doesNotContain("NotRegisteredUserException");
+	}
+
+	@Test
+	void ambiguous400ResponsesStayRejected() {
+		// 코드가 없는 400, JSON이 아닌 400은 "이미 끊김"으로 단정하지 않는다
+		for (String body : new String[]{"{\"msg\": \"no code\"}", "<html>Bad Request</html>", ""}) {
+			TestData.reset(jdbcTemplate);
+			insertPending(KAKAO_ID);
+			kakao.unlinkResponse(400, body);
+
+			purger.run();
+
+			assertThat(failureType(KAKAO_ID)).as(body).isEqualTo("REJECTED");
+		}
 	}
 
 	@Test

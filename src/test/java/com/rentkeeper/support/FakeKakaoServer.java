@@ -33,6 +33,8 @@ public final class FakeKakaoServer {
 
 	private volatile int unlinkStatus = 200;
 
+	private volatile String unlinkFailureBody;
+
 	private FakeKakaoServer(HttpServer server) {
 		this.server = server;
 	}
@@ -60,9 +62,15 @@ public final class FakeKakaoServer {
 		this.userJson = json;
 	}
 
-	/** 연결 끊기 응답 상태 (실패 재시도 시험용) */
+	/** 연결 끊기 응답 상태 (실패 재시도 시험용). 실패 본문은 {"msg": "fake failure", "code": -1} */
 	public void unlinkStatus(int status) {
+		unlinkResponse(status, status == 200 ? null : "{\"msg\": \"fake failure\", \"code\": -1}");
+	}
+
+	/** 연결 끊기 실패 응답의 상태와 본문을 직접 정한다 (예: 400 + code -101) */
+	public void unlinkResponse(int status, String failureBody) {
 		this.unlinkStatus = status;
+		this.unlinkFailureBody = failureBody;
 	}
 
 	public List<Request> requests() {
@@ -76,6 +84,7 @@ public final class FakeKakaoServer {
 	public void reset() {
 		requests.clear();
 		unlinkStatus = 200;
+		unlinkFailureBody = null;
 		userJson = user("1000000001", null, false, false, "김카카오");
 	}
 
@@ -106,9 +115,7 @@ public final class FakeKakaoServer {
 	private void unlink(HttpExchange exchange) throws IOException {
 		Request request = record(exchange);
 		respond(exchange, unlinkStatus,
-				unlinkStatus == 200
-						? "{\"id\": " + request.form().get("target_id") + "}"
-						: "{\"msg\": \"fake failure\", \"code\": -1}");
+				unlinkStatus == 200 ? "{\"id\": " + request.form().get("target_id") + "}" : unlinkFailureBody);
 	}
 
 	private Request record(HttpExchange exchange) throws IOException {
@@ -124,7 +131,7 @@ public final class FakeKakaoServer {
 	}
 
 	private static void respond(HttpExchange exchange, int status, String json) throws IOException {
-		byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+		byte[] bytes = (json == null ? "" : json).getBytes(StandardCharsets.UTF_8);
 		exchange.getResponseHeaders().add("Content-Type", "application/json;charset=UTF-8");
 		exchange.sendResponseHeaders(status, bytes.length);
 		try (OutputStream out = exchange.getResponseBody()) {

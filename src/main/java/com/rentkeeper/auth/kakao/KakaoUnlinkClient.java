@@ -47,8 +47,11 @@ public class KakaoUnlinkClient {
 	 * 예외를 던지지 않고 결과 종류를 돌려준다.
 	 * <p>
 	 * 실패하면 HTTP 상태와 카카오 에러 응답의 숫자 {@code code}만 WARN 로그에 남긴다. 응답 본문 전체와
-	 * {@code msg}는 회원 정보가 섞일 가능성을 배제할 수 없어 남기지 않는다. 이미 끊긴 회원을 다시 끊을 때의 실제 응답을 이 로그로
-	 * 확인한다 (M1-c 결정 4).
+	 * {@code msg}는 회원 정보가 섞일 가능성을 배제할 수 없어 남기지 않는다.
+	 * <p>
+	 * {@code 400 + code -101}("해당 앱에 카카오계정 연결이 완료되지 않은 사용자")은 끊을 연결이 없다는 뜻이라 성공으로
+	 * 본다. 개발자가 실제 카카오로 이미 끊긴 회원을 다시 끊어 확인한 응답이다. 이미 끊긴 경우와 처음부터 연결된 적 없는 회원번호를 구분하지
+	 * 못하지만, 둘 다 끊을 연결이 없다는 결과는 같다 (ADR-015).
 	 */
 	public KakaoUnlinkResult unlink(String kakaoId) {
 		if (!StringUtils.hasText(properties.adminKey())) {
@@ -65,9 +68,15 @@ public class KakaoUnlinkClient {
 			return KakaoUnlinkResult.SUCCESS;
 		} catch (RestClientResponseException e) {
 			int status = e.getStatusCode().value();
-			log.warn("kakao unlink failed: status={} kakaoCode={}", status,
-					kakaoErrorCode(e.getResponseBodyAsString()));
-			return classify(status);
+			String kakaoCode = kakaoErrorCode(e.getResponseBodyAsString());
+			KakaoUnlinkResult result = classify(status, kakaoCode);
+			if (result == KakaoUnlinkResult.SUCCESS) {
+				log.info("kakao unlink: already not linked (status={} kakaoCode={}), treated as success", status,
+						kakaoCode);
+			} else {
+				log.warn("kakao unlink failed: status={} kakaoCode={}", status, kakaoCode);
+			}
+			return result;
 		} catch (RestClientException e) {
 			// 시간 초과·연결 실패 등. 요청 헤더(어드민 키)가 메시지에 섞일 수 있어 예외 종류만 남긴다
 			log.warn("kakao unlink failed: {}", e.getClass().getSimpleName());
@@ -75,7 +84,13 @@ public class KakaoUnlinkClient {
 		}
 	}
 
-	static KakaoUnlinkResult classify(int status) {
+	/** 카카오 에러 코드: 앱과 연결되지 않은 사용자 (이미 끊김 또는 연결된 적 없음) */
+	static final String NOT_LINKED_CODE = "-101";
+
+	static KakaoUnlinkResult classify(int status, String kakaoCode) {
+		if (status == 400 && NOT_LINKED_CODE.equals(kakaoCode)) {
+			return KakaoUnlinkResult.SUCCESS;
+		}
 		if (status == 401 || status == 403) {
 			return KakaoUnlinkResult.CONFIG;
 		}
