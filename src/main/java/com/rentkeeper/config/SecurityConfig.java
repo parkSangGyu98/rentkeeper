@@ -36,7 +36,9 @@ public class SecurityConfig {
 			"frame-ancestors 'none'", "base-uri 'self'", "object-src 'none'");
 
 	static final String[] PUBLIC_PATHS = {"/", "/login", "/signup", "/terms", "/privacy", "/error", "/css/**", "/js/**",
-			"/images/**", "/favicon.ico", "/actuator/health"};
+			"/images/**", "/favicon.ico", "/actuator/health",
+			// 메일 링크는 다른 기기(로그인 안 된 상태)에서 열 수 있다
+			"/verify-email"};
 
 	static final int BCRYPT_STRENGTH = 12;
 

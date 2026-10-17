@@ -1,5 +1,6 @@
 package com.rentkeeper.landlord.domain;
 
+import java.time.Instant;
 import java.util.Objects;
 
 import com.rentkeeper.common.error.BusinessException;
@@ -50,6 +51,10 @@ public class Landlord extends BaseTimeEntity {
 	@Column(nullable = false, length = 20)
 	private Plan plan;
 
+	// NULL이면 미인증. 알림은 인증된 주소로만 보낸다 (M1-b)
+	@Column(name = "email_verified_at")
+	private Instant emailVerifiedAt;
+
 	protected Landlord() {
 	}
 
@@ -71,6 +76,26 @@ public class Landlord extends BaseTimeEntity {
 			throw new IllegalArgumentException("passwordHash is required");
 		}
 		return new Landlord(email, passwordHash, AuthProvider.LOCAL, normalizeName(name));
+	}
+
+	/**
+	 * 지금 이메일이 인증 메일을 보낸 주소와 같을 때만 인증 처리한다. 인증 메일을 보낸 뒤 이메일이 바뀌었다면 예전 주소의 링크로 새 주소가
+	 * 인증되면 안 된다.
+	 *
+	 * @return 인증 처리했으면(이미 인증된 경우 포함) true
+	 */
+	public boolean verifyEmail(EmailAddress verifiedAddress, Instant now) {
+		if (email == null || !email.equals(verifiedAddress.value())) {
+			return false;
+		}
+		if (emailVerifiedAt == null) {
+			emailVerifiedAt = now;
+		}
+		return true;
+	}
+
+	public boolean isEmailVerified() {
+		return emailVerifiedAt != null;
 	}
 
 	static String normalizeName(String name) {

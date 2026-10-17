@@ -1,5 +1,6 @@
 package com.rentkeeper.landlord.application;
 
+import java.time.Clock;
 import java.util.Optional;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -23,8 +24,11 @@ public class LandlordService {
 
 	private final LandlordRepository landlordRepository;
 
-	public LandlordService(LandlordRepository landlordRepository) {
+	private final Clock clock;
+
+	public LandlordService(LandlordRepository landlordRepository, Clock clock) {
 		this.landlordRepository = landlordRepository;
+		this.clock = clock;
 	}
 
 	/**
@@ -54,6 +58,35 @@ public class LandlordService {
 		return landlordRepository.findByAuthProviderAndEmail(AuthProvider.LOCAL, email.value())
 				.map(landlord -> new LandlordCredentials(landlord.getId(), landlord.getEmail(),
 						landlord.getPasswordHash(), landlord.getName(), landlord.getStatus()));
+	}
+
+	public Optional<LandlordAccount> findAccount(long landlordId) {
+		return landlordRepository.findById(landlordId).map(LandlordService::toAccount);
+	}
+
+	/**
+	 * 알림을 보낼 주소. <strong>인증된 이메일일 때만</strong> 돌려준다 (M1-b 결정: 알림은 인증된 주소로만). 인증·재설정
+	 * 링크처럼 본인 확인이 목적인 메일 외에는 모두 이 메서드로 수신 주소를 얻는다.
+	 */
+	public Optional<EmailAddress> findVerifiedEmail(long landlordId) {
+		return landlordRepository.findById(landlordId).filter(Landlord::isEmailVerified)
+				.map(landlord -> new EmailAddress(landlord.getEmail()));
+	}
+
+	/**
+	 * 인증 메일을 보낸 주소가 지금 계정 이메일과 같으면 인증 처리한다.
+	 *
+	 * @return 인증 처리했으면 true. 계정이 없거나 그 사이 이메일이 바뀌었으면 false
+	 */
+	@Transactional
+	public boolean verifyEmail(long landlordId, EmailAddress verifiedAddress) {
+		return landlordRepository.findById(landlordId)
+				.map(landlord -> landlord.verifyEmail(verifiedAddress, clock.instant())).orElse(false);
+	}
+
+	private static LandlordAccount toAccount(Landlord landlord) {
+		return new LandlordAccount(landlord.getId(), landlord.getEmail(), landlord.getName(),
+				landlord.isEmailVerified(), landlord.getStatus());
 	}
 
 	static boolean isLocalEmailUniqueViolation(Throwable e) {
