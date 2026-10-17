@@ -28,6 +28,8 @@ public class Lease extends BaseTimeEntity {
 	/** 청구를 납부일 며칠 전에 만들지의 기본값 (M3 결정 17) */
 	public static final int DEFAULT_ISSUE_DAYS_BEFORE = 7;
 
+	public static final int MAX_ISSUE_DAYS_BEFORE = 28;
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -75,7 +77,7 @@ public class Lease extends BaseTimeEntity {
 	@Column(length = LeaseTerms.MEMO_MAX_LENGTH)
 	private String memo;
 
-	// 납부일 며칠 전에 청구를 만들지 (0~28, V16). 등록·수정 화면 칸은 M3 커밋 5에서 붙인다
+	// 납부일 며칠 전에 청구를 만들지 (0~28, V16)
 	@Column(name = "issue_days_before", nullable = false)
 	private short issueDaysBefore = DEFAULT_ISSUE_DAYS_BEFORE;
 
@@ -137,6 +139,41 @@ public class Lease extends BaseTimeEntity {
 		}
 		this.status = LeaseStatus.ENDED;
 		this.endedOn = endedOn;
+	}
+
+	/**
+	 * 청구를 납부일 며칠 전에 만들지 바꾼다 (0~28일, M3 결정 17). 이미 만든 청구에는 영향이 없다.
+	 *
+	 * @throws InvalidLeaseValueException
+	 *             0~28이 아닐 때 (field = issueDaysBefore)
+	 */
+	public void changeIssueDaysBefore(int days) {
+		if (days < 0 || days > MAX_ISSUE_DAYS_BEFORE) {
+			throw new InvalidLeaseValueException("issueDaysBefore");
+		}
+		this.issueDaysBefore = (short) days;
+	}
+
+	/** 그 달의 납부일. 받는 날이 그 달에 없으면(31일의 4월 등) 그 달 마지막 날 (청구 계산과 같은 규칙, ADR-024) */
+	public static LocalDate dueDateIn(YearMonth month, int dueDay) {
+		return month.atDay(Math.min(dueDay, month.lengthOfMonth()));
+	}
+
+	/**
+	 * 등록한 날 이번 달 납부일이 이미 지나 이번 달 받을 월세가 자동으로 만들어지지 않는지 (M3 결정 2: 등록일 이후가 납부일인 달부터
+	 * 자동). 이번 달이 계약 기간 밖이면 false.
+	 *
+	 * @param actualEnd
+	 *            실제로 끝나는 날 (기간 밖)
+	 */
+	public static boolean registrationMonthSkipped(LocalDate startDate, LocalDate actualEnd, int dueDay,
+			LocalDate registeredOn) {
+		YearMonth month = YearMonth.from(registeredOn);
+		if (month.isBefore(YearMonth.from(startDate)) || !actualEnd.isAfter(startDate)
+				|| month.isAfter(YearMonth.from(actualEnd.minusDays(1)))) {
+			return false;
+		}
+		return dueDateIn(month, dueDay).isBefore(registeredOn);
 	}
 
 	public boolean isActive() {

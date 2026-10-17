@@ -63,6 +63,16 @@
 					</select>
 					<p class="form-error" th:if="${#fields.hasErrors('dueDay')}" th:errors="*{dueDay}">오류</p>
 				</div>
+				<div>
+					<label for="issueDaysBefore" class="form-label">납부일 며칠 전에 받을 월세를 만들까요?</label>
+					<p id="issue-hint" class="mb-2 text-base text-gray-700">바꾸면 아직 만들지 않은 달부터 적용돼요.</p>
+					<select id="issueDaysBefore" name="issueDaysBefore" class="form-input" aria-describedby="issue-hint">
+						<option th:each="d : ${#numbers.sequence(0, 28)}" th:value="${d}"
+							th:text="${d == 0} ? '납부일 당일' : '납부일 ' + ${d} + '일 전'"
+							th:selected="${form.issueDaysBefore == #strings.toString(d)}">납부일 7일 전</option>
+					</select>
+					<p class="form-error" th:if="${#fields.hasErrors('issueDaysBefore')}" th:errors="*{issueDaysBefore}">오류</p>
+				</div>
 			</fieldset>
 
 			<fieldset class="space-y-5 rounded-lg border-2 border-gray-200 bg-white p-5">

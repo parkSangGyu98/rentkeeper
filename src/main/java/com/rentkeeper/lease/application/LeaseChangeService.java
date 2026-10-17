@@ -73,7 +73,7 @@ public class LeaseChangeService {
 	/** 계약 수정 입력 (검증을 마친 값) */
 	public record LeaseEdit(PersonName tenantName, PhoneNumber tenantPhone, PrivateMemo tenantMemo, long deposit,
 			int dueDay, LocalDate endDate, String bankName, AccountNumber accountNumber, PersonName accountHolder,
-			String memo, long firstMonthlyRent, long firstMaintenanceFee) {
+			String memo, long firstMonthlyRent, long firstMaintenanceFee, int issueDaysBefore) {
 
 		@Override
 		public String toString() {
@@ -109,7 +109,8 @@ public class LeaseChangeService {
 		LeaseRentHistory first = schedule(landlordId, lease).first();
 		LeaseEdit current = new LeaseEdit(tenant.getName(), tenant.getPhone(), tenant.getMemo(), lease.getDeposit(),
 				lease.getDueDay(), lease.getEndDate(), lease.getBankName(), lease.getAccountNumber(),
-				lease.getAccountHolder(), lease.getMemo(), first.getMonthlyRent(), first.getMaintenanceFee());
+				lease.getAccountHolder(), lease.getMemo(), first.getMonthlyRent(), first.getMaintenanceFee(),
+				lease.getIssueDaysBefore());
 		return new EditView(leaseId, propertyService.unit(landlordId, lease.getUnitId()).displayName(), current,
 				lease.getStartDate(), otherLeasesOfTenant(landlordId, lease));
 	}
@@ -159,6 +160,7 @@ public class LeaseChangeService {
 		}
 		tenant.change(edit.tenantName(), edit.tenantPhone(), hash, edit.tenantMemo());
 		lease.changeTerms(terms);
+		lease.changeIssueDaysBefore(edit.issueDaysBefore());
 		schedule.correctFirst(edit.firstMonthlyRent(), edit.firstMaintenanceFee());
 		try {
 			leases.flush();

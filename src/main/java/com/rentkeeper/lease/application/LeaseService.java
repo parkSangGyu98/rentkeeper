@@ -30,6 +30,7 @@ import com.rentkeeper.lease.domain.Lease;
 import com.rentkeeper.lease.domain.LeaseRentHistory;
 import com.rentkeeper.lease.domain.LeaseRentHistoryRepository;
 import com.rentkeeper.lease.domain.LeaseRepository;
+import com.rentkeeper.lease.domain.LeaseTerms;
 import com.rentkeeper.lease.domain.PhoneNumber;
 import com.rentkeeper.lease.domain.Tenant;
 import com.rentkeeper.lease.domain.TenantRepository;
@@ -140,7 +141,9 @@ public class LeaseService {
 
 		Lease lease;
 		try {
-			lease = leases.saveAndFlush(Lease.register(landlordId, unit.id(), tenant.getId(), registration.terms()));
+			Lease draft = Lease.register(landlordId, unit.id(), tenant.getId(), registration.terms());
+			draft.changeIssueDaysBefore(registration.issueDaysBefore());
+			lease = leases.saveAndFlush(draft);
 		} catch (DataIntegrityViolationException e) {
 			if (Constraints.isViolated(e, OVERLAP_CONSTRAINT)) {
 				throw new LeaseOverlapException(e);
@@ -178,7 +181,25 @@ public class LeaseService {
 				tenant.getMemo() == null ? null : tenant.getMemo().value(), lease.getDeposit(), lease.getDueDay(),
 				lease.getStartDate(), lease.getEndDate(), lease.getStatus(), lease.getEndedOn(), lease.getBankName(),
 				lease.getAccountNumber().digits(), lease.getAccountHolder().value(), lease.getMemo(), current, rows,
-				upcoming);
+				upcoming, lease.getIssueDaysBefore(), thisMonthNotAutomatic(landlordId, lease, thisMonth));
+	}
+
+	/**
+	 * 이번 달 받을 월세가 자동으로 만들어지지 않는 계약인지 (M3 결정 2): 이번 달에 등록했는데 이번 달 납부일이 이미 지났고, 이번 달
+	 * 청구가 아직 없다. 계약 상세에 크게 안내한다.
+	 */
+	private boolean thisMonthNotAutomatic(long landlordId, Lease lease, YearMonth thisMonth) {
+		LocalDate registeredOn = LocalDate.ofInstant(lease.getCreatedAt(), clock.getZone());
+		if (!lease.isActive() || !YearMonth.from(registeredOn).equals(thisMonth)) {
+			return false;
+		}
+		return Lease.registrationMonthSkipped(lease.getStartDate(), lease.getEndDate(), lease.getDueDay(), registeredOn)
+				&& !chargedMonths.exists(landlordId, lease.getId(), thisMonth);
+	}
+
+	/** 지금 등록하면 이번 달 받을 월세가 자동으로 만들어지지 않는지 (등록 확인 화면의 안내, M3 결정 2) */
+	public boolean thisMonthNotAutomatic(LeaseTerms terms) {
+		return Lease.registrationMonthSkipped(terms.startDate(), terms.endDate(), terms.dueDay(), today());
 	}
 
 	/**

@@ -7,6 +7,7 @@ import org.springframework.validation.BindingResult;
 import com.rentkeeper.lease.application.LeaseViews.AccountPrefill;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRegistration;
 import com.rentkeeper.lease.domain.AccountNumber;
+import com.rentkeeper.lease.domain.Lease;
 import com.rentkeeper.lease.domain.LeaseTerms;
 import com.rentkeeper.lease.domain.PersonName;
 import com.rentkeeper.lease.domain.PhoneNumber;
@@ -39,6 +40,8 @@ public class LeaseForm {
 	private String maintenanceFee = "";
 
 	private String dueDay = "1";
+
+	private String issueDaysBefore = String.valueOf(Lease.DEFAULT_ISSUE_DAYS_BEFORE);
 
 	private String startDate = "";
 
@@ -78,6 +81,7 @@ public class LeaseForm {
 		Long rent = LeaseFields.rent(result, "monthlyRent", monthlyRent);
 		Long fee = LeaseFields.fee(result, "maintenanceFee", maintenanceFee);
 		Integer day = LeaseFields.dueDay(result, dueDay);
+		Integer issueDays = LeaseFields.issueDaysBefore(result, issueDaysBefore);
 		LocalDate start = LeaseFields.date(result, "startDate", startDate, "들어오는 날을 입력해 주세요");
 		LocalDate end = LeaseFields.date(result, "endDate", endDate, "나가는 날을 입력해 주세요");
 		if (start != null && end != null && !end.isAfter(start)) {
@@ -92,7 +96,8 @@ public class LeaseForm {
 			return null;
 		}
 		LeaseTerms terms = new LeaseTerms(depositValue, day, start, end, bank, account, holder, leaseMemo);
-		return new LeaseRegistration(unitId, name, phone, tenantMemoValue, rent, fee, terms, useExistingTenant);
+		return new LeaseRegistration(unitId, name, phone, tenantMemoValue, rent, fee, terms, useExistingTenant,
+				issueDays);
 	}
 
 	public Long getUnitId() {
@@ -157,6 +162,14 @@ public class LeaseForm {
 
 	public void setDueDay(String dueDay) {
 		this.dueDay = dueDay;
+	}
+
+	public String getIssueDaysBefore() {
+		return issueDaysBefore;
+	}
+
+	public void setIssueDaysBefore(String issueDaysBefore) {
+		this.issueDaysBefore = issueDaysBefore;
 	}
 
 	public String getStartDate() {

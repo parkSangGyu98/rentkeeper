@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.rentkeeper.common.money.Won;
 import com.rentkeeper.lease.domain.AccountNumber;
+import com.rentkeeper.lease.domain.Lease;
 import com.rentkeeper.lease.domain.LeaseStatus;
 import com.rentkeeper.lease.domain.LeaseTerms;
 import com.rentkeeper.lease.domain.PersonName;
@@ -23,9 +24,26 @@ public final class LeaseViews {
 	private LeaseViews() {
 	}
 
+	/**
+	 * 계약 등록 입력 (검증을 마친 값).
+	 *
+	 * @param issueDaysBefore
+	 *            납부일 며칠 전에 받을 월세를 만들지 (0~28, 기본 7)
+	 */
 	/** 계약 등록 입력 (검증을 마친 값) */
 	public record LeaseRegistration(long unitId, PersonName tenantName, PhoneNumber tenantPhone, PrivateMemo tenantMemo,
-			long monthlyRent, long maintenanceFee, LeaseTerms terms, boolean useExistingTenant) {
+			long monthlyRent, long maintenanceFee, LeaseTerms terms, boolean useExistingTenant, int issueDaysBefore) {
+
+		/** 받을 월세를 기본(납부일 7일 전)에 만드는 등록 */
+		public LeaseRegistration(long unitId, PersonName tenantName, PhoneNumber tenantPhone, PrivateMemo tenantMemo,
+				long monthlyRent, long maintenanceFee, LeaseTerms terms, boolean useExistingTenant) {
+			this(unitId, tenantName, tenantPhone, tenantMemo, monthlyRent, maintenanceFee, terms, useExistingTenant,
+					Lease.DEFAULT_ISSUE_DAYS_BEFORE);
+		}
+
+		public String issueDaysText() {
+			return LeaseViews.issueDaysText(issueDaysBefore);
+		}
 
 		public String depositText() {
 			return Won.format(terms.deposit()) + " (" + Won.korean(terms.deposit()) + ")";
@@ -108,7 +126,7 @@ public final class LeaseViews {
 	public record LeaseDetail(long id, UnitView unit, String tenantName, String tenantPhone, String tenantMemo,
 			long deposit, int dueDay, LocalDate startDate, LocalDate endDate, LeaseStatus status, LocalDate endedOn,
 			String bankName, String accountNumber, String accountHolder, String memo, RentRow currentRent,
-			List<RentRow> rentHistory, List<RentRow> upcomingRent) {
+			List<RentRow> rentHistory, List<RentRow> upcomingRent, int issueDaysBefore, boolean thisMonthNotAutomatic) {
 
 		public String depositText() {
 			return Won.format(deposit);
@@ -120,6 +138,10 @@ public final class LeaseViews {
 
 		public String dueDayText() {
 			return LeaseViews.dueDayText(dueDay);
+		}
+
+		public String issueDaysText() {
+			return LeaseViews.issueDaysText(issueDaysBefore);
 		}
 
 		public boolean active() {
@@ -149,7 +171,12 @@ public final class LeaseViews {
 			List<LeaseRow> leases) {
 	}
 
-	/** "매달 5일", 29일 이상이면 말일 보정 안내 (보정 계산은 M3) */
+	/** "매달 5일", 29일 이상이면 말일 보정 안내 (보정은 청구 계산과 같다, ADR-024) */
+	/** "납부일 7일 전" / "납부일 당일" */
+	public static String issueDaysText(int issueDaysBefore) {
+		return issueDaysBefore == 0 ? "납부일 당일" : "납부일 " + issueDaysBefore + "일 전";
+	}
+
 	public static String dueDayText(int dueDay) {
 		if (dueDay == 31) {
 			return "매달 31일 (31일이 없는 달은 그 달 마지막 날)";
