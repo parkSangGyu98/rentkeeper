@@ -32,6 +32,7 @@ dependencies {
 	implementation(platform(SpringBootPlugin.BOM_COORDINATES))
 
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	// Boot 4부터 Flyway 자동 구성은 전용 스타터가 있어야 동작한다
@@ -42,6 +43,8 @@ dependencies {
 	runtimeOnly("org.postgresql:postgresql")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	// Boot 4부터 MockMvc 자동 구성(@AutoConfigureMockMvc)은 webmvc 테스트 스타터에 있다
+	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")

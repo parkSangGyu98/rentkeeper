@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>개인정보처리방침 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-2 text-3xl font-bold" th:text="${document.title}">개인정보처리방침</h1>
+		<p class="mb-6 text-base text-gray-700">
+			버전 <span th:text="${document.version}">v0.1</span> · 시행일 미정
+		</p>
+
+		<div class="alert alert-info" role="note">
+			<strong>초안: 출시 전 전문가 검토 필요.</strong> 아래는 목차만 있는 초안이며, 정식 내용은 서비스 출시 전에 채워집니다.
+		</div>
+
+		<ol class="list-decimal space-y-3 pl-6 text-lg">
+			<li>개인정보의 처리 목적</li>
+			<li>처리하는 개인정보 항목</li>
+			<li>개인정보의 보유 및 이용 기간</li>
+			<li>개인정보의 파기 절차 및 방법</li>
+			<li>개인정보의 제3자 제공</li>
+			<li>개인정보 처리의 위탁</li>
+			<li>임대인이 입력하는 세입자 정보의 처리</li>
+			<li>정보주체의 권리와 행사 방법</li>
+			<li>개인정보의 안전성 확보 조치</li>
+			<li>개인정보 보호책임자</li>
+			<li>개인정보처리방침의 변경</li>
+		</ol>
+	</main>
+</body>
+</html>
