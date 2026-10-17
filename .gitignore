@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Eclipse (Buildship이 build.gradle.kts로부터 재생성)
+bin/
+.classpath
+.project
+.settings/
+.metadata/
+
+# IntelliJ / VS Code
+.idea/
+*.iml
+out/
+.vscode/
+
+# 비밀값: .env.example만 커밋한다
+.env
+.env.*
+!.env.example
+
+# 로그 / 기타
+*.log
+HELP.md
+.DS_Store
+Thumbs.db
+
+# Claude Code 개인 설정
+.claude/settings.local.json
