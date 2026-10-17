@@ -4,7 +4,8 @@
     <html th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
   CSP(script-src/style-src 'self') 때문에 인라인 스크립트·스타일 속성·이벤트 속성은 쓰지 않는다 (TemplateGuardTest가 검사).
 -->
-<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, content)">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+	th:fragment="layout(title, content)">
 <head>
 <meta charset="UTF-8">
 <!-- 확대를 막지 않는다 (maximum-scale 없음, PRD 8.5) -->
@@ -19,8 +20,19 @@
 		<div class="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-3">
 			<a th:href="@{/}" class="text-xl font-bold text-gray-900 no-underline">RentKeeper</a>
 			<nav class="flex items-center gap-3" aria-label="계정">
-				<a th:href="@{/login}" class="btn btn-secondary">로그인</a>
-				<a th:href="@{/signup}" class="btn btn-primary">가입하기</a>
+				<th:block sec:authorize="!isAuthenticated()">
+					<a th:href="@{/login}" class="btn btn-secondary">로그인</a>
+					<a th:href="@{/signup}" class="btn btn-primary">가입하기</a>
+				</th:block>
+				<th:block sec:authorize="isAuthenticated()">
+					<a th:href="@{/app}" class="hidden text-lg font-semibold text-gray-900 no-underline sm:inline">
+						<span sec:authentication="principal.displayName">홍길동</span>님
+					</a>
+					<!-- 로그아웃은 POST만 받는다. th:action이 CSRF 토큰을 넣는다 -->
+					<form th:action="@{/logout}" method="post">
+						<button type="submit" class="btn btn-secondary">로그아웃</button>
+					</form>
+				</th:block>
 			</nav>
 		</div>
 	</header>

@@ -50,8 +50,8 @@ class SitePagesTests {
 	}
 
 	@Test
-	void unknownPathIsNotFound() throws Exception {
-		mockMvc.perform(get("/no-such-page")).andExpect(status().isNotFound());
+	void missingStaticResourceIsNotFound() throws Exception {
+		mockMvc.perform(get("/css/no-such.css")).andExpect(status().isNotFound());
 	}
 
 	// MockMvc는 서블릿 컨테이너의 오류 전달(/error)을 하지 않으므로, 컨테이너가 하듯 오류 정보를 담아 /error를 직접 호출한다
