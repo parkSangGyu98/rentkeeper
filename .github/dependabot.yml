@@ -1,0 +1,41 @@
+# 의존성 취약점·업데이트 점검 (PRD 8.1 보안 체크리스트)
+# cooldown 14일: 새 릴리스가 나온 뒤 2주가 지나야 PR을 연다 (버전 고정 규칙과 동일한 기준).
+# 보안 업데이트(Dependabot security updates)는 cooldown과 무관하게 열린다.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: build
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: docker-compose
+    directory: /docker
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: chore

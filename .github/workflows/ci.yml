@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # toolchain(Java 21)이 탐지할 JDK를 미리 설치한다 (foojay 다운로드를 피해 빌드가 빨라진다)
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # Gradle 캐시와 wrapper jar 체크섬 검증을 함께 처리한다
+      - uses: gradle/actions/setup-gradle@v6
+
+      # spotlessCheck + 컴파일 + Testcontainers 통합 테스트 (ubuntu 러너에는 Docker가 기본 설치되어 있다)
+      - name: Build
+        run: ./gradlew build
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: build/reports/tests/
