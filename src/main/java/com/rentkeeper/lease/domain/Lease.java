@@ -25,6 +25,9 @@ import jakarta.persistence.Table;
 @Table(name = "lease")
 public class Lease extends BaseTimeEntity {
 
+	/** 청구를 납부일 며칠 전에 만들지의 기본값 (M3 결정 17) */
+	public static final int DEFAULT_ISSUE_DAYS_BEFORE = 7;
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -71,6 +74,10 @@ public class Lease extends BaseTimeEntity {
 
 	@Column(length = LeaseTerms.MEMO_MAX_LENGTH)
 	private String memo;
+
+	// 납부일 며칠 전에 청구를 만들지 (0~28, V16). 등록·수정 화면 칸은 M3 커밋 5에서 붙인다
+	@Column(name = "issue_days_before", nullable = false)
+	private short issueDaysBefore = DEFAULT_ISSUE_DAYS_BEFORE;
 
 	protected Lease() {
 	}
@@ -215,6 +222,10 @@ public class Lease extends BaseTimeEntity {
 
 	public String getMemo() {
 		return memo;
+	}
+
+	public int getIssueDaysBefore() {
+		return issueDaysBefore;
 	}
 
 	@Override
