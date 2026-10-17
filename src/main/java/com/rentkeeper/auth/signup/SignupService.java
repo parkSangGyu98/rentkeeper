@@ -2,9 +2,11 @@ package com.rentkeeper.auth.signup;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.rentkeeper.auth.security.LandlordPrincipal;
 import com.rentkeeper.auth.verification.EmailVerificationService;
+import com.rentkeeper.consent.ConsentService;
 import com.rentkeeper.landlord.application.LandlordService;
 import com.rentkeeper.landlord.domain.EmailAddress;
 
@@ -23,12 +25,16 @@ public class SignupService {
 
 	private final EmailVerificationService emailVerificationService;
 
+	private final ConsentService consentService;
+
 	public SignupService(LandlordService landlordService, PasswordPolicy passwordPolicy,
-			PasswordEncoder passwordEncoder, EmailVerificationService emailVerificationService) {
+			PasswordEncoder passwordEncoder, EmailVerificationService emailVerificationService,
+			ConsentService consentService) {
 		this.landlordService = landlordService;
 		this.passwordPolicy = passwordPolicy;
 		this.passwordEncoder = passwordEncoder;
 		this.emailVerificationService = emailVerificationService;
+		this.consentService = consentService;
 	}
 
 	/**
@@ -43,12 +49,15 @@ public class SignupService {
 	 * @throws com.rentkeeper.landlord.domain.Landlord.InvalidNameException
 	 *             이름이 비었거나 너무 길 때
 	 */
+	@Transactional
 	public LandlordPrincipal signup(String rawEmail, String password, String name) {
 		EmailAddress email = EmailAddress.of(rawEmail);
 		passwordPolicy.check(password, email).ifPresent(violation -> {
 			throw new WeakPasswordException(violation);
 		});
 		long landlordId = landlordService.registerLocal(email, passwordEncoder.encode(password), name);
+		// 가입 폼에서 받은 필수 동의를 계정 생성과 같은 트랜잭션에 기록한다 (ADR-016)
+		consentService.recordSignupAgreements(landlordId);
 		// 인증 전에도 로그인은 된다. 인증 메일만 보내 두고, 화면에서는 안내 띠로 알린다
 		emailVerificationService.sendVerification(landlordId);
 		return new LandlordPrincipal(landlordId, email.value(), name.strip(), true, null);
