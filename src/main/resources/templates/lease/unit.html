@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>호실 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<p class="mb-2 text-lg"><a th:href="@{/app/properties/{id}(id=${page.unit().propertyId()})}" class="font-semibold text-brand-700 underline" th:text="${page.unit().propertyName()}">행복빌라</a></p>
+		<div class="mb-2 flex flex-wrap items-center gap-3">
+			<h1 class="text-3xl font-bold" th:text="${page.unit().name()}">101호</h1>
+			<span class="badge"
+				th:classappend="${page.status().name() == 'OCCUPIED'} ? 'badge-occupied' : (${page.status().name() == 'UPCOMING'} ? 'badge-upcoming' : (${page.status().name() == 'OVERDUE'} ? 'badge-overdue' : 'badge-vacant'))"
+				th:text="${page.status().label()}">공실</span>
+		</div>
+		<p class="mb-4 text-lg text-gray-700" th:text="${page.unit().type().label()}">원룸</p>
+
+		<!-- 나가는 날이 지났는데 종료 처리를 하지 않은 계약 (ADR-019) -->
+		<div class="alert alert-error" role="alert" th:if="${page.staleActive()}">
+			나가는 날이 지났는데 종료 처리를 하지 않은 계약이 있어요. 아래 목록에서 확인해 주세요.
+		</div>
+
+		<a th:href="@{/app/leases/new(unitId=${page.unit().id()})}" class="btn btn-primary mb-8">계약 등록</a>
+
+		<h2 class="mb-4 text-2xl font-bold">계약</h2>
+		<p th:if="${page.leases().isEmpty()}" class="rounded-lg border-2 border-dashed border-gray-400 bg-white p-5 text-lg">
+			아직 계약이 없어요. 위의 [계약 등록]으로 첫 계약을 넣어 보세요.
+		</p>
+		<ul th:unless="${page.leases().isEmpty()}" class="space-y-3">
+			<li th:each="l : ${page.leases()}">
+				<a th:href="@{/app/leases/{id}(id=${l.id()})}"
+					class="block rounded-lg border-2 bg-white p-4 no-underline hover:border-brand-700"
+					th:classappend="${l.current()} ? 'border-brand-700' : 'border-gray-200'">
+					<p class="text-xl font-bold text-gray-900">
+						<span th:text="${l.tenantName()}">홍길동</span>
+						<span th:if="${l.current()}" class="text-base font-semibold text-brand-700">(현재 계약)</span>
+						<span th:if="${l.status().name() == 'ENDED'}" class="text-base font-semibold text-gray-700">(종료)</span>
+					</p>
+					<p class="text-lg text-gray-900">
+						<span th:text="${#temporals.format(l.startDate(), 'yyyy년 M월 d일')}">2026년 1월 1일</span> 들어옴 ·
+						<span th:text="${#temporals.format(l.endDate(), 'yyyy년 M월 d일')}">2027년 1월 1일</span> 나감
+					</p>
+				</a>
+			</li>
+		</ul>
+	</main>
+</body>
+</html>

@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.rentkeeper.common.error.ResourceNotFoundException;
@@ -164,6 +165,19 @@ public class PropertyService {
 	/** 다른 모듈(계약)도 호실 소유권 확인에 쓴다. 남의 호실이면 404 */
 	public UnitView unit(long landlordId, long unitId) {
 		Unit unit = ownedUnit(landlordId, unitId);
+		Property property = ownedProperty(landlordId, unit.getPropertyId());
+		return new UnitView(unit.getId(), property.getId(), property.getName(), unit.getName(), unit.getType(),
+				unit.getMemo());
+	}
+
+	/**
+	 * 호실을 잠그고 가져온다 (계약 모듈이 같은 호실의 계약을 등록·수정할 때). 호출한 쪽의 트랜잭션이 끝날 때까지 같은 호실의 다른 요청은
+	 * 기다린다. 남의 호실이면 404.
+	 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public UnitView lockUnit(long landlordId, long unitId) {
+		Unit unit = units.lockByIdAndLandlordId(unitId, landlordId)
+				.orElseThrow(() -> new ResourceNotFoundException("unit"));
 		Property property = ownedProperty(landlordId, unit.getPropertyId());
 		return new UnitView(unit.getId(), property.getId(), property.getName(), unit.getName(), unit.getType(),
 				unit.getMemo());

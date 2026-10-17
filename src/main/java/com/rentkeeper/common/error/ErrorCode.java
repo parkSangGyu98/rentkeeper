@@ -23,4 +23,8 @@ public enum ErrorCode {
 
 	UNIT_HAS_LEASES,
 
+	LEASE_PERIOD_OVERLAP,
+
+	EXISTING_TENANT,
+
 }

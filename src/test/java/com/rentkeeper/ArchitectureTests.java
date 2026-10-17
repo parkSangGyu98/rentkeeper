@@ -65,9 +65,7 @@ class ArchitectureTests {
 
 	@ArchTest
 	static final ArchRule leaseDoesNotDependOnUpperModules = noClasses().that().resideInAPackage(ROOT + "lease..")
-			.should().dependOnClassesThat().resideInAnyPackage(modules("consent", "site", "config"))
-			// lease 패키지가 생기기 전(M2 커밋 4)까지만 대상이 비어 있어도 통과
-			.allowEmptyShould(true);
+			.should().dependOnClassesThat().resideInAnyPackage(modules("consent", "site", "config"));
 
 	@ArchTest
 	static final ArchRule domainModulesUseOnlyLoginInfoFromAuth = noClasses().that()

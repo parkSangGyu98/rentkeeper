@@ -104,6 +104,29 @@ class PropertyWebTests {
 	}
 
 	@Test
+	void lengthLimitsCountCharactersLikePostgresVarchar() throws Exception {
+		// 이모지는 UTF-16으로 2단위지만 한 글자다. DB varchar(500)와 같은 기준으로 500자까지 받는다
+		String emoji500 = "😀".repeat(500);
+		long id = createPropertyWithMemo("이모지빌라", emoji500);
+		assertThat(jdbc.queryForObject("select char_length(memo) from property where id = ?", Integer.class, id))
+				.isEqualTo(500);
+
+		mockMvc.perform(post("/app/properties").with(csrf()).cookie(a.cookie()).param("name", "초과빌라").param("memo",
+				emoji500 + "😀")).andExpect(status().isOk())
+				.andExpect(content().string(containsString("메모는 500자 이하로 입력해 주세요")));
+		mockMvc.perform(post("/app/properties").with(csrf()).cookie(a.cookie()).param("name", "😀".repeat(50)))
+				.andExpect(status().is3xxRedirection());
+		long propertyId = createProperty(a, "호실빌라");
+		mockMvc.perform(post("/app/properties/" + propertyId + "/units").with(csrf()).cookie(a.cookie())
+				.param("name", "1호").param("type", "ONE_ROOM").param("memo", emoji500))
+				.andExpect(redirectedUrl("/app/properties/" + propertyId));
+		mockMvc.perform(post("/app/properties/" + propertyId + "/units").with(csrf()).cookie(a.cookie())
+				.param("name", "2호").param("type", "ONE_ROOM").param("memo", emoji500 + "가"))
+				.andExpect(content().string(containsString("메모는 500자 이하로 입력해 주세요")));
+		assertThat(count("property where name = '초과빌라'")).isZero();
+	}
+
+	@Test
 	void updatesProperty() throws Exception {
 		long id = createProperty(a, "행복빌라");
 		createProperty(a, "중앙상가");
@@ -225,6 +248,15 @@ class PropertyWebTests {
 		MvcResult result = mockMvc.perform(post("/app/properties").with(csrf()).cookie(session.cookie())
 				.param("name", name).param("address", "").param("memo", "")).andReturn();
 		String location = result.getResponse().getRedirectedUrl();
+		assertThat(location).as("등록 성공").startsWith("/app/properties/");
+		return Long.parseLong(location.substring("/app/properties/".length()));
+	}
+
+	private long createPropertyWithMemo(String name, String memo) throws Exception {
+		String location = mockMvc
+				.perform(
+						post("/app/properties").with(csrf()).cookie(a.cookie()).param("name", name).param("memo", memo))
+				.andReturn().getResponse().getRedirectedUrl();
 		assertThat(location).as("등록 성공").startsWith("/app/properties/");
 		return Long.parseLong(location.substring("/app/properties/".length()));
 	}

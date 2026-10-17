@@ -14,14 +14,14 @@
 			<div>
 				<label for="name" class="form-label">건물 이름</label>
 				<p id="name-hint" class="mb-2 text-base text-gray-700">예: 행복빌라, 중앙상가</p>
-				<input id="name" type="text" th:field="*{name}" class="form-input" maxlength="50" required
+				<input id="name" type="text" th:field="*{name}" class="form-input" required
 					th:attr="aria-invalid=${#fields.hasErrors('name')},aria-describedby=${#fields.hasErrors('name')} ? 'name-hint name-error' : 'name-hint'">
 				<p id="name-error" class="form-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">이름 오류</p>
 			</div>
 
 			<div>
 				<label for="address" class="form-label">주소 (선택)</label>
-				<input id="address" type="text" th:field="*{address}" class="form-input" maxlength="200" autocomplete="street-address"
+				<input id="address" type="text" th:field="*{address}" class="form-input" autocomplete="street-address"
 					th:attr="aria-invalid=${#fields.hasErrors('address')}">
 				<p class="form-error" th:if="${#fields.hasErrors('address')}" th:errors="*{address}">주소 오류</p>
 			</div>
@@ -29,7 +29,7 @@
 			<div>
 				<label for="memo" class="form-label">메모 (선택)</label>
 				<p id="memo-hint" class="mb-2 text-base text-gray-700">주민번호·계좌번호는 적지 마세요.</p>
-				<textarea id="memo" th:field="*{memo}" rows="3" maxlength="500" class="form-input py-3" aria-describedby="memo-hint"></textarea>
+				<textarea id="memo" th:field="*{memo}" rows="3" class="form-input py-3" aria-describedby="memo-hint"></textarea>
 				<p class="form-error" th:if="${#fields.hasErrors('memo')}" th:errors="*{memo}">메모 오류</p>
 			</div>
 
