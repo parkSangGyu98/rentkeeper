@@ -55,6 +55,14 @@ public class Landlord extends BaseTimeEntity {
 	@Column(name = "email_verified_at")
 	private Instant emailVerifiedAt;
 
+	// 카카오 회원번호. 카카오 계정만 있다 (M1-c)
+	@Column(name = "kakao_id", length = 64)
+	private String kakaoId;
+
+	// 탈퇴 처리 시각. NULL이면 탈퇴 안 함. 30일 뒤 파기 (M1-c)
+	@Column(name = "withdrawn_at")
+	private Instant withdrawnAt;
+
 	protected Landlord() {
 	}
 
@@ -152,6 +160,14 @@ public class Landlord extends BaseTimeEntity {
 
 	public Plan getPlan() {
 		return plan;
+	}
+
+	public String getKakaoId() {
+		return kakaoId;
+	}
+
+	public Instant getWithdrawnAt() {
+		return withdrawnAt;
 	}
 
 	public static class InvalidNameException extends BusinessException {

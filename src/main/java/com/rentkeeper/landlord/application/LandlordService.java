@@ -12,6 +12,7 @@ import com.rentkeeper.landlord.domain.AuthProvider;
 import com.rentkeeper.landlord.domain.EmailAddress;
 import com.rentkeeper.landlord.domain.Landlord;
 import com.rentkeeper.landlord.domain.LandlordRepository;
+import com.rentkeeper.landlord.domain.LandlordStatus;
 
 /**
  * landlord 모듈의 공개 API. 다른 모듈(auth 등)은 repository나 엔티티 대신 이 서비스를 쓴다 (PRD 10장).
@@ -39,7 +40,8 @@ public class LandlordService {
 	 */
 	@Transactional
 	public long registerLocal(EmailAddress email, String passwordHash, String name) {
-		if (landlordRepository.existsByAuthProviderAndEmail(AuthProvider.LOCAL, email.value())) {
+		if (landlordRepository.existsByAuthProviderAndEmailAndStatus(AuthProvider.LOCAL, email.value(),
+				LandlordStatus.ACTIVE)) {
 			throw new DuplicateEmailException();
 		}
 		try {
@@ -55,7 +57,8 @@ public class LandlordService {
 	}
 
 	public Optional<LandlordCredentials> findLocalCredentials(EmailAddress email) {
-		return landlordRepository.findByAuthProviderAndEmail(AuthProvider.LOCAL, email.value())
+		return landlordRepository
+				.findByAuthProviderAndEmailAndStatus(AuthProvider.LOCAL, email.value(), LandlordStatus.ACTIVE)
 				.map(landlord -> new LandlordCredentials(landlord.getId(), landlord.getEmail(),
 						landlord.getPasswordHash(), landlord.getName(), landlord.getStatus()));
 	}
@@ -91,7 +94,8 @@ public class LandlordService {
 	}
 
 	public boolean isLocalEmailTaken(EmailAddress email) {
-		return landlordRepository.existsByAuthProviderAndEmail(AuthProvider.LOCAL, email.value());
+		return landlordRepository.existsByAuthProviderAndEmailAndStatus(AuthProvider.LOCAL, email.value(),
+				LandlordStatus.ACTIVE);
 	}
 
 	/** 이메일 변경 결과: 이전 주소와 그 주소가 인증돼 있었는지 (이전 주소로 보안 안내를 보낼지 판단) */
