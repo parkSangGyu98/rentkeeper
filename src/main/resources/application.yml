@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: rentkeeper
+  profiles:
+    # 운영은 SPRING_PROFILES_ACTIVE=prod로 명시한다
+    default: local
+  datasource:
+    # 비밀값은 코드에 두지 않고 환경변수(로컬은 .env)로 주입한다 (PRD 13장)
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    # 뷰 렌더링 중 지연 로딩 쿼리를 막아 트랜잭션 경계를 서비스 계층으로 한정한다
+    open-in-view: false
+    hibernate:
+      # 스키마는 Flyway만 만든다. Hibernate는 엔티티와 스키마가 맞는지 검증만 한다
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          # ADR-002: 순간(timestamptz)은 UTC 기준으로 읽고 쓴다
+          time_zone: UTC
