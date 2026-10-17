@@ -10,7 +10,7 @@
 | M1-b 이메일 인증 배너·비밀번호 재설정·로그인 잠금/IP 제한·remember-me·재인증 | 완료 (PR #3 병합) | |
 | M1-c 카카오 로그인·회원 탈퇴/파기 배치·동의 기록 | 완료 (PR 병합, 병합 커밋 `468e1b1`). 개발자 브라우저·DB 확인 통과 (2026-10-17) | 아래 "M1-c 확인된 것" |
 | **M1 전체** | **완료** (M1-a·b·c 모두 main 병합) | |
-| M2 건물·호실·계약 | 진행 중: 커밋 6/7 완료 (ArchUnit, 암호화, 건물·호실, 세입자·계약 등록, 계약 수정·월세 변경·종료, IDOR 전수 테스트). 브라우저 확인은 M2 끝난 뒤 한꺼번에 | 브랜치 `feature/m2-property-lease`, 아래 "M2에서 확정한 결정" |
+| M2 건물·호실·계약 | 구현 완료: 커밋 7/7. 개발자 브라우저 확인 대기 (아래 "M2 브라우저 확인 대기"), PR 전 | 브랜치 `feature/m2-property-lease`, 아래 "M2에서 확정한 결정" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -187,7 +187,7 @@
 13. **HTMX**: M2에서 도입하지 않는다. 삭제·종료는 확인 화면(GET 확인 → POST 실행)으로 한다.
 14. **임대인 연락처(`landlord.phone_enc`, SET-1)**: M2에서 빼고 M5로 미룬다.
 15. **Money**: A안(`long` 유지). M3 시작 때 다시 검토한다(ADR-003).
-16. **QueryDSL**: 보류한다. M3 청구 목록에서 다시 판단한다.
+16. **QueryDSL**: 보류한다. M3 청구 목록에서 다시 판단한다 (ADR-021: OpenFeign 포크가 Hibernate 7을 지원하지만 Spring Data 지원은 best-effort).
 17. **호실 유형**: 원룸·투룸·쓰리룸 이상·상가·사무실·기타.
 18. `issue_days_before`는 M3, `notify_opt_out`은 M4에서 추가한다.
 19. **세입자 정보 보관 기간**: 미정으로 두고 삭제 기능은 만들지 않는다(위 "출시 전 전문가 검토").
@@ -249,6 +249,20 @@ SELECT lease_id, effective_from, monthly_rent, maintenance_fee FROM lease_rent_h
 6. `test: 임대인 간 데이터 접근(IDOR) 전수 테스트 추가`
 7. `docs: M2 진행 상황 갱신`
 
+### M2 구현 결과 메모 (2026-10-17)
+- **커밋**: 1 `6d2e7a0`, 2 `8c154e5`, 3 `b2b0130`, 4 `817de0c`, 5 `9b1f823`, 6 `559f1ba`, 7(이 문서).
+- **마이그레이션**: V13 `property`·`unit`, V14 `tenant`·`lease`·`lease_rent_history`. 개발자 확인을 받고 확정했다(V14는 `bank_name` 50자, `memo_enc` 2800자 수정 반영).
+- **ADR**: 017 암호화·키, 018 소유 데이터 격리·IDOR, 019 계약 기간·겹침·호실 상태·월세 이력, 020 ArchUnit, 021 QueryDSL 보류, 003 보완(Money: A안 유지).
+- **계획 대비 달라진 점**
+  - **동시 등록 교착**: 같은 호실에 동시에 계약을 넣으면 EXCLUDE 검사끼리 교착(deadlock)이 나는 것을 동시성 테스트로 발견했다. 등록·수정 때 호실 행을 먼저 잠근다(`PropertyService.lockUnit`, ADR-019).
+  - **길이 기준**: `@Size`·HTML `maxlength`는 이모지를 2자로 세서 DB `varchar(n)`(코드 포인트)와 기준이 달랐다. 코드 포인트 기준 `@MaxChars`로 바꾸고 `maxlength`를 뺐다. 이모지 500자는 저장되고 501자는 안내와 함께 거부된다.
+  - **암호문 길이**: 이모지가 섞인 메모 500자가 `varchar(2200)`을 넘는 것을 테스트로 확인했다. `memo_enc`를 2800으로 늘렸다(최악 2,710자). `EncryptedColumnLengthTests`가 키 버전 1·99·999·9999에서 계속 확인한다.
+  - **암호문 형식 CHECK**(`ck_tenant_encrypted`, `ck_lease_encrypted`)를 추가했다. 앱 버그로 평문이 저장되는 것을 DB가 막는다.
+  - **계약 폼은 일반 객체(게터·세터)**다. 생성자로 바인딩한 레코드는 BindingResult가 대상을 갖지 않아 칸별 `rejectValue`가 실패했다.
+  - **잘못 등록한 계약 삭제**(M2 결정 11)를 커밋 5에 넣었다.
+  - Thymeleaf 3.1은 템플릿의 정적 `T(...)` 호출을 막는다. 금액·날짜 표시 문자열은 화면용 record가 만든다.
+- **브라우저 확인**: 위 "M2 브라우저 확인 대기" 16단계. M2 PR을 만들기 전에 개발자가 한꺼번에 한다.
+
 ## M3로 이월
 - 청구 상태 전이표(`PARTIALLY_PAID` 진입·이탈 조건, 취소 가능 상태)는 **M3 시작 전에 별도로 확정**한다.
 - ShedLock의 Boot 4 호환 버전 확인. 도입하면 탈퇴 계정 파기 배치(`WithdrawnAccountPurgeJob`)에도 붙인다.
@@ -260,7 +274,7 @@ SELECT lease_id, effective_from, monthly_rent, maintenance_fee FROM lease_rent_h
 - [ ] **첫 달 금액 정정**: M2는 계약 수정에서 첫 달(들어오는 달) 월세·관리비를 언제든 고칠 수 있다(M2 결정 4). M3에서 그 달 청구가 생기면 막는다.
 - [ ] **계약 기간의 마지막 청구월**: M2는 월세 변경을 "나가는 날 전날이 속한 달"까지 허용한다(`Lease.lastMonth`, [) 기간이라 나가는 날은 기간 밖). M3 청구 정책(시작월·종료월 경계)과 맞는지 확인한다.
 - [ ] **잘못 등록한 계약 삭제 후 세입자 정보**: 계약을 지워도 세입자 행은 남는다(보관 기간 미정·삭제 기능 없음, M2 결정 19). 같은 번호로 다시 등록하면 그 세입자를 다시 쓴다. 출시 전 보관 정책을 정할 때 함께 본다.
-- [ ] **Money 값 객체 재검토**(ADR-003), **QueryDSL 재판단**(청구 목록 필터), `lease.issue_days_before` 추가.
+- [ ] **Money 값 객체 재검토**(ADR-003), **QueryDSL 재판단**(청구 목록 필터, ADR-021), `lease.issue_days_before` 추가.
 
 ## M4로 이월
 - `tenant.notify_opt_out` 추가 (세입자 알림 수신 거부, M2 결정 18).
