@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>가입하기 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-2 text-3xl font-bold">가입하기</h1>
+		<p class="mb-8 text-lg text-gray-700">이메일과 비밀번호만 있으면 바로 시작할 수 있어요.</p>
+
+		<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('${form.*}')}">입력한 내용을 확인해 주세요. 빨간 글씨로 안내한 칸을 고치면 돼요.</div>
+
+		<!-- 비밀번호 칸은 오류가 나도 다시 채우지 않는다 (th:field 대신 name만 쓴다) -->
+		<form th:action="@{/signup}" th:object="${form}" method="post" class="space-y-6" novalidate>
+			<div>
+				<label for="email" class="form-label">이메일</label>
+				<input id="email" type="email" th:field="*{email}" class="form-input" autocomplete="email" inputmode="email"
+					required th:attr="aria-invalid=${#fields.hasErrors('email')},aria-describedby=${#fields.hasErrors('email')} ? 'email-error'">
+				<p id="email-error" class="form-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">이메일 오류</p>
+			</div>
+
+			<div>
+				<label for="password" class="form-label">비밀번호</label>
+				<p id="password-hint" class="mb-2 text-base text-gray-700">8자 이상으로 정해 주세요. 너무 흔한 비밀번호나 이메일과 같은 비밀번호는 쓸 수 없어요.</p>
+				<input id="password" name="password" type="password" class="form-input" autocomplete="new-password" required
+					th:attr="aria-invalid=${#fields.hasErrors('password')},aria-describedby=${#fields.hasErrors('password')} ? 'password-hint password-error' : 'password-hint'">
+				<p id="password-error" class="form-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">비밀번호 오류</p>
+			</div>
+
+			<div>
+				<label for="passwordConfirm" class="form-label">비밀번호 확인</label>
+				<input id="passwordConfirm" name="passwordConfirm" type="password" class="form-input" autocomplete="new-password"
+					required
+					th:attr="aria-invalid=${#fields.hasErrors('passwordConfirm')},aria-describedby=${#fields.hasErrors('passwordConfirm')} ? 'passwordConfirm-error'">
+				<p id="passwordConfirm-error" class="form-error" th:if="${#fields.hasErrors('passwordConfirm')}"
+					th:errors="*{passwordConfirm}">비밀번호 확인 오류</p>
+			</div>
+
+			<div>
+				<label for="name" class="form-label">이름(호칭)</label>
+				<p id="name-hint" class="mb-2 text-base text-gray-700">화면에서 부를 이름이에요. 예: 김임대, 행복빌라 사장님</p>
+				<input id="name" type="text" th:field="*{name}" class="form-input" autocomplete="name" required
+					th:attr="aria-invalid=${#fields.hasErrors('name')},aria-describedby=${#fields.hasErrors('name')} ? 'name-hint name-error' : 'name-hint'">
+				<p id="name-error" class="form-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">이름 오류</p>
+			</div>
+
+			<div>
+				<div class="flex items-start gap-3">
+					<input id="agreeTerms" type="checkbox" th:field="*{agreeTerms}" class="mt-1 h-6 w-6 shrink-0"
+						th:attr="aria-invalid=${#fields.hasErrors('agreeTerms')},aria-describedby=${#fields.hasErrors('agreeTerms')} ? 'agreeTerms-error'">
+					<label for="agreeTerms" class="text-lg">
+						<a th:href="@{/terms}" target="_blank" rel="noopener" class="font-semibold text-brand-700 underline">이용약관</a>과
+						<a th:href="@{/privacy}" target="_blank" rel="noopener" class="font-semibold text-brand-700 underline">개인정보처리방침</a>에
+						동의해요 (필수)
+					</label>
+				</div>
+				<p id="agreeTerms-error" class="form-error" th:if="${#fields.hasErrors('agreeTerms')}" th:errors="*{agreeTerms}">동의 오류</p>
+			</div>
+
+			<button type="submit" class="btn btn-primary w-full">가입하기</button>
+		</form>
+
+		<p class="mt-8 text-lg">
+			이미 가입하셨나요? <a th:href="@{/login}" class="font-semibold text-brand-700 underline">로그인</a>
+		</p>
+	</main>
+</body>
+</html>
