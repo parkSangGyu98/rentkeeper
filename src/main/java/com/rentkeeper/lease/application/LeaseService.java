@@ -3,6 +3,7 @@ package com.rentkeeper.lease.application;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import com.rentkeeper.lease.application.LeaseViews.ExistingTenant;
 import com.rentkeeper.lease.application.LeaseViews.LeaseDetail;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRegistration;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRow;
+import com.rentkeeper.lease.application.LeaseViews.LeaseSummary;
 import com.rentkeeper.lease.application.LeaseViews.RentRow;
 import com.rentkeeper.lease.application.LeaseViews.UnitPage;
 import com.rentkeeper.lease.domain.Lease;
@@ -200,6 +202,24 @@ public class LeaseService {
 	/** 지금 등록하면 이번 달 받을 월세가 자동으로 만들어지지 않는지 (등록 확인 화면의 안내, M3 결정 2) */
 	public boolean thisMonthNotAutomatic(LeaseTerms terms) {
 		return Lease.registrationMonthSkipped(terms.startDate(), terms.endDate(), terms.dueDay(), today());
+	}
+
+	/**
+	 * 여러 계약의 요약 (받을 월세 목록 등, billing이 쓴다). 남의 계약 ID는 결과에서 빠진다(ADR-018). 세입자 이름은
+	 * 복호화한다.
+	 */
+	public Map<Long, LeaseSummary> summaries(long landlordId, Collection<Long> leaseIds) {
+		if (leaseIds.isEmpty()) {
+			return Map.of();
+		}
+		List<Lease> found = leases.findByLandlordIdAndIdIn(landlordId, leaseIds);
+		Map<Long, UnitView> unitViews = propertyService.units(landlordId,
+				found.stream().map(Lease::getUnitId).collect(Collectors.toSet()));
+		Map<Long, Tenant> tenantById = tenants
+				.findByLandlordIdAndIdIn(landlordId, found.stream().map(Lease::getTenantId).collect(Collectors.toSet()))
+				.stream().collect(Collectors.toMap(Tenant::getId, Function.identity()));
+		return found.stream().collect(Collectors.toMap(Lease::getId, l -> new LeaseSummary(l.getId(), l.getUnitId(),
+				unitViews.get(l.getUnitId()).displayName(), tenantById.get(l.getTenantId()).getName().value())));
 	}
 
 	/**

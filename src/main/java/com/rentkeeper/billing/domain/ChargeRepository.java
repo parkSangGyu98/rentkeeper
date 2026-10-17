@@ -17,6 +17,9 @@ public interface ChargeRepository extends Repository<Charge, Long> {
 
 	Optional<Charge> findByIdAndLandlordId(long id, long landlordId);
 
+	/** 임대인의 한 달 청구 (납부일 순) */
+	List<Charge> findByLandlordIdAndBillingMonthOrderByDueDateAscIdAsc(long landlordId, LocalDate billingMonth);
+
 	/** 계약에 이미 있는 청구 달 (취소 포함, 그 달 1일) */
 	@Query("select c.billingMonth from Charge c where c.leaseId = :leaseId and c.landlordId = :landlordId")
 	List<LocalDate> billingMonths(@Param("leaseId") long leaseId, @Param("landlordId") long landlordId);

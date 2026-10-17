@@ -79,6 +79,11 @@
 		@apply border-danger-700 bg-red-50 text-red-900;
 	}
 
+	/* 받을 월세: 일부 받음 */
+	.badge-partial {
+		@apply border-amber-700 bg-amber-50 text-amber-900;
+	}
+
 	/* 되돌릴 수 없는 작업(회원 탈퇴 등) */
 	.btn-danger {
 		@apply bg-danger-700 text-white hover:bg-red-800;

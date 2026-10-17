@@ -43,6 +43,8 @@ public interface LeaseRepository extends Repository<Lease, Long> {
 
 	List<Lease> findByLandlordIdAndStatusAndUnitIdIn(long landlordId, LeaseStatus status, Collection<Long> unitIds);
 
+	List<Lease> findByLandlordIdAndIdIn(long landlordId, Collection<Long> ids);
+
 	/** 같은 임대인의 가장 최근 계약 (계좌 미리 채우기, M2 결정 20) */
 	Optional<Lease> findFirstByLandlordIdOrderByIdDesc(long landlordId);
 

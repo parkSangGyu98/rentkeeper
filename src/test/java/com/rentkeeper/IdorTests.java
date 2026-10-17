@@ -60,11 +60,15 @@ import com.rentkeeper.support.TestData;
 class IdorTests {
 
 	/** 소유 데이터 엔드포인트의 경로 앞부분 */
-	private static final List<String> OWNED_PREFIXES = List.of("/app/properties", "/app/units", "/app/leases");
+	private static final List<String> OWNED_PREFIXES = List.of("/app/properties", "/app/units", "/app/leases",
+			"/app/charges");
 
-	/** 남의 ID를 받지 않는 엔드포인트 (목록·새 화면·자기 건물 만들기). 여기에 넣을 때는 이유가 분명해야 한다 */
+	/**
+	 * 남의 ID를 받지 않는 엔드포인트 (목록·새 화면·자기 건물 만들기). 여기에 넣을 때는 이유가 분명해야 한다. 받을 월세 목록은 달만
+	 * 받고 로그인한 임대인 것만 보인다(chargeListShowsOnlyOwnCharges).
+	 */
 	private static final Set<String> NO_FOREIGN_ID = Set.of("GET /app/properties", "GET /app/properties/new",
-			"POST /app/properties");
+			"POST /app/properties", "GET /app/charges");
 
 	@Autowired
 	MockMvc mockMvc;
@@ -116,6 +120,10 @@ class IdorTests {
 		long history = jdbc.queryForObject(
 				"select id from lease_rent_history where lease_id = ? and effective_from = '2027-01-01'", Long.class,
 				lease);
+		// 피해자의 10월 받을 월세
+		jdbc.update("insert into charge (landlord_id, lease_id, billing_month, due_date, total_amount, status, source, "
+				+ "issued_at, created_at, updated_at) values (?, ?, '2026-10-01', '2026-10-05', 500000, 'ISSUED', "
+				+ "'AUTO', now(), now(), now())", victim.landlordId(), lease);
 		victimIds = Map.of("id", "", "property", String.valueOf(property), "unit", String.valueOf(unit), "lease",
 				String.valueOf(lease), "history", String.valueOf(history));
 	}
@@ -183,6 +191,13 @@ class IdorTests {
 	}
 
 	@Test
+	void chargeListShowsOnlyOwnCharges() throws Exception {
+		String body = mockMvc.perform(Attack.get("/app/charges", "month", "2026-10").build(victimIds, attacker))
+				.andReturn().getResponse().getContentAsString();
+		assertThat(body).contains("이 달에 받을 월세가 없어요").doesNotContain("피해자세입자").doesNotContain("피해자빌라");
+	}
+
+	@Test
 	void everyOwnedEndpointIsInTheIdorTable() {
 		Set<String> mapped = new TreeSet<>();
 		handlerMapping.getHandlerMethods().keySet().forEach(info -> info.getPatternValues().forEach(pattern -> {
@@ -203,7 +218,8 @@ class IdorTests {
 	/** 소유 데이터 전체를 한 문자열로 (바뀌었는지 비교용) */
 	private String snapshot() {
 		StringBuilder all = new StringBuilder();
-		for (String table : List.of("property", "unit", "tenant", "lease", "lease_rent_history")) {
+		for (String table : List.of("property", "unit", "tenant", "lease", "lease_rent_history", "charge",
+				"charge_item", "payment_record", "charge_status_history", "charge_item_history")) {
 			all.append(table).append(':').append(jdbc.queryForObject(
 					"select coalesce(string_agg(t::text, '|' order by t.id), '') from " + table + " t", String.class));
 		}

@@ -69,6 +69,16 @@ public final class LeaseViews {
 
 	}
 
+	/** 다른 화면(받을 월세 목록 등)에 보일 계약 요약 */
+	public record LeaseSummary(long leaseId, long unitId, String unitName, String tenantName) {
+
+		@Override
+		public String toString() {
+			return "LeaseSummary[leaseId=" + leaseId + "]";
+		}
+
+	}
+
 	/** 같은 연락처로 이미 등록된 세입자 (M2 결정 6: "이미 등록된 세입자로 계약할까요?") */
 	public record ExistingTenant(String name, String phone) {
 
