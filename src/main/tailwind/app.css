@@ -1,0 +1,75 @@
+/*
+ * RentKeeper 공통 스타일 (Tailwind CSS v4, standalone CLI로 빌드 — ADR-007)
+ * 임대인 UI 원칙 (PRD 6.3): 큰 글씨, 48px 이상 버튼, 높은 대비, 쉬운 단계.
+ * 인라인 style 속성은 CSP(style-src 'self')에 막히므로 쓰지 않는다. 필요한 스타일은 여기 클래스로 만든다.
+ */
+@import "tailwindcss";
+
+/* 템플릿에서 쓰는 클래스를 찾을 위치 (이 파일 기준 상대 경로) */
+@source "../resources/templates";
+
+@theme {
+	/* 외부 웹폰트 없이 시스템 한글 글꼴을 쓴다 (CSP font-src 'self' 유지, 로딩 지연 없음) */
+	--font-sans: system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+
+	--color-brand-700: #1d4ed8;
+	--color-brand-800: #1e40af;
+	--color-danger-700: #b91c1c;
+}
+
+@layer base {
+	/* 브라우저 기본 16px의 112.5% = 18px. %로 지정해 사용자가 키운 시스템 글꼴 크기를 존중한다 (PRD 8.5) */
+	html {
+		font-size: 112.5%;
+	}
+
+	body {
+		@apply bg-gray-50 font-sans text-gray-900 antialiased;
+	}
+
+	/* 키보드로 이동할 때 현재 위치가 분명히 보이게 한다 */
+	:focus-visible {
+		outline: 3px solid var(--color-brand-700);
+		outline-offset: 2px;
+	}
+}
+
+@layer components {
+	/* 주요 버튼: 높이 48px(3rem) 이상, 넓은 터치 영역. 템플릿에서 "btn btn-primary"처럼 함께 쓴다 */
+	.btn {
+		@apply inline-flex min-h-12 items-center justify-center rounded-lg px-6 text-lg font-semibold no-underline;
+	}
+
+	.btn-primary {
+		@apply bg-brand-700 text-white hover:bg-brand-800;
+	}
+
+	.btn-secondary {
+		@apply border-2 border-gray-400 bg-white text-gray-900 hover:bg-gray-100;
+	}
+
+	.form-label {
+		@apply mb-2 block text-lg font-semibold;
+	}
+
+	.form-input {
+		@apply block min-h-12 w-full rounded-lg border-2 border-gray-400 bg-white px-4 text-lg;
+	}
+
+	.form-error {
+		@apply mt-2 text-base font-semibold text-danger-700;
+	}
+
+	/* 안내 상자: "alert alert-info"처럼 함께 쓴다 */
+	.alert {
+		@apply mb-6 rounded-lg border-2 p-4 text-base;
+	}
+
+	.alert-info {
+		@apply border-brand-700 bg-blue-50;
+	}
+
+	.alert-error {
+		@apply border-danger-700 bg-red-50;
+	}
+}

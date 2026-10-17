@@ -3,3 +3,7 @@ spring:
     # 루트의 .env를 프로퍼티로 읽는다. PowerShell에서 환경변수를 따로 설정하지 않아도
     # docker compose와 앱이 같은 접속 정보를 쓴다. 파일이 없으면 무시한다(CI 등).
     import: optional:file:.env[.properties]
+  web:
+    resources:
+      # 개발 중에는 tailwindWatch가 다시 만든 CSS를 앱 재시작 없이 바로 쓴다 (상대 경로 = 프로젝트 폴더에서 bootRun 기준)
+      static-locations: file:build/generated/tailwind/static/, classpath:/static/

@@ -21,6 +21,9 @@ repositories {
 	mavenCentral()
 }
 
+// Tailwind CSS 빌드 (ADR-007)
+apply(from = "gradle/tailwind.gradle.kts")
+
 // ADR-002: 로컬 실행과 테스트도 운영과 같은 JVM 기본 시간대를 쓴다
 val seoulTimeZone = "-Duser.timezone=Asia/Seoul"
 
