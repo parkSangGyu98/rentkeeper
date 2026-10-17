@@ -10,7 +10,7 @@
 | M1-b 이메일 인증 배너·비밀번호 재설정·로그인 잠금/IP 제한·remember-me·재인증 | 완료 (PR #3 병합) | |
 | M1-c 카카오 로그인·회원 탈퇴/파기 배치·동의 기록 | 완료 (PR 병합, 병합 커밋 `468e1b1`). 개발자 브라우저·DB 확인 통과 (2026-10-17) | 아래 "M1-c 확인된 것" |
 | **M1 전체** | **완료** (M1-a·b·c 모두 main 병합) | |
-| M2 건물·호실·계약 | 진행 중: 커밋 1/7 완료 (ArchUnit) | 브랜치 `feature/m2-property-lease`, 아래 "M2에서 확정한 결정" |
+| M2 건물·호실·계약 | 진행 중: 커밋 2/7 완료 (ArchUnit, 암호화) | 브랜치 `feature/m2-property-lease`, 아래 "M2에서 확정한 결정" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
