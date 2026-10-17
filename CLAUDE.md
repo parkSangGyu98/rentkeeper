@@ -24,8 +24,14 @@ Thymeleaf+HTMX+Tailwind, Spring Security(세션), JUnit5+Testcontainers
 
 ## 작업 방식
 - 설계 결정은 docs/decisions/ 에 ADR로 기록.
-- 마일스톤 종료 시 PRD 18장 학습 체크리스트로 개발자에게 질문할 것.
 - 모르는 요구사항은 추측하지 말고 질문.
+- 마일스톤 종료 시 퀴즈·학습 체크리스트는 내지 않는다 (서비스 운영 목적).
+
+## 커밋 규칙
+- 형식: `타입: 한글 요약` (예: `feat: 이메일 회원가입 추가`). 타입은 영어 유지: feat, fix, docs, test, refactor, chore, build, ci. 범위가 필요하면 `feat(auth): ...`.
+- 본문(필요할 때): 무엇을, 왜 바꿨는지 쉬운 한글로. 나중에 다시 읽고 이해할 수 있게 쓴다.
+- 이미 push한 기존 영어 커밋은 그대로 둔다. 이력 재작성·강제 push 금지.
+- 단계별로 나눠 커밋하고, push는 개발자가 지시할 때만 한다.
 
 ## Windows 명령어 (개발 환경: Windows / PowerShell)
 - 로컬 DB 기동: `docker compose --env-file .env -f docker\docker-compose.yml up -d`
