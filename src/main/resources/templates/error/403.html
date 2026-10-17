@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>요청을 처리할 수 없어요 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-4 text-3xl font-bold">요청을 처리할 수 없어요</h1>
+		<p class="mb-8 text-lg text-gray-700">화면을 오래 열어 두었다면 새로고침한 뒤 다시 시도해 주세요. 계속 안 되면 다시 로그인해 주세요.</p>
+		<a th:href="@{/}" class="btn btn-primary">처음 화면으로</a>
+	</main>
+</body>
+</html>

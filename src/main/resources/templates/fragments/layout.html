@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!--
+  공통 레이아웃. 각 페이지는 자기 <title>과 <main>을 넘겨 쓴다:
+    <html th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+  CSP(script-src/style-src 'self') 때문에 인라인 스크립트·스타일 속성·이벤트 속성은 쓰지 않는다 (TemplateGuardTest가 검사).
+-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+	th:fragment="layout(title, content)">
+<head>
+<meta charset="UTF-8">
+<!-- 확대를 막지 않는다 (maximum-scale 없음, PRD 8.5) -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title th:replace="${title}">RentKeeper</title>
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="flex min-h-screen flex-col">
+	<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:bg-white focus:p-3">본문 바로가기</a>
+
+	<header class="border-b-2 border-gray-200 bg-white">
+		<div class="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-3">
+			<a th:href="@{/}" class="text-xl font-bold text-gray-900 no-underline">RentKeeper</a>
+			<nav class="flex items-center gap-3" aria-label="계정">
+				<th:block sec:authorize="!isAuthenticated()">
+					<a th:href="@{/login}" class="btn btn-secondary">로그인</a>
+					<a th:href="@{/signup}" class="btn btn-primary">가입하기</a>
+				</th:block>
+				<th:block sec:authorize="isAuthenticated()">
+					<a th:href="@{/app}" class="hidden text-lg font-semibold text-gray-900 no-underline sm:inline">
+						<span sec:authentication="principal.displayName">홍길동</span>님
+					</a>
+					<!-- 로그아웃은 POST만 받는다. th:action이 CSRF 토큰을 넣는다 -->
+					<form th:action="@{/logout}" method="post">
+						<button type="submit" class="btn btn-secondary">로그아웃</button>
+					</form>
+				</th:block>
+			</nav>
+		</div>
+	</header>
+
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8" th:replace="${content}">
+	</main>
+
+	<footer class="border-t-2 border-gray-200 bg-white">
+		<div class="mx-auto flex w-full max-w-2xl flex-wrap gap-x-6 gap-y-2 px-4 py-6 text-base text-gray-700">
+			<a th:href="@{/terms}" class="underline">이용약관</a>
+			<a th:href="@{/privacy}" class="font-semibold underline">개인정보처리방침</a>
+		</div>
+	</footer>
+</body>
+</html>

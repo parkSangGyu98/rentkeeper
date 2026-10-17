@@ -1,0 +1,16 @@
+package com.rentkeeper.common.error;
+
+/**
+ * 도메인 예외의 에러 코드 (PRD 11장). 화면 문구는 화면 계층에서 코드에 맞춰 고르고, 예외 메시지는 내부 로그용으로만 쓴다.
+ */
+public enum ErrorCode {
+
+	DUPLICATE_EMAIL,
+
+	INVALID_EMAIL,
+
+	INVALID_NAME,
+
+	WEAK_PASSWORD,
+
+}

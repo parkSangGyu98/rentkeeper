@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>로그인 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-6 text-3xl font-bold">로그인</h1>
+
+		<div class="alert alert-error" role="alert" th:if="${param.error}">이메일 또는 비밀번호가 맞지 않아요. 다시 확인해 주세요.</div>
+		<div class="alert alert-info" role="status" th:if="${param.logout}">로그아웃되었어요.</div>
+
+		<!-- th:action이 CSRF 토큰을 숨은 칸으로 자동으로 넣는다 -->
+		<form th:action="@{/login}" method="post" class="space-y-6" novalidate>
+			<div>
+				<label for="email" class="form-label">이메일</label>
+				<input id="email" name="email" type="email" class="form-input" autocomplete="username" inputmode="email"
+					required>
+			</div>
+			<div>
+				<label for="password" class="form-label">비밀번호</label>
+				<input id="password" name="password" type="password" class="form-input" autocomplete="current-password"
+					required>
+			</div>
+			<button type="submit" class="btn btn-primary w-full">로그인</button>
+		</form>
+
+		<p class="mt-8 text-lg">
+			아직 가입하지 않으셨나요? <a th:href="@{/signup}" class="font-semibold text-brand-700 underline">가입하기</a>
+		</p>
+	</main>
+</body>
+</html>

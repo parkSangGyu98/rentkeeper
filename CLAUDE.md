@@ -24,14 +24,21 @@ Thymeleaf+HTMX+Tailwind, Spring Security(세션), JUnit5+Testcontainers
 
 ## 작업 방식
 - 설계 결정은 docs/decisions/ 에 ADR로 기록.
-- 마일스톤 종료 시 PRD 18장 학습 체크리스트로 개발자에게 질문할 것.
 - 모르는 요구사항은 추측하지 말고 질문.
+- 마일스톤 종료 시 퀴즈·학습 체크리스트는 내지 않는다 (서비스 운영 목적).
+
+## 커밋 규칙
+- 형식: `타입: 한글 요약` (예: `feat: 이메일 회원가입 추가`). 타입은 영어 유지: feat, fix, docs, test, refactor, chore, build, ci. 범위가 필요하면 `feat(auth): ...`.
+- 본문(필요할 때): 무엇을, 왜 바꿨는지 쉬운 한글로. 나중에 다시 읽고 이해할 수 있게 쓴다.
+- 이미 push한 기존 영어 커밋은 그대로 둔다. 이력 재작성·강제 push 금지.
+- 단계별로 나눠 커밋하고, push는 개발자가 지시할 때만 한다.
 
 ## Windows 명령어 (개발 환경: Windows / PowerShell)
 - 로컬 DB 기동: `docker compose --env-file .env -f docker\docker-compose.yml up -d`
   (`-f`로 하위 폴더를 지정하면 compose가 `.env`를 `docker\`에서 찾으므로 `--env-file`을 명시한다. 최초 1회 `Copy-Item .env.example .env` 후 값 수정)
 - 로컬 DB 중지: `docker compose --env-file .env -f docker\docker-compose.yml down`
 - 실행: `.\gradlew.bat bootRun`
+- 화면 개발 중 CSS 자동 재빌드: 다른 터미널에서 `.\gradlew.bat tailwindWatch` (local 프로필은 템플릿·CSS 변경을 재시작 없이 반영)
 - 테스트: `.\gradlew.bat test` (Testcontainers 사용 → Docker Desktop 실행 필요)
 - 전체 빌드(포맷 검사 + 테스트): `.\gradlew.bat build`
 - 포맷: `.\gradlew.bat spotlessApply`

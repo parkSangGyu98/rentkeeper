@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>이용약관 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-2 text-3xl font-bold" th:text="${document.title}">이용약관</h1>
+		<p class="mb-6 text-base text-gray-700">
+			버전 <span th:text="${document.version}">v0.1</span> · 시행일 미정
+		</p>
+
+		<div class="alert alert-info" role="note">
+			<strong>초안: 출시 전 전문가 검토 필요.</strong> 아래는 목차만 있는 초안이며, 정식 내용은 서비스 출시 전에 채워집니다.
+		</div>
+
+		<ol class="list-decimal space-y-3 pl-6 text-lg">
+			<li>목적</li>
+			<li>용어의 정의</li>
+			<li>약관의 효력과 변경</li>
+			<li>서비스의 내용</li>
+			<li>회원가입과 계정 관리</li>
+			<li>회원의 의무</li>
+			<li>서비스의 변경·중단</li>
+			<li>회원 탈퇴와 이용 제한</li>
+			<li>책임의 제한</li>
+			<li>분쟁 해결</li>
+		</ol>
+	</main>
+</body>
+</html>

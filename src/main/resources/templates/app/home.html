@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+	th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>내 화면 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-4 text-3xl font-bold"><span sec:authentication="principal.displayName">홍길동</span>님, 환영합니다</h1>
+		<p class="mb-8 text-lg text-gray-700">곧 이 화면에서 이번 달 받을 월세와 아직 안 들어온 월세를 한눈에 보실 수 있어요.</p>
+	</main>
+</body>
+</html>
