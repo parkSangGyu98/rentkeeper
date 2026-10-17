@@ -16,6 +16,8 @@ public final class TestData {
 		jdbcTemplate.update("delete from rate_limit_bucket");
 		// account_token, login_failure는 landlord 삭제 시 함께 지워진다 (ON DELETE CASCADE)
 		jdbcTemplate.update("delete from landlord");
+		// landlord에 FK가 없는 대기 테이블 (V11)
+		jdbcTemplate.update("delete from kakao_unlink_pending");
 	}
 
 }

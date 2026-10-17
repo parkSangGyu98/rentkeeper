@@ -16,7 +16,10 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,6 +45,7 @@ import jakarta.servlet.http.Cookie;
  * 회원 탈퇴 (AUTH-5, ADR-015): 재인증(이메일 계정은 비밀번호, 카카오 계정은 카카오 재로그인), 즉시 차단(모든 세션·로그인
  * 유지 삭제, 로그인 불가), 링크·실패 기록 삭제, 안내 메일, 카카오 연결 끊기와 그 기록.
  */
+@ExtendWith(OutputCaptureExtension.class)
 class WithdrawalTests extends KakaoIntegrationTest {
 
 	private static final String EMAIL = "kim@example.com";
@@ -232,7 +236,40 @@ class WithdrawalTests extends KakaoIntegrationTest {
 		assertThat(kakao.requestsTo("/v1/user/unlink")).hasSize(1);
 		assertThat(
 				jdbcTemplate.queryForObject("select kakao_unlinked_at from landlord where id = ?", Timestamp.class, id))
-				.as("파기 배치가 다시 시도할 수 있게 NULL").isNull();
+				.isNull();
+		// 끊기가 남았다 = 대기 행이 있다 (파기 배치가 다시 시도한다)
+		assertThat(jdbcTemplate.queryForMap(
+				"select withdrawn_at, failure_count, last_failure_type from kakao_unlink_pending where kakao_id = ?",
+				KAKAO_ID)).containsEntry("withdrawn_at", Timestamp.from(MutableClockConfiguration.START))
+				.containsEntry("failure_count", 1).containsEntry("last_failure_type", "TRANSIENT");
+	}
+
+	@Test
+	void unlinkSuccessLeavesNoPendingRow() throws Exception {
+		insertKakaoLandlord(KAKAO_ID);
+		Cookie session = loginKakao(KAKAO_ID);
+
+		confirmKakao(session);
+		MvcResult start = mockMvc.perform(get("/oauth2/authorization/kakao").cookie(session)).andReturn();
+		callback(start, session, KAKAO_ID);
+
+		assertThat(count("kakao_unlink_pending")).isZero();
+	}
+
+	@Test
+	void configErrorAtWithdrawalAlertsImmediately(CapturedOutput output) throws Exception {
+		insertKakaoLandlord(KAKAO_ID);
+		Cookie session = loginKakao(KAKAO_ID);
+		kakao.unlinkStatus(401);
+
+		confirmKakao(session);
+		MvcResult start = mockMvc.perform(get("/oauth2/authorization/kakao").cookie(session)).andReturn();
+		callback(start, session, KAKAO_ID);
+
+		assertThat(jdbcTemplate.queryForObject("select last_failure_type from kakao_unlink_pending", String.class))
+				.isEqualTo("CONFIG");
+		assertThat(output).contains("KAKAO_UNLINK_ALERT source=withdrawal config=1")
+				.contains("kakao unlink failed: status=401 kakaoCode=-1").doesNotContain("test-admin-key");
 	}
 
 	@Test

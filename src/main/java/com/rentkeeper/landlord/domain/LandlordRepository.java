@@ -1,5 +1,6 @@
 package com.rentkeeper.landlord.domain;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +18,10 @@ public interface LandlordRepository extends JpaRepository<Landlord, Long> {
 			LandlordStatus status);
 
 	Optional<Landlord> findByAuthProviderAndKakaoIdAndStatus(AuthProvider authProvider, String kakaoId,
+			LandlordStatus status);
+
+	/** 탈퇴 계정은 같은 회원번호로 여러 행일 수 있다 (탈퇴-재가입-탈퇴) */
+	List<Landlord> findAllByAuthProviderAndKakaoIdAndStatus(AuthProvider authProvider, String kakaoId,
 			LandlordStatus status);
 
 }

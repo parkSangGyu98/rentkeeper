@@ -1,6 +1,7 @@
 package com.rentkeeper.landlord.application;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -89,18 +90,34 @@ public class LandlordService {
 				.setUnverifiedNotificationEmail(email);
 	}
 
-	/** 탈퇴 처리한다 (ADR-015). 이미 탈퇴했으면 IllegalStateException */
+	/**
+	 * 탈퇴 처리한다 (ADR-015). 이미 탈퇴했으면 IllegalStateException
+	 *
+	 * @return 탈퇴 시각
+	 */
 	@Transactional
-	public void withdraw(long landlordId) {
+	public Instant withdraw(long landlordId) {
+		Instant now = clock.instant();
 		landlordRepository.findById(landlordId).orElseThrow(() -> new IllegalArgumentException("landlord not found"))
-				.withdraw(clock.instant());
+				.withdraw(now);
+		return now;
 	}
 
-	/** 탈퇴한 카카오 계정의 연결 끊기 성공을 기록한다 */
+	/**
+	 * 카카오 연결 끊기 성공을 같은 회원번호의 <strong>모든</strong> 탈퇴 계정 행에 기록한다. 탈퇴-재가입-탈퇴를 반복했을 때
+	 * 이미 끊긴 회원을 또 끊으려 하지 않게 하기 위해서다 (ADR-015).
+	 */
 	@Transactional
-	public void markKakaoUnlinked(long landlordId) {
-		landlordRepository.findById(landlordId).orElseThrow(() -> new IllegalArgumentException("landlord not found"))
-				.markKakaoUnlinked(clock.instant());
+	public void markKakaoUnlinked(String kakaoId) {
+		landlordRepository
+				.findAllByAuthProviderAndKakaoIdAndStatus(AuthProvider.KAKAO, kakaoId, LandlordStatus.WITHDRAWN)
+				.forEach(landlord -> landlord.markKakaoUnlinked(clock.instant()));
+	}
+
+	/** 같은 회원번호의 사용 중(ACTIVE) 카카오 계정이 있는지 */
+	public boolean hasActiveKakaoAccount(String kakaoId) {
+		return landlordRepository
+				.findByAuthProviderAndKakaoIdAndStatus(AuthProvider.KAKAO, kakaoId, LandlordStatus.ACTIVE).isPresent();
 	}
 
 	public Optional<LandlordCredentials> findLocalCredentials(EmailAddress email) {

@@ -1,5 +1,7 @@
 package com.rentkeeper.auth.withdrawal;
 
+import java.time.Instant;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,8 @@ import com.rentkeeper.landlord.domain.LandlordStatus;
  * <li>모든 기기의 세션과 로그인 유지(remember-me)를 지운다</li>
  * <li>메일로 나간 링크(인증·재설정 등)와 로그인 실패 기록을 지운다</li>
  * <li>인증된 이메일이 있으면 탈퇴 안내 메일 (커밋 뒤)</li>
- * <li>카카오 계정은 커밋 뒤 카카오 연결 끊기. 성공하면 시각을 남긴다</li>
+ * <li>카카오 계정은 커밋 뒤 카카오 연결 끊기. 성공하면 시각을 남기고, 실패하면 대기 행(kakao_unlink_pending)을
+ * 만든다</li>
  * </ol>
  * 개인정보는 30일 뒤 파기 배치가 행째 지운다.
  */
@@ -115,13 +118,13 @@ public class WithdrawalService {
 		if (!account.isKakao()) {
 			throw new IllegalStateException("LOCAL accounts re-authenticate with password");
 		}
-		withdraw(account);
+		Instant withdrawnAt = withdraw(account);
 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 			@Override
 			public void afterCommit() {
-				// 탈퇴는 이미 확정됐다. 카카오 쪽이 실패해도 탈퇴를 되돌리지 않고, 파기 배치가 다시 시도한다
+				// 탈퇴는 이미 확정됐다. 카카오 쪽이 실패해도 탈퇴를 되돌리지 않고, 대기 행이 남아 파기 배치가 다시 시도한다
 				try {
-					kakaoUnlinker.unlink(landlordId, account.kakaoId());
+					kakaoUnlinker.attemptAfterWithdrawal(landlordId, account.kakaoId(), withdrawnAt);
 				} catch (RuntimeException e) {
 					log.warn("kakao unlink after withdrawal failed: landlordId={}, error={}", landlordId,
 							e.getClass().getSimpleName());
@@ -130,7 +133,8 @@ public class WithdrawalService {
 		});
 	}
 
-	private void withdraw(LandlordAccount account) {
+	/** @return 탈퇴 시각 */
+	private Instant withdraw(LandlordAccount account) {
 		if (account.status() != LandlordStatus.ACTIVE) {
 			throw new IllegalStateException("already withdrawn");
 		}
@@ -138,13 +142,14 @@ public class WithdrawalService {
 		// 상태를 바꾸기 전에 안내 메일 주소를 얻는다 (알림은 인증된 주소로만)
 		var verifiedEmail = landlordService.findVerifiedEmail(landlordId);
 
-		landlordService.withdraw(landlordId);
+		Instant withdrawnAt = landlordService.withdraw(landlordId);
 		sessionTerminator.terminateAll(landlordId);
 		tokenService.deleteAll(landlordId);
 		lockService.clear(landlordId);
 		verifiedEmail.ifPresent(
 				email -> emailDispatcher.sendAfterCommit(accountEmails.withdrawn(email.value(), account.name())));
 		log.info("landlord withdrawn: id={}", landlordId);
+		return withdrawnAt;
 	}
 
 }

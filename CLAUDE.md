@@ -38,6 +38,8 @@ Thymeleaf+HTMX+Tailwind, Spring Security(세션), JUnit5+Testcontainers
 - 설계 결정은 docs/decisions/ 에 ADR로 기록.
 - 모르는 요구사항은 추측하지 말고 질문.
 - 마일스톤 종료 시 퀴즈·학습 체크리스트는 내지 않는다 (서비스 운영 목적).
+- 커밋 하나가 끝날 때마다 docs/progress.md의 마일스톤 진행 줄을 한 줄로 갱신해 같은 커밋에 넣는다 (예: "M1-c: 커밋 6/7 완료"). 상세 결정과 ADR 정리는 마일스톤 마지막 문서 커밋에서 한다.
+  - 이유: M1-c 중 progress.md가 진행을 따라오지 못해, 세션이 끊긴 뒤 이미 정한 결정을 개발자가 다시 전달해야 했다.
 
 ## 커밋 규칙
 - 형식: `타입: 한글 요약` (예: `feat: 이메일 회원가입 추가`). 타입은 영어 유지: feat, fix, docs, test, refactor, chore, build, ci. 범위가 필요하면 `feat(auth): ...`.
