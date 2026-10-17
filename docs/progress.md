@@ -7,7 +7,7 @@
 |---|---|---|
 | M0 프로젝트 세팅 | 완료 (CI 통과) | |
 | M1-a 보안 기본·이메일 가입/로그인·세션·레이아웃·정적 페이지 | 완료 (PR #2 병합, CI 통과, 브라우저 확인 완료) | |
-| M1-b 이메일 인증 배너·비밀번호 재설정·로그인 잠금/IP 제한·remember-me·재인증 | 구현 완료, **개발자 브라우저 확인 대기** (`feature/m1-b-auth-security`, push 안 함) | main 병합은 개발자 지시 |
+| M1-b 이메일 인증 배너·비밀번호 재설정·로그인 잠금/IP 제한·remember-me·재인증 | 완료 (PR #3 병합) | |
 | M1-c 카카오 로그인·회원 탈퇴/파기 배치·동의 기록 | 대기 | |
 
 ## 저장소 공개 전 할 일
@@ -62,7 +62,11 @@
 - 구현 중 테스트로 잡은 버그 2건: 로그인 IP 필터가 `getServletPath()`로 경로를 비교해 MockMvc에서 동작하지 않음 → 요청 URI로 비교. 비밀번호 변경 화면에서 실패 기록이 롤백돼 무제한 대입 가능 → `recordFailure`를 `REQUIRES_NEW`로 (ADR-012).
 - 8b(이메일 변경)는 커밋 `f69410b` 하나에 모았다. 빼야 하면 이 커밋만 되돌린다 (공통 재인증 `CurrentPasswordVerifier`도 같이 되돌아가며 8a는 원래 코드로 돌아간다).
 - 로컬 `.env`의 한글 주석은 M0에서 ASCII 인코딩으로 저장해 깨져 있다(값에는 영향 없음). 필요하면 `.env.example`을 다시 복사해 값을 옮긴다.
-- 남은 확인: 개발자 브라우저 확인, push 후 CI.
+- 확인 완료: PR #3으로 main 병합.
+
+### DB 설명(COMMENT) 규칙 (2026-10-17 추가)
+- 모든 테이블·컬럼에 한글 COMMENT를 붙인다(CLAUDE.md "DB 설명(COMMENT) 규칙"). 기존 V2~V6 테이블은 V7에서 일괄 추가했다.
+- `SchemaCommentsTests`가 설명 없는 테이블·컬럼을 찾으면 빌드가 실패한다.
 
 ### b/c에서 추가할 스키마 (모두 추가만, M1-a 구조는 바꾸지 않음)
 - **M1-b (완료)**: `landlord.email_verified_at`, `account_token`(인증·이메일 변경·재설정 토큰을 한 테이블에), `login_failure`, `rate_limit_bucket`, `persistent_logins`
