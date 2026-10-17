@@ -22,6 +22,8 @@
    - 세션에 들어가는 principal에는 카카오 사용자 정보를 담지 않는다(`getAttributes()`는 우리 id만).
 5. **principal**: 가입을 마친 임대인은 이메일·카카오 로그인 모두 `LandlordPrincipal`(UserDetails + OAuth2User)을 쓴다. `getName()` = `getUsername()` = landlord id.
    - 처음 온 카카오 사용자는 계정을 만들지 않고 임시 `KakaoSignupPrincipal`(`ROLE_KAKAO_SIGNUP`)로 가입 단계(`/signup/kakao`)에 보낸다. 동의 없이 계정이 생기지 않게 하기 위해서다.
+   - 임시 principal의 이름은 `kakao-signup:{무작위 UUID}`다. 처음에는 `kakao-signup:{회원번호}`였는데, Spring Session이 이 이름을 `spring_session.principal_name`(인덱스가 걸린 평문 컬럼)에 저장해 가입을 마치지 않은 사람의 회원번호가 그대로 보였다. 그래서 무작위 값으로 바꿨다. `toString()`에도 회원번호를 넣지 않는다.
+   - **한계:** 가입을 마치려면 회원번호가 필요하므로 세션 속성(principal을 직렬화한 값, `spring_session_attributes`)에는 회원번호가 **여전히 들어 있다**. 이 수정의 효과는 조회·인덱스가 쉬운 principal_name 컬럼에서 평문 노출을 줄이는 데까지다. 세션은 2시간 유휴 뒤 만료되어 지워진다.
 6. **계정 찾기는 회원번호 + ACTIVE로만** 한다. 같은 이메일의 LOCAL 계정이 있어도 새 카카오 가입으로 이어진다(자동 병합 금지). 탈퇴 유예 중인 계정도 새 가입으로 처리한다(ADR-015).
 7. **CSP**: 카카오 로그인은 링크(GET `/oauth2/authorization/kakao`)로 시작한다. 폼 POST 뒤에 다른 사이트로 리다이렉트하면 Chrome이 `form-action 'self'`로 막기 때문이다.
 8. state 검증, 로그인 성공 시 세션 id 교체는 Spring Security 기본 동작을 쓰고 테스트로 확인했다.

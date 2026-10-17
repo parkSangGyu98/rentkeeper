@@ -58,6 +58,16 @@ class KakaoSignupTests extends KakaoIntegrationTest {
 	}
 
 	@Test
+	void pendingSignupSessionPrincipalNameDoesNotContainKakaoId() throws Exception {
+		pendingSignup(FakeKakaoServer.user(KAKAO_ID, null, false, false, "김카카오"));
+
+		// 세션 속성(직렬화한 임시 로그인 정보)에는 가입 처리를 위해 회원번호가 남아 있다. 인덱스된 이름 컬럼에만 없다 (ADR-014)
+		assertThat(jdbcTemplate.queryForList(
+				"select principal_name from spring_session where principal_name is not null", String.class))
+				.singleElement().asString().startsWith("kakao-signup:").doesNotContain(KAKAO_ID);
+	}
+
+	@Test
 	void kakaoVerifiedEmailKeptAsIsIsStoredVerifiedWithoutMail() throws Exception {
 		Cookie pending = pendingSignup(FakeKakaoServer.user(KAKAO_ID, "kim@example.com", true, true, "김카카오"));
 
