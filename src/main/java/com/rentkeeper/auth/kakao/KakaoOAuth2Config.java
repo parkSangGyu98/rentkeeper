@@ -53,8 +53,8 @@ public class KakaoOAuth2Config {
 				// 카카오 콘솔에 등록한 리다이렉트 URI와 같은 형태 (로컬:
 				// http://localhost:8080/login/oauth2/code/kakao)
 				.redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-				// 최소 수집: 이메일(선택 동의)과 닉네임만
-				.scope("account_email", "profile_nickname").authorizationUri(properties.authorizationUri())
+				// 최소 수집. 지금은 닉네임만 (app.kakao.scopes, ADR-014)
+				.scope(properties.scopes()).authorizationUri(properties.authorizationUri())
 				.tokenUri(properties.tokenUri()).userInfoUri(properties.userInfoUri())
 				// 사용자 정보 응답의 최상위 "id"(회원번호)
 				.userNameAttributeName("id").clientName("카카오").build();

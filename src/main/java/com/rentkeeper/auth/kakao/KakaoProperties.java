@@ -1,5 +1,7 @@
 package com.rentkeeper.auth.kakao;
 
+import java.util.List;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.util.StringUtils;
@@ -15,13 +17,19 @@ import org.springframework.util.StringUtils;
  *            서비스 앱 어드민 키 (KAKAO_ADMIN_KEY). 탈퇴 시 연결 끊기에 쓴다
  * @param authorizationUri
  *            테스트에서 가짜 카카오 서버로 바꿀 수 있게 주소도 설정으로 둔다
+ * @param scopes
+ *            요청할 동의항목. 지금은 닉네임만 (이메일 동의항목은 비즈 앱 전환 전이라 권한이 없다, ADR-014)
  */
 @ConfigurationProperties("app.kakao")
 public record KakaoProperties(String clientId, String clientSecret, String adminKey,
 		@DefaultValue("https://kauth.kakao.com/oauth/authorize") String authorizationUri,
 		@DefaultValue("https://kauth.kakao.com/oauth/token") String tokenUri,
 		@DefaultValue("https://kapi.kakao.com/v2/user/me") String userInfoUri,
-		@DefaultValue("https://kapi.kakao.com/v1/user/unlink") String unlinkUri) {
+		@DefaultValue("https://kapi.kakao.com/v1/user/unlink") String unlinkUri,
+		@DefaultValue("profile_nickname") List<String> scopes) {
+
+	/** 카카오계정(이메일) 동의항목. 이 scope를 요청할 때만 카카오가 준 이메일을 쓴다 (KakaoProfile) */
+	public static final String EMAIL_SCOPE = "account_email";
 
 	public boolean enabled() {
 		return StringUtils.hasText(clientId);

@@ -48,12 +48,13 @@ class KakaoSignupTests extends KakaoIntegrationTest {
 	}
 
 	@Test
-	void signupFormIsPrefilledWithKakaoNicknameAndEmail() throws Exception {
+	void signupFormIsPrefilledWithNicknameOnly() throws Exception {
+		// 이메일 scope를 요청하지 않으므로, 응답에 이메일이 있더라도 쓰지 않는다 (ADR-014)
 		Cookie pending = pendingSignup(FakeKakaoServer.user(KAKAO_ID, "kim@example.com", true, true, "김카카오"));
 
 		mockMvc.perform(get("/signup/kakao").cookie(pending)).andExpect(status().isOk())
 				.andExpect(content().string(containsString("value=\"김카카오\"")))
-				.andExpect(content().string(containsString("value=\"kim@example.com\"")))
+				.andExpect(content().string(not(containsString("kim@example.com"))))
 				.andExpect(content().string(containsString("가입 그만두기")));
 	}
 
@@ -68,7 +69,8 @@ class KakaoSignupTests extends KakaoIntegrationTest {
 	}
 
 	@Test
-	void kakaoVerifiedEmailKeptAsIsIsStoredVerifiedWithoutMail() throws Exception {
+	void enteredEmailIsVerifiedByOurMailEvenIfKakaoSentVerifiedEmail() throws Exception {
+		// 이메일 scope 없이는 "카카오가 인증한 이메일 → 바로 인증" 분기가 동작하지 않는다 (지금 기본 경로, ADR-014)
 		Cookie pending = pendingSignup(FakeKakaoServer.user(KAKAO_ID, "kim@example.com", true, true, "김카카오"));
 
 		MvcResult result = submit(pending, "김임대", "kim@example.com", true);
@@ -77,12 +79,12 @@ class KakaoSignupTests extends KakaoIntegrationTest {
 		Map<String, Object> row = landlordRow();
 		assertThat(row).containsEntry("auth_provider", "KAKAO").containsEntry("kakao_id", KAKAO_ID)
 				.containsEntry("name", "김임대").containsEntry("email", "kim@example.com")
-				.containsEntry("status", "ACTIVE").containsEntry("verified", true);
+				.containsEntry("status", "ACTIVE").containsEntry("verified", false);
 		assertThat(row.get("password_hash")).isNull();
 		assertThat(consentTypes()).containsExactly("PRIVACY", "TERMS");
-		assertThat(mail.sent()).as("카카오가 인증한 주소는 인증 메일을 보내지 않는다").isEmpty();
+		assertThat(mail.lastTokenTo("kim@example.com")).as("입력한 주소는 우리 인증 메일로 확인").isNotBlank();
 
-		// 정식 로그인으로 바뀌었다: 세션 id가 바뀌고, 새 세션으로 내 화면을 쓸 수 있고, 안내 띠가 없다
+		// 정식 로그인으로 바뀌었다: 세션 id가 바뀌고, 새 세션으로 내 화면을 쓸 수 있고, 인증 안내 띠가 보인다
 		Cookie session = result.getResponse().getCookie("SESSION");
 		assertThat(session.getValue()).isNotEqualTo(pending.getValue());
 		assertThat(jdbcTemplate.queryForList(
@@ -90,7 +92,7 @@ class KakaoSignupTests extends KakaoIntegrationTest {
 				.containsExactly(String.valueOf(row.get("id")));
 		mockMvc.perform(get("/app").cookie(session)).andExpect(status().isOk())
 				.andExpect(content().string(containsString("김임대")))
-				.andExpect(content().string(not(containsString("이메일 인증이 아직"))));
+				.andExpect(content().string(containsString("이메일 인증이 아직")));
 	}
 
 	@Test
@@ -103,16 +105,6 @@ class KakaoSignupTests extends KakaoIntegrationTest {
 		assertThat(mail.lastTokenTo("other@example.com")).isNotBlank();
 		mockMvc.perform(get("/app").cookie(session)).andExpect(content().string(containsString("이메일 인증이 아직")))
 				.andExpect(content().string(containsString("주소 고치기")));
-	}
-
-	@Test
-	void kakaoEmailNotVerifiedByKakaoIsNotTrusted() throws Exception {
-		Cookie pending = pendingSignup(FakeKakaoServer.user(KAKAO_ID, "kim@example.com", true, false, "김카카오"));
-
-		submit(pending, "김임대", "kim@example.com", true);
-
-		assertThat(landlordRow()).containsEntry("verified", false);
-		assertThat(mail.lastTokenTo("kim@example.com")).isNotBlank();
 	}
 
 	@Test

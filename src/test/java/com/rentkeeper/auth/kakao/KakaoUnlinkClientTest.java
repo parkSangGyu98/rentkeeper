@@ -2,6 +2,8 @@ package com.rentkeeper.auth.kakao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -29,7 +31,8 @@ class KakaoUnlinkClientTest {
 
 	@Test
 	void missingAdminKeyIsConfigError() {
-		KakaoProperties noKey = new KakaoProperties(null, null, null, "a", "t", "u", "http://127.0.0.1:1/unlink");
+		KakaoProperties noKey = new KakaoProperties(null, null, null, "a", "t", "u", "http://127.0.0.1:1/unlink",
+				List.of());
 		assertThat(new KakaoUnlinkClient(noKey).unlink("1")).isEqualTo(KakaoUnlinkResult.CONFIG);
 	}
 
@@ -37,7 +40,7 @@ class KakaoUnlinkClientTest {
 	void connectionFailureIsTransient() {
 		// 1번 포트는 열려 있지 않다: 연결 실패
 		KakaoProperties unreachable = new KakaoProperties("id", "secret", "admin", "a", "t", "u",
-				"http://127.0.0.1:1/v1/user/unlink");
+				"http://127.0.0.1:1/v1/user/unlink", List.of());
 		assertThat(new KakaoUnlinkClient(unreachable).unlink("1")).isEqualTo(KakaoUnlinkResult.TRANSIENT);
 	}
 

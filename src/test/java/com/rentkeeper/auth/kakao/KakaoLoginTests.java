@@ -46,7 +46,8 @@ class KakaoLoginTests extends KakaoIntegrationTest {
 		assertThat(queryParam(location, "response_type")).isEqualTo("code");
 		assertThat(queryParam(location, "client_id")).isEqualTo("test-client-id");
 		assertThat(queryParam(location, "redirect_uri")).isEqualTo("http://localhost/login/oauth2/code/kakao");
-		assertThat(queryParam(location, "scope")).isEqualTo("account_email profile_nickname");
+		// 이메일 동의항목은 권한이 없어(비즈 앱 전환 전) 닉네임만 요청한다 (ADR-014)
+		assertThat(queryParam(location, "scope")).isEqualTo("profile_nickname");
 		assertThat(queryParam(location, "state")).isNotBlank();
 		// PKCE: Security 7.1.1은 ClientRegistration의 requireProofKey 기본값이 true라 PKCE를
 		// 보낸다 (ADR-014)

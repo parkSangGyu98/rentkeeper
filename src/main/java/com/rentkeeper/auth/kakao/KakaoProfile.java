@@ -20,8 +20,13 @@ import com.rentkeeper.landlord.domain.Landlord;
  */
 public record KakaoProfile(String kakaoId, String email, boolean emailTrusted, String nickname) {
 
+	/**
+	 * @param emailScopeRequested
+	 *            이메일 동의항목(account_email)을 요청했는지. 요청하지 않았으면 응답에 이메일이 있어도 쓰지 않는다:
+	 *            이메일을 비워 두고 인증된 것으로도 보지 않는다 (ADR-014, 지금 기본 경로)
+	 */
 	@SuppressWarnings("unchecked")
-	public static KakaoProfile from(Map<String, Object> attributes) {
+	public static KakaoProfile from(Map<String, Object> attributes, boolean emailScopeRequested) {
 		Object id = attributes.get("id");
 		String kakaoId = id == null ? "" : String.valueOf(id);
 		if (!kakaoId.matches("[0-9]+")) {
@@ -34,7 +39,8 @@ public record KakaoProfile(String kakaoId, String email, boolean emailTrusted, S
 		String email = null;
 		boolean emailTrusted = false;
 		// is_email_valid=false면 다른 카카오계정에 쓰여 만료된 주소다 (카카오 문서) → 쓰지 않는다
-		if (account.get("email") instanceof String rawEmail && Boolean.TRUE.equals(account.get("is_email_valid"))) {
+		if (emailScopeRequested && account.get("email") instanceof String rawEmail
+				&& Boolean.TRUE.equals(account.get("is_email_valid"))) {
 			try {
 				email = EmailAddress.of(rawEmail).value();
 				emailTrusted = Boolean.TRUE.equals(account.get("is_email_verified"));

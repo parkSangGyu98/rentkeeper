@@ -32,7 +32,9 @@ public class KakaoOAuth2UserService implements OAuth2UserService<OAuth2UserReque
 
 	@Override
 	public OAuth2User loadUser(OAuth2UserRequest userRequest) {
-		KakaoProfile profile = KakaoProfile.from(delegate.loadUser(userRequest).getAttributes());
+		boolean emailScopeRequested = userRequest.getClientRegistration().getScopes()
+				.contains(KakaoProperties.EMAIL_SCOPE);
+		KakaoProfile profile = KakaoProfile.from(delegate.loadUser(userRequest).getAttributes(), emailScopeRequested);
 		return landlordService.findActiveKakaoAccount(profile.kakaoId()).<OAuth2User>map(LandlordPrincipal::of)
 				.orElseGet(() -> new KakaoSignupPrincipal(profile));
 	}
