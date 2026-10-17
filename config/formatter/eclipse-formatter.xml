@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  임시 프로필: Eclipse [built-in] 기본값으로 시작한다.
+  여기에 없는 설정은 Eclipse JDT 기본값(DefaultCodeFormatterOptions)이 적용된다.
+  개발자의 Eclipse 포매터를 Export한 XML로 교체할 예정 (docs/progress.md 참고).
+-->
+<profiles version="23">
+<profile kind="CodeFormatterProfile" name="Eclipse [built-in] rentkeeper" version="23">
+<!-- Java 21 문법(record, switch 패턴 등)을 파싱하려면 소스 레벨을 명시해야 한다 -->
+<setting id="org.eclipse.jdt.core.compiler.source" value="21"/>
+<setting id="org.eclipse.jdt.core.compiler.compliance" value="21"/>
+<setting id="org.eclipse.jdt.core.compiler.codegen.targetPlatform" value="21"/>
+<!-- 아래는 Eclipse [built-in] 기본값을 명시적으로 적은 것 -->
+<setting id="org.eclipse.jdt.core.formatter.tabulation.char" value="tab"/>
+<setting id="org.eclipse.jdt.core.formatter.tabulation.size" value="4"/>
+<setting id="org.eclipse.jdt.core.formatter.lineSplit" value="120"/>
+<setting id="org.eclipse.jdt.core.formatter.comment.line_length" value="80"/>
+</profile>
+</profiles>

@@ -36,4 +36,6 @@
 
 ## 기타 메모
 - 포매터는 Eclipse 기본 프로필로 시작했다. 개발자의 Eclipse 포매터 XML을 받으면 `config/formatter/eclipse-formatter.xml`을 교체하고 `.\gradlew.bat spotlessApply`로 일괄 재포맷한다 (재포맷은 별도 커밋 `style:`).
+  Eclipse의 Organize Imports 순서도 함께 내보내(`.importorder`) Spotless `importOrderFile(...)`로 맞추면 저장 시 import 순서가 흔들리지 않는다. 현재는 `java, javax, org, com, 기타` 순서로 임시 지정했다.
+- Spotless의 Eclipse JDT 버전은 개발자 Eclipse(2025-06 = 4.36)에 맞춰 `eclipse("4.36")`으로 고정했다. Eclipse를 업그레이드하면 이 값도 함께 올린다.
 - Gradle 9.8.1은 2주 규칙의 예외로 채택했다 (ADR-004).

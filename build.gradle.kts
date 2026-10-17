@@ -4,6 +4,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
 	java
 	id("org.springframework.boot") version "4.1.1"
+	id("com.diffplug.spotless") version "8.10.3"
 }
 
 group = "com.rentkeeper"
@@ -49,4 +50,21 @@ tasks.withType<Test> {
 
 tasks.named<BootRun>("bootRun") {
 	jvmArgs(seoulTimeZone)
+}
+
+// spotlessCheck는 check(=build)에 연결된다. 포맷이 어긋나면 빌드가 실패하고, spotlessApply로 고친다.
+spotless {
+	java {
+		importOrder("java", "javax", "org", "com", "")
+		removeUnusedImports()
+		// 개발자가 쓰는 Eclipse(2025-06 = 4.36)와 같은 JDT 버전으로 포맷해 IDE 저장 결과와 일치시킨다
+		eclipse("4.36").configFile("config/formatter/eclipse-formatter.xml")
+	}
+	format("misc") {
+		target("*.md", "docs/**/*.md", "*.gradle.kts", "**/*.yml", ".gitignore", ".gitattributes")
+		// PRD 사본은 원본과의 diff를 최소로 유지하기 위해 손대지 않는다
+		targetExclude("docs/PRD.md", "build/**")
+		trimTrailingWhitespace()
+		endWithNewline()
+	}
 }
