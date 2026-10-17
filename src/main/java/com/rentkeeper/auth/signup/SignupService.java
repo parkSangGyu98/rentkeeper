@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.rentkeeper.auth.security.LandlordPrincipal;
+import com.rentkeeper.auth.verification.EmailVerificationService;
 import com.rentkeeper.landlord.application.LandlordService;
 import com.rentkeeper.landlord.domain.EmailAddress;
 
@@ -20,11 +21,14 @@ public class SignupService {
 
 	private final PasswordEncoder passwordEncoder;
 
+	private final EmailVerificationService emailVerificationService;
+
 	public SignupService(LandlordService landlordService, PasswordPolicy passwordPolicy,
-			PasswordEncoder passwordEncoder) {
+			PasswordEncoder passwordEncoder, EmailVerificationService emailVerificationService) {
 		this.landlordService = landlordService;
 		this.passwordPolicy = passwordPolicy;
 		this.passwordEncoder = passwordEncoder;
+		this.emailVerificationService = emailVerificationService;
 	}
 
 	/**
@@ -45,6 +49,8 @@ public class SignupService {
 			throw new WeakPasswordException(violation);
 		});
 		long landlordId = landlordService.registerLocal(email, passwordEncoder.encode(password), name);
+		// 인증 전에도 로그인은 된다. 인증 메일만 보내 두고, 화면에서는 안내 띠로 알린다
+		emailVerificationService.sendVerification(landlordId);
 		return new LandlordPrincipal(landlordId, email.value(), name.strip(), true, null);
 	}
 

@@ -5,17 +5,21 @@
 ## 마일스톤 현황
 | 마일스톤 | 상태 | 비고 |
 |---|---|---|
-| M0 프로젝트 세팅 | 로컬 완료, push 완료, **CI 결과 확인 대기** | Actions 결과를 개발자가 확인 후 알려 주기로 함 |
-| M1-a 보안 기본·이메일 가입/로그인·세션·레이아웃·정적 페이지 | 구현 완료, **개발자 브라우저 확인 대기** (`feature/m1-a-auth`, push 안 함) | main 병합은 CI 확인 후 개발자 지시 |
-| M1-b 이메일 인증 배너·비밀번호 재설정·로그인 잠금/IP 제한·remember-me·재인증 | 대기 | |
+| M0 프로젝트 세팅 | 완료 (CI 통과) | |
+| M1-a 보안 기본·이메일 가입/로그인·세션·레이아웃·정적 페이지 | 완료 (PR #2 병합, CI 통과, 브라우저 확인 완료) | |
+| M1-b 이메일 인증 배너·비밀번호 재설정·로그인 잠금/IP 제한·remember-me·재인증 | 구현 완료, **개발자 브라우저 확인 대기** (`feature/m1-b-auth-security`, push 안 함) | main 병합은 개발자 지시 |
 | M1-c 카카오 로그인·회원 탈퇴/파기 배치·동의 기록 | 대기 | |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
 - [x] GitHub 저장소 생성 → remote 등록 → push (2026-10-17, Private)
-- [ ] CI(GitHub Actions) 첫 실행 통과 확인 → M0 완료 처리
-- [ ] Dependabot 첫 PR 동작 확인
+- [x] CI(GitHub Actions) 첫 실행 통과 확인 → M0 완료 처리
+- [x] Dependabot 첫 PR 동작 확인 (postgres 18 PR이 열림 → 병합하지 않고 닫음. postgres 메이저 업데이트는 dependabot.yml에서 무시)
 - [ ] `main` 브랜치 보호 규칙 설정 (CI 통과 필수)
+
+## 출시 전 필수 (차단 항목: 해결 전에는 운영 배포 금지)
+- [ ] **클라이언트 IP 판정**: 지금 `ClientIp`는 `request.getRemoteAddr()`를 그대로 쓴다. 운영에서 Caddy 뒤에 두면 모든 요청이 프록시 IP로 보여 **전체 사용자가 같은 레이트 리미트에 묶인다**(로그인 10분 30회를 모든 사용자가 나눠 씀). M6에서 신뢰할 프록시를 정하고 `server.forward-headers-strategy`를 설정한 뒤, 프록시 뒤에서 IP별로 따로 세어지는지 확인한다. X-Forwarded-For를 아무 요청에서나 믿으면 IP 위조가 가능하므로 신뢰 범위를 함께 정한다 (ADR-012).
+- [ ] **운영용 메일 발송 구현(M5)**: 없으면 prod 프로필로 앱이 기동하지 않는다 (ADR-010).
 
 ## 출시 전 할 일
 - [ ] 이용약관·개인정보처리방침 **출시 전 전문가 검토** (현재 화면은 목차만 있는 초안 v0.1, 시행일 미정)
@@ -44,19 +48,31 @@
 - 세션 설정은 `spring.session.timeout`과 `SessionCookieConfig`(CookieSerializer 빈) 한 곳에만 둔다. Boot가 MockMvc와 실제 실행에서 `server.servlet.session.*`를 다른 경로로 읽기 때문이다 (ADR-005). 실제 Tomcat 테스트는 `SessionCookieRealServerTests` 1개뿐.
 - `thymeleaf-extras-springsecurity6`는 Security 7.1.1에서 `sec:authorize`·`sec:authentication`이 동작하는 것을 테스트로 확인했다 → `@ControllerAdvice` 대체는 필요 없었다.
 - 기본 거부(`denyAll`) 때문에 비로그인 상태로 없는 주소에 가면 404가 아니라 로그인 화면으로 간다(로그인 상태면 403). 404 화면은 `/css/no-such.css`처럼 허용 경로 안의 없는 파일에서 보인다 (ADR-008).
-- Tailwind 4.3.3 Windows 바이너리는 이 PC에서 동작 확인. Linux 바이너리는 CI 첫 실행 때 확인 필요.
+- Tailwind 4.3.3 Windows 바이너리는 이 PC에서, Linux 바이너리는 CI(PR #2)에서 동작 확인.
 - Windows의 `curl.exe`로 한글 폼 값을 명령줄에서 보내면 CP949로 바뀌어 Tomcat이 400을 준다. 브라우저(UTF-8)는 정상이다. curl로 시험할 때는 `%EA%B2%80`처럼 UTF-8 퍼센트 인코딩 값을 직접 넣는다.
-- 남은 확인: 개발자 브라우저 확인(가입→로그인→로그아웃, 쿠키 속성, 404 화면), CI 결과.
+- 확인 완료: 개발자 브라우저 확인(가입→로그인→로그아웃, 쿠키 속성, 404 화면), CI 통과, PR #2로 main 병합.
+
+### M1-b 구현 결과 메모 (2026-10-17)
+- 마이그레이션: V4 `account_token` + `landlord.email_verified_at`, V5 `login_failure`·`rate_limit_bucket`, V6 `persistent_logins`. ADR-010~013 작성.
+- 개발 메일: bootRun 콘솔에서 로거 `rentkeeper.dev-mail`의 `===== [개발용 메일 - 실제로 발송되지 않음] =====` 블록에 인증·재설정·이메일 변경 링크가 찍힌다 (local 프로필 전용, ADR-010).
+- 계획 대비 확인 결과:
+  - `CookieTheftException`: Security 7.1.1 기본 동작은 500 → `HashingRememberMeServices`에서 잡아 로그인 화면 안내로 처리 (ADR-013).
+  - 자동 로그인 후 세션 저장, Tomcat의 remember-me `SameSite=Lax` 출력: 테스트로 확인.
+  - **remember-me 키를 바꿔도 기존 로그인 유지는 풀리지 않는다** (PersistentToken 방식). 모두 끊으려면 `persistent_logins`를 비운다. 키를 바꾸면 모두 무효가 된다는 처음 설명은 틀렸고 문서에는 실제 동작을 적었다 (ADR-013, .env.example).
+- 구현 중 테스트로 잡은 버그 2건: 로그인 IP 필터가 `getServletPath()`로 경로를 비교해 MockMvc에서 동작하지 않음 → 요청 URI로 비교. 비밀번호 변경 화면에서 실패 기록이 롤백돼 무제한 대입 가능 → `recordFailure`를 `REQUIRES_NEW`로 (ADR-012).
+- 8b(이메일 변경)는 커밋 `f69410b` 하나에 모았다. 빼야 하면 이 커밋만 되돌린다 (공통 재인증 `CurrentPasswordVerifier`도 같이 되돌아가며 8a는 원래 코드로 돌아간다).
+- 로컬 `.env`의 한글 주석은 M0에서 ASCII 인코딩으로 저장해 깨져 있다(값에는 영향 없음). 필요하면 `.env.example`을 다시 복사해 값을 옮긴다.
+- 남은 확인: 개발자 브라우저 확인, push 후 CI.
 
 ### b/c에서 추가할 스키마 (모두 추가만, M1-a 구조는 바꾸지 않음)
-- **M1-b**: `landlord.email_verified_at`, 이메일 인증 토큰 테이블, 비밀번호 재설정 토큰 테이블(30분, 1회용), 로그인 시도·IP 제한 테이블, `persistent_logins`(remember-me)
+- **M1-b (완료)**: `landlord.email_verified_at`, `account_token`(인증·이메일 변경·재설정 토큰을 한 테이블에), `login_failure`, `rate_limit_bucket`, `persistent_logins`
 - **M1-c**: `landlord.kakao_id`(KAKAO 계정끼리 unique), `landlord.withdrawn_at`, KAKAO 계정이면 `kakao_id` 필수인 CHECK, `consent_log` 테이블
 - **M1-c에서 정할 것**: 탈퇴 후 30일 유예 중 같은 이메일 재가입 허용 여부 → 결과에 따라 `uk_landlord_local_email` 인덱스 조건만 재생성
 - **M2**: `landlord.phone_enc` (암호화 컨버터와 함께, SET-1)
 
-### M1-b로 미룬 것
-- 메일 발송 인터페이스(`MailSender` 계열)와 로그 출력 구현체
-- 비밀번호 변경 시 그 사용자의 모든 세션 종료 (`spring_session.principal_name` 인덱스 활용)
+### M1-b로 미뤘던 것 (M1-b에서 완료)
+- [x] 메일 발송 인터페이스(`EmailSender`, `EmailDispatcher`)와 로그 출력 구현체(`LoggingEmailSender`, local 전용)
+- [x] 비밀번호 변경·재설정 시 세션과 remember-me 종료 (`AccountSessionTerminator`)
 
 ## M1에서 반영할 인증 결정 (확정)
 - 카카오 로그인에서 **이메일 미동의** 시: 가입 후 "알림 받을 이메일" 입력 + 인증 단계를 둔다.

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>이메일 바꾸기 확인 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<th:block th:switch="${state}">
+			<th:block th:case="'CONFIRM'">
+				<h1 class="mb-4 text-3xl font-bold">이 주소로 이메일을 바꿀까요?</h1>
+				<p class="mb-8 text-lg text-gray-700">버튼을 누르면 로그인 이메일과 알림 받는 주소가 이 주소로 바뀌어요.</p>
+				<!-- 링크를 여는 것(GET)만으로는 바뀌지 않는다. 버튼(POST)을 눌러야 한다 (ADR-011) -->
+				<form th:action="@{/verify-email-change}" method="post">
+					<input type="hidden" name="token" th:value="${token}">
+					<button type="submit" class="btn btn-primary w-full">이메일 바꾸기 완료</button>
+				</form>
+			</th:block>
+
+			<th:block th:case="'DONE'">
+				<h1 class="mb-4 text-3xl font-bold">이메일을 바꿨어요</h1>
+				<p class="mb-8 text-lg text-gray-700">앞으로는 새 이메일로 로그인하고 알림도 새 이메일로 받아요.</p>
+				<a th:href="@{/app/settings}" class="btn btn-primary">계정 설정으로</a>
+			</th:block>
+
+			<th:block th:case="'DUPLICATE'">
+				<h1 class="mb-4 text-3xl font-bold">이미 다른 계정에서 쓰는 이메일이에요</h1>
+				<p class="mb-8 text-lg text-gray-700">요청하신 뒤에 다른 계정이 이 주소를 쓰게 됐어요. 다른 이메일로 다시 시도해 주세요.</p>
+				<a th:href="@{/app/settings/email}" class="btn btn-primary">다시 시도하기</a>
+			</th:block>
+
+			<th:block th:case="*">
+				<h1 class="mb-4 text-3xl font-bold">링크가 만료됐거나 이미 사용됐어요</h1>
+				<p class="mb-8 text-lg text-gray-700">이메일 바꾸기 링크는 24시간 동안, 한 번만 쓸 수 있어요. 계정 설정에서 다시 요청해 주세요.</p>
+				<a th:href="@{/app/settings/email}" class="btn btn-primary">다시 요청하기</a>
+			</th:block>
+		</th:block>
+	</main>
+</body>
+</html>

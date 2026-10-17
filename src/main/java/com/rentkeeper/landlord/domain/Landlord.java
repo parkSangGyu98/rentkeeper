@@ -1,5 +1,6 @@
 package com.rentkeeper.landlord.domain;
 
+import java.time.Instant;
 import java.util.Objects;
 
 import com.rentkeeper.common.error.BusinessException;
@@ -50,6 +51,10 @@ public class Landlord extends BaseTimeEntity {
 	@Column(nullable = false, length = 20)
 	private Plan plan;
 
+	// NULL이면 미인증. 알림은 인증된 주소로만 보낸다 (M1-b)
+	@Column(name = "email_verified_at")
+	private Instant emailVerifiedAt;
+
 	protected Landlord() {
 	}
 
@@ -71,6 +76,46 @@ public class Landlord extends BaseTimeEntity {
 			throw new IllegalArgumentException("passwordHash is required");
 		}
 		return new Landlord(email, passwordHash, AuthProvider.LOCAL, normalizeName(name));
+	}
+
+	/**
+	 * 지금 이메일이 인증 메일을 보낸 주소와 같을 때만 인증 처리한다. 인증 메일을 보낸 뒤 이메일이 바뀌었다면 예전 주소의 링크로 새 주소가
+	 * 인증되면 안 된다.
+	 *
+	 * @return 인증 처리했으면(이미 인증된 경우 포함) true
+	 */
+	public boolean verifyEmail(EmailAddress verifiedAddress, Instant now) {
+		if (email == null || !email.equals(verifiedAddress.value())) {
+			return false;
+		}
+		if (emailVerifiedAt == null) {
+			emailVerifiedAt = now;
+		}
+		return true;
+	}
+
+	public boolean isEmailVerified() {
+		return emailVerifiedAt != null;
+	}
+
+	/**
+	 * 이메일을 바꾼다. 새 주소로 보낸 확인 링크를 누른 뒤에만 호출되므로, 바꾸는 순간 인증된 것으로 본다 (M1-b 결정 7).
+	 */
+	public void changeEmail(EmailAddress newEmail, Instant verifiedAt) {
+		Objects.requireNonNull(newEmail, "newEmail");
+		this.email = newEmail.value();
+		this.emailVerifiedAt = verifiedAt;
+	}
+
+	/** 비밀번호를 바꾼다. 이미 해시된 값을 받는다 (평문은 auth 모듈 밖으로 나오지 않는다) */
+	public void changePassword(String newPasswordHash) {
+		if (authProvider != AuthProvider.LOCAL) {
+			throw new IllegalStateException("only LOCAL accounts have a password");
+		}
+		if (newPasswordHash == null || newPasswordHash.isBlank()) {
+			throw new IllegalArgumentException("passwordHash is required");
+		}
+		this.passwordHash = newPasswordHash;
 	}
 
 	static String normalizeName(String name) {

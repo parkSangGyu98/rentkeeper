@@ -2,14 +2,31 @@ package com.rentkeeper.config;
 
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.RememberMeServices;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.NullSecurityContextRepository;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+
+import com.rentkeeper.auth.rememberme.HashingPersistentTokenRepository;
+import com.rentkeeper.auth.rememberme.HashingRememberMeServices;
+import com.rentkeeper.auth.rememberme.RememberMeKey;
+import com.rentkeeper.auth.rememberme.RememberMeUserDetailsService;
+import com.rentkeeper.auth.web.LoginRateLimitFilter;
+import com.rentkeeper.common.config.AppProperties;
+import com.rentkeeper.common.ratelimit.RateLimiter;
+import com.rentkeeper.landlord.application.LandlordService;
 
 import jakarta.servlet.DispatcherType;
 
@@ -36,12 +53,42 @@ public class SecurityConfig {
 			"frame-ancestors 'none'", "base-uri 'self'", "object-src 'none'");
 
 	static final String[] PUBLIC_PATHS = {"/", "/login", "/signup", "/terms", "/privacy", "/error", "/css/**", "/js/**",
-			"/images/**", "/favicon.ico", "/actuator/health"};
+			"/images/**", "/favicon.ico", "/actuator/health",
+			// 메일 링크는 다른 기기(로그인 안 된 상태)에서 열 수 있다
+			"/verify-email", "/password-reset", "/password-reset/confirm", "/verify-email-change"};
 
 	static final int BCRYPT_STRENGTH = 12;
 
+	static final String[] STATIC_PATHS = {"/css/**", "/js/**", "/images/**", "/favicon.ico"};
+
+	/**
+	 * 정적 파일 전용 체인 (ADR-013). 세션·remember-me 없이 보안 헤더만 붙인다.
+	 * <p>
+	 * 세션이 만료된 상태에서 브라우저가 페이지와 CSS를 동시에 요청하면, 두 요청이 같은 remember-me 쿠키로 동시에 자동 로그인하다
+	 * 하나가 "이미 쓴 토큰"으로 보여 도난으로 오판된다(모든 기기 로그인 유지 해제). 정적 파일에서는 자동 로그인을 하지 않게 해 이를
+	 * 막는다.
+	 */
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	@Order(1)
+	SecurityFilterChain staticResourcesFilterChain(HttpSecurity http) throws Exception {
+		http.securityMatcher(STATIC_PATHS).authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+				.requestCache(cache -> cache.disable())
+				.securityContext(context -> context.securityContextRepository(new NullSecurityContextRepository()))
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+		applySecurityHeaders(http);
+		return http.build();
+	}
+
+	@Bean
+	@Order(2)
+	SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimiter rateLimiter,
+			RememberMeServices rememberMeServices) throws Exception {
+		// 로그인 시도 IP 한도 (ADR-012). 빈으로 등록하지 않는다: 빈이면 서블릿 필터로도 자동 등록되어 두 번 실행된다
+		http.addFilterBefore(new LoginRateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class);
+
+		// 로그인 유지 30일 (ADR-013). 로그인 폼의 remember-me 체크박스를 켰을 때만 쿠키를 발급한다
+		http.rememberMe(rememberMe -> rememberMe.rememberMeServices(rememberMeServices));
+
 		http.authorizeHttpRequests(authorize -> authorize
 				// 오류 화면 전달(/error)과 내부 forward는 원래 요청에서 이미 권한 검사를 거쳤다
 				.dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
@@ -56,11 +103,28 @@ public class SecurityConfig {
 		// CSRF가 켜져 있으면 로그아웃은 POST만 받는다 (다른 사이트의 링크·이미지로 강제 로그아웃되는 것을 막는다)
 		http.logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/login?logout"));
 
+		applySecurityHeaders(http);
+		return http.build();
+	}
+
+	private static void applySecurityHeaders(HttpSecurity http) throws Exception {
 		http.headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY))
 				.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
 				.frameOptions(frame -> frame.deny()));
+	}
 
-		return http.build();
+	/** remember-me 토큰 저장소. 비밀번호 재설정·변경 때 그 사용자의 토큰을 모두 지우는 데도 쓴다 */
+	@Bean
+	HashingPersistentTokenRepository persistentTokenRepository(DataSource dataSource) {
+		return new HashingPersistentTokenRepository(dataSource);
+	}
+
+	@Bean
+	HashingRememberMeServices rememberMeServices(AppProperties appProperties, Environment environment,
+			LandlordService landlordService, HashingPersistentTokenRepository persistentTokenRepository) {
+		String key = RememberMeKey.resolve(appProperties.rememberMeKey(), environment.matchesProfiles("local"));
+		return new HashingRememberMeServices(key, new RememberMeUserDetailsService(landlordService),
+				persistentTokenRepository);
 	}
 
 	/**

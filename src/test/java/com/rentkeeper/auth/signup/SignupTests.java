@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import com.rentkeeper.TestcontainersConfiguration;
 import com.rentkeeper.auth.security.LandlordPrincipal;
+import com.rentkeeper.support.TestData;
 
 /**
  * 이메일 회원가입 (AUTH-1): 성공, 중복 이메일, 약한 비밀번호, 입력 오류, 평문 비밀번호 미저장.
@@ -50,8 +51,7 @@ class SignupTests {
 
 	@BeforeEach
 	void cleanUp() {
-		jdbcTemplate.update("delete from spring_session");
-		jdbcTemplate.update("delete from landlord");
+		TestData.reset(jdbcTemplate);
 	}
 
 	@Test

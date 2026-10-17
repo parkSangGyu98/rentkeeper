@@ -1,5 +1,6 @@
 package com.rentkeeper.landlord.application;
 
+import java.time.Clock;
 import java.util.Optional;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -23,8 +24,11 @@ public class LandlordService {
 
 	private final LandlordRepository landlordRepository;
 
-	public LandlordService(LandlordRepository landlordRepository) {
+	private final Clock clock;
+
+	public LandlordService(LandlordRepository landlordRepository, Clock clock) {
 		this.landlordRepository = landlordRepository;
+		this.clock = clock;
 	}
 
 	/**
@@ -54,6 +58,77 @@ public class LandlordService {
 		return landlordRepository.findByAuthProviderAndEmail(AuthProvider.LOCAL, email.value())
 				.map(landlord -> new LandlordCredentials(landlord.getId(), landlord.getEmail(),
 						landlord.getPasswordHash(), landlord.getName(), landlord.getStatus()));
+	}
+
+	public Optional<LandlordAccount> findAccount(long landlordId) {
+		return landlordRepository.findById(landlordId).map(LandlordService::toAccount);
+	}
+
+	/**
+	 * 알림을 보낼 주소. <strong>인증된 이메일일 때만</strong> 돌려준다 (M1-b 결정: 알림은 인증된 주소로만). 인증·재설정
+	 * 링크처럼 본인 확인이 목적인 메일 외에는 모두 이 메서드로 수신 주소를 얻는다.
+	 */
+	public Optional<EmailAddress> findVerifiedEmail(long landlordId) {
+		return landlordRepository.findById(landlordId).filter(Landlord::isEmailVerified)
+				.map(landlord -> new EmailAddress(landlord.getEmail()));
+	}
+
+	/**
+	 * 인증 메일을 보낸 주소가 지금 계정 이메일과 같으면 인증 처리한다.
+	 *
+	 * @return 인증 처리했으면 true. 계정이 없거나 그 사이 이메일이 바뀌었으면 false
+	 */
+	@Transactional
+	public boolean verifyEmail(long landlordId, EmailAddress verifiedAddress) {
+		return landlordRepository.findById(landlordId)
+				.map(landlord -> landlord.verifyEmail(verifiedAddress, clock.instant())).orElse(false);
+	}
+
+	@Transactional
+	public void changePassword(long landlordId, String newPasswordHash) {
+		landlordRepository.findById(landlordId).orElseThrow(() -> new IllegalArgumentException("landlord not found"))
+				.changePassword(newPasswordHash);
+	}
+
+	public boolean isLocalEmailTaken(EmailAddress email) {
+		return landlordRepository.existsByAuthProviderAndEmail(AuthProvider.LOCAL, email.value());
+	}
+
+	/** 이메일 변경 결과: 이전 주소와 그 주소가 인증돼 있었는지 (이전 주소로 보안 안내를 보낼지 판단) */
+	public record EmailChanged(String previousEmail, boolean previousVerified) {
+	}
+
+	/**
+	 * 이메일을 바꾸고 인증된 것으로 표시한다 (새 주소의 확인 링크를 누른 뒤에만 호출).
+	 *
+	 * @throws DuplicateEmailException
+	 *             그 사이 다른 이메일 가입 계정이 같은 주소를 쓰게 된 경우
+	 */
+	@Transactional
+	public EmailChanged changeEmail(long landlordId, EmailAddress newEmail) {
+		Landlord landlord = landlordRepository.findById(landlordId)
+				.orElseThrow(() -> new IllegalArgumentException("landlord not found"));
+		EmailChanged previous = new EmailChanged(landlord.getEmail(), landlord.isEmailVerified());
+		landlord.changeEmail(newEmail, clock.instant());
+		try {
+			landlordRepository.saveAndFlush(landlord);
+		} catch (DataIntegrityViolationException e) {
+			if (isLocalEmailUniqueViolation(e)) {
+				throw new DuplicateEmailException(e);
+			}
+			throw e;
+		}
+		return previous;
+	}
+
+	/** 지금 비밀번호 해시 (비밀번호 변경 화면의 "현재 비밀번호" 확인용, auth 모듈 전용) */
+	public Optional<String> findPasswordHash(long landlordId) {
+		return landlordRepository.findById(landlordId).map(Landlord::getPasswordHash);
+	}
+
+	private static LandlordAccount toAccount(Landlord landlord) {
+		return new LandlordAccount(landlord.getId(), landlord.getEmail(), landlord.getName(),
+				landlord.isEmailVerified(), landlord.getStatus());
 	}
 
 	static boolean isLocalEmailUniqueViolation(Throwable e) {
