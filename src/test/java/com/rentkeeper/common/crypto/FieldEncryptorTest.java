@@ -47,8 +47,10 @@ class FieldEncryptorTest {
 	void detectsTampering() {
 		FieldEncryptor encryptor = encryptor(KEY_V1, "1", "");
 		String stored = encryptor.encrypt(PLAIN, "tenant.name");
-		char last = stored.charAt(stored.length() - 1);
-		String tampered = stored.substring(0, stored.length() - 1) + (last == 'A' ? 'B' : 'A');
+		// 가운데 글자를 바꾼다. 패딩 없는 base64url의 마지막 글자는 쓰지 않는 비트가 있어 바꿔도 같은 바이트로 풀릴 수 있다
+		int at = stored.length() / 2;
+		char original = stored.charAt(at);
+		String tampered = stored.substring(0, at) + (original == 'A' ? 'B' : 'A') + stored.substring(at + 1);
 
 		assertThatThrownBy(() -> encryptor.decrypt(tampered, "tenant.name"))
 				.isInstanceOf(FieldEncryptionException.class);
