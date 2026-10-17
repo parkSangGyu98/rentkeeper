@@ -1,6 +1,7 @@
 package com.rentkeeper.landlord.application;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -12,6 +13,7 @@ import com.rentkeeper.landlord.domain.AuthProvider;
 import com.rentkeeper.landlord.domain.EmailAddress;
 import com.rentkeeper.landlord.domain.Landlord;
 import com.rentkeeper.landlord.domain.LandlordRepository;
+import com.rentkeeper.landlord.domain.LandlordStatus;
 
 /**
  * landlord 모듈의 공개 API. 다른 모듈(auth 등)은 repository나 엔티티 대신 이 서비스를 쓴다 (PRD 10장).
@@ -21,6 +23,8 @@ import com.rentkeeper.landlord.domain.LandlordRepository;
 public class LandlordService {
 
 	static final String LOCAL_EMAIL_UNIQUE_CONSTRAINT = "uk_landlord_local_email";
+
+	static final String KAKAO_ID_UNIQUE_CONSTRAINT = "uk_landlord_kakao_id";
 
 	private final LandlordRepository landlordRepository;
 
@@ -39,7 +43,8 @@ public class LandlordService {
 	 */
 	@Transactional
 	public long registerLocal(EmailAddress email, String passwordHash, String name) {
-		if (landlordRepository.existsByAuthProviderAndEmail(AuthProvider.LOCAL, email.value())) {
+		if (landlordRepository.existsByAuthProviderAndEmailAndStatus(AuthProvider.LOCAL, email.value(),
+				LandlordStatus.ACTIVE)) {
 			throw new DuplicateEmailException();
 		}
 		try {
@@ -54,10 +59,79 @@ public class LandlordService {
 		}
 	}
 
+	/**
+	 * 카카오 계정을 만들고 id를 돌려준다 (ADR-014).
+	 *
+	 * @param notificationEmail
+	 *            알림 받을 이메일, 없으면 null
+	 * @param emailTrusted
+	 *            카카오가 인증한 이메일을 그대로 쓰는 경우 true → 인증된 것으로 저장
+	 * @throws DuplicateKakaoAccountException
+	 *             같은 카카오 회원번호의 사용 중인 계정이 이미 있을 때 (다른 창에서 동시에 가입한 경우 등)
+	 */
+	@Transactional
+	public long registerKakao(String kakaoId, String name, EmailAddress notificationEmail, boolean emailTrusted) {
+		Landlord landlord = Landlord.registerKakao(kakaoId, name, notificationEmail,
+				notificationEmail != null && emailTrusted ? clock.instant() : null);
+		try {
+			return landlordRepository.saveAndFlush(landlord).getId();
+		} catch (DataIntegrityViolationException e) {
+			if (hasConstraint(e, KAKAO_ID_UNIQUE_CONSTRAINT)) {
+				throw new DuplicateKakaoAccountException(e);
+			}
+			throw e;
+		}
+	}
+
+	/** 카카오 계정의 아직 인증되지 않은 알림 이메일을 넣거나 고친다. 인증 메일은 호출한 쪽이 보낸다 */
+	@Transactional
+	public void setUnverifiedNotificationEmail(long landlordId, EmailAddress email) {
+		landlordRepository.findById(landlordId).orElseThrow(() -> new IllegalArgumentException("landlord not found"))
+				.setUnverifiedNotificationEmail(email);
+	}
+
+	/**
+	 * 탈퇴 처리한다 (ADR-015). 이미 탈퇴했으면 IllegalStateException
+	 *
+	 * @return 탈퇴 시각
+	 */
+	@Transactional
+	public Instant withdraw(long landlordId) {
+		Instant now = clock.instant();
+		landlordRepository.findById(landlordId).orElseThrow(() -> new IllegalArgumentException("landlord not found"))
+				.withdraw(now);
+		return now;
+	}
+
+	/**
+	 * 카카오 연결 끊기 성공을 같은 회원번호의 <strong>모든</strong> 탈퇴 계정 행에 기록한다. 탈퇴-재가입-탈퇴를 반복했을 때
+	 * 이미 끊긴 회원을 또 끊으려 하지 않게 하기 위해서다 (ADR-015).
+	 */
+	@Transactional
+	public void markKakaoUnlinked(String kakaoId) {
+		landlordRepository
+				.findAllByAuthProviderAndKakaoIdAndStatus(AuthProvider.KAKAO, kakaoId, LandlordStatus.WITHDRAWN)
+				.forEach(landlord -> landlord.markKakaoUnlinked(clock.instant()));
+	}
+
+	/** 같은 회원번호의 사용 중(ACTIVE) 카카오 계정이 있는지 */
+	public boolean hasActiveKakaoAccount(String kakaoId) {
+		return landlordRepository
+				.findByAuthProviderAndKakaoIdAndStatus(AuthProvider.KAKAO, kakaoId, LandlordStatus.ACTIVE).isPresent();
+	}
+
 	public Optional<LandlordCredentials> findLocalCredentials(EmailAddress email) {
-		return landlordRepository.findByAuthProviderAndEmail(AuthProvider.LOCAL, email.value())
+		return landlordRepository
+				.findByAuthProviderAndEmailAndStatus(AuthProvider.LOCAL, email.value(), LandlordStatus.ACTIVE)
 				.map(landlord -> new LandlordCredentials(landlord.getId(), landlord.getEmail(),
 						landlord.getPasswordHash(), landlord.getName(), landlord.getStatus()));
+	}
+
+	/** 사용 중(ACTIVE)인 카카오 계정을 회원번호로 찾는다. 탈퇴 유예 중인 계정은 찾지 않는다 */
+	public Optional<LandlordAccount> findActiveKakaoAccount(String kakaoId) {
+		return landlordRepository
+				.findByAuthProviderAndKakaoIdAndStatus(AuthProvider.KAKAO, kakaoId, LandlordStatus.ACTIVE)
+				.map(LandlordService::toAccount);
 	}
 
 	public Optional<LandlordAccount> findAccount(long landlordId) {
@@ -91,7 +165,8 @@ public class LandlordService {
 	}
 
 	public boolean isLocalEmailTaken(EmailAddress email) {
-		return landlordRepository.existsByAuthProviderAndEmail(AuthProvider.LOCAL, email.value());
+		return landlordRepository.existsByAuthProviderAndEmailAndStatus(AuthProvider.LOCAL, email.value(),
+				LandlordStatus.ACTIVE);
 	}
 
 	/** 이메일 변경 결과: 이전 주소와 그 주소가 인증돼 있었는지 (이전 주소로 보안 안내를 보낼지 판단) */
@@ -128,13 +203,17 @@ public class LandlordService {
 
 	private static LandlordAccount toAccount(Landlord landlord) {
 		return new LandlordAccount(landlord.getId(), landlord.getEmail(), landlord.getName(),
-				landlord.isEmailVerified(), landlord.getStatus());
+				landlord.isEmailVerified(), landlord.getStatus(), landlord.getAuthProvider(), landlord.getKakaoId());
 	}
 
 	static boolean isLocalEmailUniqueViolation(Throwable e) {
+		return hasConstraint(e, LOCAL_EMAIL_UNIQUE_CONSTRAINT);
+	}
+
+	private static boolean hasConstraint(Throwable e, String constraintName) {
 		for (Throwable t = e; t != null; t = t.getCause()) {
 			if (t instanceof ConstraintViolationException cve
-					&& LOCAL_EMAIL_UNIQUE_CONSTRAINT.equalsIgnoreCase(cve.getConstraintName())) {
+					&& constraintName.equalsIgnoreCase(cve.getConstraintName())) {
 				return true;
 			}
 		}

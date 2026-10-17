@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>탈퇴 완료 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-4 text-3xl font-bold">탈퇴 처리됐어요</h1>
+		<p class="mb-4 text-lg text-gray-700">그동안 이용해 주셔서 감사합니다. 모든 기기에서 로그아웃됐어요.</p>
+		<p class="mb-8 text-lg text-gray-700">계정 정보는 30일 뒤에 완전히 지워요. 다시 이용하시려면 언제든 새로 가입하실 수 있어요.</p>
+		<a th:href="@{/}" class="btn btn-primary">처음 화면으로</a>
+	</main>
+</body>
+</html>

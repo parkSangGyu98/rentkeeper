@@ -44,8 +44,23 @@
 		@apply bg-brand-700 text-white hover:bg-brand-800;
 	}
 
+	/* 카카오 로그인 버튼: 카카오 디자인 가이드의 배경색(#FEE500)과 글자색(검정 85%). 공식 심볼 이미지는 출시 전에 적용한다 */
+	.btn-kakao {
+		background-color: #fee500;
+		color: rgb(0 0 0 / 0.85);
+	}
+
+	.btn-kakao:hover {
+		background-color: #f5dc00;
+	}
+
 	.btn-secondary {
 		@apply border-2 border-gray-400 bg-white text-gray-900 hover:bg-gray-100;
+	}
+
+	/* 되돌릴 수 없는 작업(회원 탈퇴 등) */
+	.btn-danger {
+		@apply bg-danger-700 text-white hover:bg-red-800;
 	}
 
 	.form-label {

@@ -77,6 +77,19 @@ public class AccountEmails {
 				""".formatted(name, newEmail));
 	}
 
+	/** 탈퇴 안내 (ADR-015). 인증된 주소로만 보낸다 */
+	public EmailMessage withdrawn(String to, String name) {
+		return new EmailMessage(to, SUBJECT_PREFIX + "탈퇴 처리됐어요", """
+				안녕하세요, %s님.
+
+				RentKeeper 회원 탈퇴가 처리됐어요. 모든 기기에서 로그아웃됐고, 더 이상 로그인할 수 없어요.
+				계정 정보는 30일 뒤에 완전히 지워요. 탈퇴를 되돌리는 기능은 없어요.
+				다시 이용하시려면 언제든 새로 가입하실 수 있어요.
+
+				본인이 탈퇴한 것이 아니라면 바로 문의해 주세요.
+				""".formatted(name));
+	}
+
 	/** 보안 안내 메일. 인증된 주소로만 보낸다 (호출하는 쪽이 findVerifiedEmail로 주소를 얻는다) */
 	public EmailMessage passwordChanged(String to, String name) {
 		return new EmailMessage(to, SUBJECT_PREFIX + "비밀번호가 변경됐어요", """

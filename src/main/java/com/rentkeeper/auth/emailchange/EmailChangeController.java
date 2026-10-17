@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.rentkeeper.auth.emailchange.EmailChangeService.EmailChangeException;
 import com.rentkeeper.auth.security.LandlordPrincipal;
+import com.rentkeeper.auth.settings.LocalAccountGuard;
 import com.rentkeeper.landlord.application.DuplicateEmailException;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,12 +29,16 @@ public class EmailChangeController {
 
 	private final EmailChangeService emailChangeService;
 
-	public EmailChangeController(EmailChangeService emailChangeService) {
+	private final LocalAccountGuard localAccountGuard;
+
+	public EmailChangeController(EmailChangeService emailChangeService, LocalAccountGuard localAccountGuard) {
 		this.emailChangeService = emailChangeService;
+		this.localAccountGuard = localAccountGuard;
 	}
 
 	@GetMapping("/app/settings/email")
-	public String form(Model model) {
+	public String form(@AuthenticationPrincipal LandlordPrincipal principal, Model model) {
+		localAccountGuard.requireLocal(principal.getLandlordId());
 		model.addAttribute("state", "FORM");
 		return FORM_VIEW;
 	}
@@ -42,6 +47,7 @@ public class EmailChangeController {
 	public String request(@AuthenticationPrincipal LandlordPrincipal principal,
 			@RequestParam(name = "currentPassword", defaultValue = "") String currentPassword,
 			@RequestParam(name = "newEmail", defaultValue = "") String newEmail, Model model) {
+		localAccountGuard.requireLocal(principal.getLandlordId());
 		try {
 			emailChangeService.requestChange(principal.getLandlordId(), currentPassword, newEmail);
 		} catch (EmailChangeException e) {

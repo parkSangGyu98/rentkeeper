@@ -88,7 +88,11 @@ class LandlordServiceTests {
 	void kakaoAccountMayShareEmailWithLocalAccount() {
 		// 자동 병합 금지: 같은 이메일이어도 공급자가 다르면 별도 계정
 		insert("kim@example.com", "LOCAL", "{bcrypt}hash");
-		insert("kim@example.com", "KAKAO", null);
+		// 카카오 계정은 회원번호가 반드시 있다 (V9 ck_landlord_kakao_credentials)
+		jdbcTemplate.update("""
+				insert into landlord (email, auth_provider, kakao_id, name, created_at, updated_at)
+				values ('kim@example.com', 'KAKAO', '1234567890', '테스트', now(), now())
+				""");
 
 		assertThat(countLandlords()).isEqualTo(2);
 	}

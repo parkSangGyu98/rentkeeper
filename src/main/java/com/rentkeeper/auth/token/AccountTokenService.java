@@ -74,6 +74,12 @@ public class AccountTokenService {
 		return token.map(AccountTokenService::toUsable);
 	}
 
+	/** 한 계정의 토큰을 모두 지운다 (탈퇴: 메일로 나간 링크를 바로 쓸 수 없게) */
+	@Transactional
+	public void deleteAll(long landlordId) {
+		repository.deleteByLandlord(landlordId);
+	}
+
 	private Optional<AccountToken> find(String rawToken, TokenPurpose purpose) {
 		if (!SecureTokens.isWellFormed(rawToken)) {
 			return Optional.empty();

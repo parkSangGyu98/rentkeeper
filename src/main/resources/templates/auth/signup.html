@@ -10,6 +10,12 @@
 
 		<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('${form.*}')}">입력한 내용을 확인해 주세요. 빨간 글씨로 안내한 칸을 고치면 돼요.</div>
 
+		<!-- 링크(GET)로 시작한다 (CSP form-action, ADR-014) -->
+		<th:block th:if="${kakaoLoginEnabled}">
+			<a th:href="@{/oauth2/authorization/kakao}" class="btn btn-kakao w-full">카카오로 시작하기</a>
+			<p class="my-6 text-center text-base text-gray-700">또는 이메일로 가입</p>
+		</th:block>
+
 		<!-- 비밀번호 칸은 오류가 나도 다시 채우지 않는다 (th:field 대신 name만 쓴다) -->
 		<form th:action="@{/signup}" th:object="${form}" method="post" class="space-y-6" novalidate>
 			<div>
