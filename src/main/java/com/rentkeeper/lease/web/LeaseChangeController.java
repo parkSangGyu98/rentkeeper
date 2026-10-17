@@ -17,12 +17,15 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.rentkeeper.auth.security.LandlordPrincipal;
 import com.rentkeeper.common.error.ResourceNotFoundException;
+import com.rentkeeper.lease.application.ChargedMonths.Cancellation;
 import com.rentkeeper.lease.application.LeaseChangeService;
 import com.rentkeeper.lease.application.LeaseChangeService.EditView;
 import com.rentkeeper.lease.application.LeaseChangeService.LeaseEdit;
 import com.rentkeeper.lease.application.LeaseExceptions.ChangeAfterEndException;
 import com.rentkeeper.lease.application.LeaseExceptions.DuplicateTenantPhoneException;
+import com.rentkeeper.lease.application.LeaseExceptions.FirstMonthChargedException;
 import com.rentkeeper.lease.application.LeaseExceptions.LeaseEndedException;
+import com.rentkeeper.lease.application.LeaseExceptions.LeaseHasChargesException;
 import com.rentkeeper.lease.application.LeaseExceptions.LeaseOverlapException;
 import com.rentkeeper.lease.application.LeaseService;
 import com.rentkeeper.lease.application.LeaseViews.LeaseDetail;
@@ -68,8 +71,9 @@ public class LeaseChangeController {
 		if (edit == null) {
 			return "lease/edit";
 		}
+		Cancellation canceled;
 		try {
-			changeService.edit(principal.getLandlordId(), id, edit);
+			canceled = changeService.edit(principal.getLandlordId(), id, edit);
 		} catch (LeaseOverlapException e) {
 			result.rejectValue("endDate", "overlap", "이 나가는 날이면 같은 호실의 다른 계약과 기간이 겹쳐요");
 			return "lease/edit";
@@ -79,8 +83,12 @@ public class LeaseChangeController {
 		} catch (DuplicateTenantPhoneException e) {
 			result.rejectValue("tenantPhone", "duplicate", "이 휴대폰 번호는 다른 세입자가 이미 쓰고 있어요");
 			return "lease/edit";
+		} catch (FirstMonthChargedException e) {
+			result.rejectValue("firstMonthlyRent", "firstMonthCharged",
+					"첫 달 받을 월세가 이미 만들어져 여기서는 첫 달 금액을 고칠 수 없어요. 그 달 받을 월세에서 금액을 고쳐 주세요");
+			return "lease/edit";
 		}
-		redirect.addFlashAttribute("notice", "계약을 고쳤어요.");
+		redirect.addFlashAttribute("notice", "계약을 고쳤어요." + canceledText(canceled));
 		return "redirect:/app/leases/" + id;
 	}
 
@@ -152,10 +160,10 @@ public class LeaseChangeController {
 	public String end(@AuthenticationPrincipal LandlordPrincipal principal, @PathVariable long id,
 			@RequestParam(name = "endedOn", defaultValue = "") String endedOn, Model model,
 			RedirectAttributes redirect) {
-		LocalDate day;
+		Cancellation canceled;
 		try {
-			day = LocalDate.parse(endedOn.strip());
-			changeService.end(principal.getLandlordId(), id, day);
+			LocalDate day = LocalDate.parse(endedOn.strip());
+			canceled = changeService.end(principal.getLandlordId(), id, day);
 		} catch (DateTimeParseException | InvalidLeaseValueException e) {
 			model.addAttribute("lease", activeDetail(principal, id));
 			model.addAttribute("endedOn", endedOn);
@@ -163,7 +171,7 @@ public class LeaseChangeController {
 			model.addAttribute("error", "실제로 끝난 날은 들어오는 날부터 오늘까지 중에서 골라 주세요. 앞으로 나갈 예정이면 계약 수정에서 나가는 날을 고쳐 주세요");
 			return "lease/end";
 		}
-		return backToDetail(id, redirect, "계약을 종료했어요. 호실 상태에서 빠지고, 이 계약은 더 이상 고칠 수 없어요.");
+		return backToDetail(id, redirect, "계약을 종료했어요. 호실 상태에서 빠지고, 이 계약은 더 이상 고칠 수 없어요." + canceledText(canceled));
 	}
 
 	// ---------------------------------------------------------------- 삭제
@@ -171,6 +179,7 @@ public class LeaseChangeController {
 	@GetMapping("/app/leases/{id}/delete")
 	public String deleteConfirm(@AuthenticationPrincipal LandlordPrincipal principal, @PathVariable long id,
 			Model model) {
+		model.addAttribute("hasCharges", changeService.hasCharges(principal.getLandlordId(), id));
 		model.addAttribute("lease", leaseService.detail(principal.getLandlordId(), id));
 		return "lease/delete";
 	}
@@ -178,7 +187,12 @@ public class LeaseChangeController {
 	@PostMapping("/app/leases/{id}/delete")
 	public String delete(@AuthenticationPrincipal LandlordPrincipal principal, @PathVariable long id,
 			RedirectAttributes redirect) {
-		long unitId = changeService.delete(principal.getLandlordId(), id);
+		long unitId;
+		try {
+			unitId = changeService.delete(principal.getLandlordId(), id);
+		} catch (LeaseHasChargesException e) {
+			return backToDetail(id, redirect, HAS_CHARGES_MESSAGE);
+		}
 		redirect.addFlashAttribute("notice", "계약을 지웠어요.");
 		return "redirect:/app/units/" + unitId;
 	}
@@ -197,6 +211,20 @@ public class LeaseChangeController {
 		return leaseService.activeDetail(principal.getLandlordId(), id);
 	}
 
+	static final String HAS_CHARGES_MESSAGE = "받을 월세가 만들어진 계약은 지울 수 없어요. 세입자가 나갔다면 [계약 종료]를 눌러 주세요.";
+
+	/** 계약 종료·나가는 날 단축 뒤 이후 달 청구 정리 안내 (M3 결정 5) */
+	static String canceledText(Cancellation result) {
+		StringBuilder text = new StringBuilder();
+		if (result.canceled() > 0) {
+			text.append(" 이후 달 받을 월세 ").append(result.canceled()).append("건이 취소됐어요.");
+		}
+		if (result.keptWithPayments() > 0) {
+			text.append(" 입금 기록이 있는 이후 달 받을 월세 ").append(result.keptWithPayments()).append("건은 그대로 두었어요. 직접 확인해 주세요.");
+		}
+		return text.toString();
+	}
+
 	private static String backToDetail(long id, RedirectAttributes redirect, String notice) {
 		redirect.addFlashAttribute("notice", notice);
 		return "redirect:/app/leases/" + id;
@@ -209,6 +237,7 @@ public class LeaseChangeController {
 			case FIRST_MONTH -> "첫 달 금액은 [계약 고치기]에서 고쳐 주세요";
 			case AFTER_LEASE -> "계약 기간 안의 달을 골라 주세요";
 			case ALREADY_STARTED -> "이미 적용 중인 달의 금액은 바꿀 수 없어요. 다음 달 이후로 골라 주세요";
+			case ALREADY_CHARGED -> "받을 월세가 이미 만들어진 달이에요. 그 다음 달부터 골라 주세요";
 			case NOT_FOUND -> throw new ResourceNotFoundException("rent history");
 		};
 	}

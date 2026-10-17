@@ -21,4 +21,16 @@ public interface ChargeRepository extends Repository<Charge, Long> {
 	@Query("select c.billingMonth from Charge c where c.leaseId = :leaseId and c.landlordId = :landlordId")
 	List<LocalDate> billingMonths(@Param("leaseId") long leaseId, @Param("landlordId") long landlordId);
 
+	boolean existsByLeaseIdAndLandlordId(long leaseId, long landlordId);
+
+	boolean existsByLeaseIdAndLandlordIdAndBillingMonth(long leaseId, long landlordId, LocalDate billingMonth);
+
+	/** 계약의 가장 늦은 청구 달 (취소 포함, 그 달 1일) */
+	@Query("select max(c.billingMonth) from Charge c where c.leaseId = :leaseId and c.landlordId = :landlordId")
+	Optional<LocalDate> latestBillingMonth(@Param("leaseId") long leaseId, @Param("landlordId") long landlordId);
+
+	/** 그 달 뒤의 청구 (달 순) */
+	List<Charge> findByLeaseIdAndLandlordIdAndBillingMonthAfterOrderByBillingMonth(long leaseId, long landlordId,
+			LocalDate billingMonth);
+
 }

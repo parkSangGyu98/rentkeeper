@@ -11,7 +11,10 @@
 			<li>잘못 등록한 계약을 지울 때만 쓰세요. 세입자가 나갔다면 [계약 종료]를 쓰세요.</li>
 			<li>지우면 월세 변경 이력도 함께 지워지고 되돌릴 수 없어요.</li>
 		</ul>
-		<form th:action="@{/app/leases/{id}/delete(id=${lease.id()})}" method="post" class="mb-4">
+		<div th:if="${hasCharges}" class="alert alert-error mb-6 text-xl" role="alert">
+			받을 월세가 만들어진 계약은 지울 수 없어요. 세입자가 나갔다면 [계약 종료]를 눌러 주세요.
+		</div>
+		<form th:unless="${hasCharges}" th:action="@{/app/leases/{id}/delete(id=${lease.id()})}" method="post" class="mb-4">
 			<button type="submit" class="btn btn-danger w-full">네, 지울게요</button>
 		</form>
 		<a th:href="@{/app/leases/{id}(id=${lease.id()})}" class="btn btn-secondary w-full">지우지 않고 돌아가기</a>

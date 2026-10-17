@@ -62,15 +62,18 @@ public class LeaseService {
 
 	private final KeyedHasher hasher;
 
+	private final ChargedMonths chargedMonths;
+
 	private final Clock clock;
 
 	public LeaseService(LeaseRepository leases, TenantRepository tenants, LeaseRentHistoryRepository histories,
-			PropertyService propertyService, KeyedHasher hasher, Clock clock) {
+			PropertyService propertyService, KeyedHasher hasher, ChargedMonths chargedMonths, Clock clock) {
 		this.leases = leases;
 		this.tenants = tenants;
 		this.histories = histories;
 		this.propertyService = propertyService;
 		this.hasher = hasher;
+		this.chargedMonths = chargedMonths;
 		this.clock = clock;
 	}
 
@@ -159,10 +162,12 @@ public class LeaseService {
 		YearMonth thisMonth = YearMonth.now(clock);
 		List<LeaseRentHistory> history = histories.findByLeaseIdAndLandlordIdOrderByEffectiveFromAsc(leaseId,
 				landlordId);
+		// 청구가 생긴 달 이하의 변경은 취소할 수 없다 (M3 결정 13)
+		Optional<YearMonth> lastCharged = chargedMonths.latest(landlordId, leaseId);
 		List<RentRow> rows = history.stream()
 				.map(h -> new RentRow(h.getId(), h.effectiveMonth(), h.getMonthlyRent(), h.getMaintenanceFee(),
-						h.getReason(),
-						lease.isActive() && h != history.get(0) && h.effectiveMonth().isAfter(thisMonth)))
+						h.getReason(), lease.isActive() && h != history.get(0) && h.effectiveMonth().isAfter(thisMonth)
+								&& lastCharged.map(m -> h.effectiveMonth().isAfter(m)).orElse(true)))
 				.toList();
 		// 이번 달 금액: 이번 달 이하에서 가장 최근 행. 아직 들어오기 전 계약이면 첫 행
 		RentRow current = rows.stream().filter(r -> !r.effectiveMonth().isAfter(thisMonth))

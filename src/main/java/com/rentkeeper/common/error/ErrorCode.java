@@ -29,4 +29,8 @@ public enum ErrorCode {
 
 	LEASE_ENDED,
 
+	LEASE_HAS_CHARGES,
+
+	FIRST_MONTH_CHARGED,
+
 }
