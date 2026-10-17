@@ -17,6 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.rentkeeper.TestcontainersConfiguration;
+import com.rentkeeper.support.TestData;
 
 /**
  * 가입·로그인 과정에서 원문 비밀번호가 로그에 남지 않는지 확인한다 (PRD 0장 7번). 보안·웹 로그를 DEBUG로 켜서, 운영보다 더
@@ -39,8 +40,7 @@ class PasswordNotLoggedTests {
 
 	@Test
 	void rawPasswordNeverAppearsInLogs(CapturedOutput output) throws Exception {
-		jdbcTemplate.update("delete from spring_session");
-		jdbcTemplate.update("delete from landlord");
+		TestData.reset(jdbcTemplate);
 
 		// 가입 실패(확인 불일치) → 가입 성공 → 로그인 실패 → 로그인 성공
 		mockMvc.perform(post("/signup").with(csrf()).param("email", "log@example.com").param("password", SECRET)

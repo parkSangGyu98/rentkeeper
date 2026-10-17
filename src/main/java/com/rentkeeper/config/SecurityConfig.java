@@ -9,7 +9,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+
+import com.rentkeeper.auth.web.LoginRateLimitFilter;
+import com.rentkeeper.common.ratelimit.RateLimiter;
 
 import jakarta.servlet.DispatcherType;
 
@@ -43,7 +47,10 @@ public class SecurityConfig {
 	static final int BCRYPT_STRENGTH = 12;
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimiter rateLimiter) throws Exception {
+		// 로그인 시도 IP 한도 (ADR-012). 빈으로 등록하지 않는다: 빈이면 서블릿 필터로도 자동 등록되어 두 번 실행된다
+		http.addFilterBefore(new LoginRateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class);
+
 		http.authorizeHttpRequests(authorize -> authorize
 				// 오류 화면 전달(/error)과 내부 forward는 원래 요청에서 이미 권한 검사를 거쳤다
 				.dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()

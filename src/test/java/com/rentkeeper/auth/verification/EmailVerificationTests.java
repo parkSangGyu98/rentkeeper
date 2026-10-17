@@ -32,6 +32,7 @@ import com.rentkeeper.support.MutableClock;
 import com.rentkeeper.support.MutableClockConfiguration;
 import com.rentkeeper.support.RecordingEmailSender;
 import com.rentkeeper.support.RecordingEmailSenderConfiguration;
+import com.rentkeeper.support.TestData;
 
 /**
  * 이메일 인증: 가입 시 인증 메일, GET 확인 / POST 인증, 만료·재사용, 미인증 안내 띠, 재발송, 알림 주소 규칙.
@@ -65,8 +66,7 @@ class EmailVerificationTests {
 	@BeforeEach
 	void signUp() throws Exception {
 		clock.set(MutableClockConfiguration.START);
-		jdbcTemplate.update("delete from spring_session");
-		jdbcTemplate.update("delete from landlord");
+		TestData.reset(jdbcTemplate);
 		mails.clear();
 		mockMvc.perform(post("/signup").with(csrf()).param("email", "Kim@Example.com").param("password", PASSWORD)
 				.param("passwordConfirm", PASSWORD).param("name", "김임대").param("agreeTerms", "true"))

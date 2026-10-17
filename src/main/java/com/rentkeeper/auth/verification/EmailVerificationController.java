@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.rentkeeper.auth.security.LandlordPrincipal;
+import com.rentkeeper.common.ratelimit.RateLimitRule;
+import com.rentkeeper.common.ratelimit.RateLimiter;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -23,8 +25,11 @@ public class EmailVerificationController {
 
 	private final EmailVerificationService verificationService;
 
-	public EmailVerificationController(EmailVerificationService verificationService) {
+	private final RateLimiter rateLimiter;
+
+	public EmailVerificationController(EmailVerificationService verificationService, RateLimiter rateLimiter) {
 		this.verificationService = verificationService;
+		this.rateLimiter = rateLimiter;
 	}
 
 	@GetMapping("/verify-email")
@@ -50,6 +55,11 @@ public class EmailVerificationController {
 
 	@PostMapping("/app/email-verification/resend")
 	public String resend(@AuthenticationPrincipal LandlordPrincipal principal, RedirectAttributes redirect) {
+		if (!rateLimiter.tryAcquire(RateLimitRule.VERIFICATION_RESEND_PER_ACCOUNT,
+				String.valueOf(principal.getLandlordId()))) {
+			redirect.addFlashAttribute("notice", "인증 메일은 1시간에 3번까지 받을 수 있어요. 잠시 후 다시 시도해 주세요.");
+			return "redirect:/app";
+		}
 		if (verificationService.sendVerification(principal.getLandlordId())) {
 			redirect.addFlashAttribute("notice", "인증 메일을 다시 보냈어요. 메일함(스팸함 포함)을 확인해 주세요.");
 		}

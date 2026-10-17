@@ -30,6 +30,7 @@ import com.rentkeeper.TestcontainersConfiguration;
 import com.rentkeeper.auth.security.LandlordPrincipal;
 import com.rentkeeper.landlord.application.LandlordService;
 import com.rentkeeper.landlord.domain.EmailAddress;
+import com.rentkeeper.support.TestData;
 
 import jakarta.servlet.http.Cookie;
 
@@ -59,8 +60,7 @@ class SecurityTests {
 
 	@BeforeEach
 	void setUp() {
-		jdbcTemplate.update("delete from spring_session");
-		jdbcTemplate.update("delete from landlord");
+		TestData.reset(jdbcTemplate);
 		landlordId = landlordService.registerLocal(EmailAddress.of("kim@example.com"), passwordEncoder.encode(PASSWORD),
 				"김임대");
 	}

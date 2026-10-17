@@ -25,6 +25,9 @@
 			<button type="submit" class="btn btn-primary w-full">로그인</button>
 		</form>
 
+		<!-- 계정 상태(잠김 여부)가 아니라 정책만 항상 안내한다 (ADR-012) -->
+		<p class="mt-6 text-base text-gray-700">비밀번호를 5번 틀리면 15분 동안 로그인이 제한돼요.</p>
+
 		<p class="mt-8 text-lg">
 			아직 가입하지 않으셨나요? <a th:href="@{/signup}" class="font-semibold text-brand-700 underline">가입하기</a>
 		</p>
