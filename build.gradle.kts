@@ -56,7 +56,7 @@ dependencies {
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")
 	// 모듈 의존 방향·now() 금지 규칙을 테스트로 강제한다 (ADR-020). Boot BOM에 없어 버전을 직접 적는다
-	testImplementation("com.tngtech.archunit:archunit-junit5:1.4.2")
+	testImplementation("com.tngtech.archunit:archunit-junit5:1.5.1")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
