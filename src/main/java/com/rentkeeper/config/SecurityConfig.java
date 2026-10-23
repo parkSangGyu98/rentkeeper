@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.NullSecurityContextRepository;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 
 import com.rentkeeper.auth.kakao.KakaoLoginSuccessHandler;
 import com.rentkeeper.auth.kakao.KakaoOAuth2UserService;
@@ -92,8 +93,36 @@ public class SecurityConfig {
 		return http.build();
 	}
 
+	static final String TENANT_LINK_PATHS = "/t/**";
+
+	/** 세입자 링크 화면은 검색엔진이 모으거나 보관하지 않게 한다 (PRD 4.7) */
+	static final String ROBOTS = "noindex, nofollow, noarchive";
+
+	/**
+	 * 세입자 링크 전용 체인 (M4 결정 8, ADR-026). 세입자는 로그인하지 않고 URL의 토큰으로만 들어온다.
+	 * <ul>
+	 * <li>세션·로그인 유지·요청 저장을 쓰지 않는다: 세입자마다 세션이 생기지 않고, 임대인 쿠키가 있어도 무시한다</li>
+	 * <li>CSRF 토큰을 쓰지 않는다: 브라우저가 자동으로 붙이는 인증 정보(쿠키)가 없고, 비밀은 URL의 토큰이다. 세입자 POST는
+	 * Origin 헤더로 같은 출처만 받는다(M4 커밋 3)</li>
+	 * <li>Referrer-Policy: no-referrer (링크 주소가 다른 사이트로 새지 않게), X-Robots-Tag, 캐시
+	 * 금지(Spring Security 기본 Cache-Control: no-store)</li>
+	 * </ul>
+	 */
 	@Bean
 	@Order(2)
+	SecurityFilterChain tenantLinkFilterChain(HttpSecurity http) throws Exception {
+		http.securityMatcher(TENANT_LINK_PATHS).authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+				.csrf(csrf -> csrf.disable()).requestCache(cache -> cache.disable())
+				.securityContext(context -> context.securityContextRepository(new NullSecurityContextRepository()))
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+		http.headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY))
+				.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER))
+				.frameOptions(frame -> frame.deny()).addHeaderWriter(new StaticHeadersWriter("X-Robots-Tag", ROBOTS)));
+		return http.build();
+	}
+
+	@Bean
+	@Order(3)
 	SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimiter rateLimiter,
 			RememberMeServices rememberMeServices, ObjectProvider<ClientRegistrationRepository> clientRegistrations,
 			KakaoOAuth2UserService kakaoUserService, KakaoLoginSuccessHandler kakaoSuccessHandler,

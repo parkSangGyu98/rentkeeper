@@ -26,6 +26,10 @@ public interface ChargeRepository extends Repository<Charge, Long> {
 
 	Optional<Charge> findByLeaseIdAndLandlordIdAndBillingMonth(long leaseId, long landlordId, LocalDate billingMonth);
 
+	/** 한 계약의 [from, to] 달 받을 월세, 달 순 (세입자 화면, M4 결정 6) */
+	List<Charge> findByLeaseIdAndLandlordIdAndBillingMonthBetweenOrderByBillingMonthAsc(long leaseId, long landlordId,
+			LocalDate from, LocalDate to);
+
 	boolean existsByLeaseIdAndLandlordId(long leaseId, long landlordId);
 
 	boolean existsByLeaseIdAndLandlordIdAndBillingMonth(long leaseId, long landlordId, LocalDate billingMonth);

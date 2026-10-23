@@ -5,7 +5,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +25,8 @@ import com.rentkeeper.billing.application.ChargeViews.MonthView;
 import com.rentkeeper.billing.application.ChargeViews.PaymentRow;
 import com.rentkeeper.billing.application.ChargeViews.StatusFilter;
 import com.rentkeeper.billing.application.ChargeViews.StatusHistoryRow;
+import com.rentkeeper.billing.application.TenantChargeViews.TenantCharge;
+import com.rentkeeper.billing.application.TenantChargeViews.TenantItem;
 import com.rentkeeper.billing.domain.Charge;
 import com.rentkeeper.billing.domain.ChargeItemHistoryRepository;
 import com.rentkeeper.billing.domain.ChargeItemRepository;
@@ -133,6 +137,47 @@ public class ChargeQueryService {
 				lease.tenantName(), charge.getBillingMonth(), charge.getDueDate(), charge.getStatus(),
 				charge.getTotalAmount(), charge.getPaidAmount(), charge.getCancelReason(), itemRows, paymentRows,
 				YearMonth.from(lease.startDate()).atDay(1), statusRows, itemHistoryRows);
+	}
+
+	/** 세입자 화면이 보는 지난 달 수 (M4 결정 6) */
+	public static final int TENANT_MONTHS = 12;
+
+	/**
+	 * 세입자가 지금 볼 받을 월세 (M4 결정 6): 이번 달 것(다 확인됐어도), 그리고 아직 다 확인되지 않은 지난
+	 * {@value #TENANT_MONTHS}개 달·다음 달 것. 취소한 것은 보이지 않는다. 범위는 링크가 가리키는 계약 하나다.
+	 */
+	public List<TenantCharge> tenantDue(long landlordId, long leaseId) {
+		YearMonth thisMonth = thisMonth();
+		return tenantCharges(landlordId, leaseId, thisMonth.minusMonths(TENANT_MONTHS), thisMonth.plusMonths(1))
+				.stream().filter(
+						c -> c.getBillingMonth().equals(thisMonth) || c.getStatus() != ChargeStatus.PAID)
+				.map(c -> tenantCharge(c, items.findByChargeIdAndLandlordIdOrderByIdAsc(c.getId(), landlordId).stream()
+						.map(i -> new TenantItem(i.getLabel(), i.getAmount())).toList()))
+				.toList();
+	}
+
+	/**
+	 * 세입자의 지난 기록: 최근 {@value #TENANT_MONTHS}개월(다음 달 포함), 최근 달이 위. 취소한 것은 보이지 않는다
+	 */
+	public List<TenantCharge> tenantHistory(long landlordId, long leaseId) {
+		YearMonth thisMonth = thisMonth();
+		List<TenantCharge> rows = new ArrayList<>(
+				tenantCharges(landlordId, leaseId, thisMonth.minusMonths(TENANT_MONTHS - 1), thisMonth.plusMonths(1))
+						.stream().map(c -> tenantCharge(c, List.of())).toList());
+		Collections.reverse(rows);
+		return rows;
+	}
+
+	private List<Charge> tenantCharges(long landlordId, long leaseId, YearMonth from, YearMonth to) {
+		return charges
+				.findByLeaseIdAndLandlordIdAndBillingMonthBetweenOrderByBillingMonthAsc(leaseId, landlordId,
+						from.atDay(1), to.atDay(1))
+				.stream().filter(c -> c.getStatus() != ChargeStatus.CANCELED).toList();
+	}
+
+	private static TenantCharge tenantCharge(Charge c, List<TenantItem> itemRows) {
+		return new TenantCharge(c.getId(), c.getBillingMonth(), c.getDueDate(), c.getTotalAmount(), c.getPaidAmount(),
+				c.getStatus(), itemRows);
 	}
 
 	/** 지금 상태 (충돌 안내 문구를 고를 때) */

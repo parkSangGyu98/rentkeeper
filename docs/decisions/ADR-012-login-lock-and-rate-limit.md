@@ -45,6 +45,7 @@
 | 재설정 요청 (POST /password-reset) | IP | 1시간에 10회 | 429 안내 화면 |
 | 재설정 요청 (POST /password-reset) | 이메일(SHA-256 키) | 1시간에 3회 | 항상 같은 안내 문구, 메일만 안 보냄 |
 | 재설정 완료 (POST /password-reset/confirm) | IP | 1시간에 20회 | 429 안내 화면 |
+| 세입자 링크 `/t/**` 모든 요청 (M4 결정 9, 토큰이 틀려도 센다) | IP | 1분에 30회 | 세입자용 429 화면 |
 
 - 로그인 IP 한도는 Spring Security 필터(`LoginRateLimitFilter`)에서, 나머지는 컨트롤러에서 적용한다. 필터는 빈으로 등록하지 않는다(빈이면 서블릿 필터로도 자동 등록돼 두 번 실행된다).
 - IP는 `ClientIp` 한 곳에서 `getRemoteAddr()`로 읽는다.

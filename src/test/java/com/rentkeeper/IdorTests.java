@@ -2,8 +2,10 @@ package com.rentkeeper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -26,8 +28,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import com.rentkeeper.common.crypto.SecureTokens;
 import com.rentkeeper.landlord.application.LandlordService;
 import com.rentkeeper.lease.application.LeaseChangeService;
 import com.rentkeeper.lease.application.LeaseService;
@@ -106,6 +110,12 @@ class IdorTests {
 
 	Map<String, String> victimIds;
 
+	/** 피해자 계약의 열린 세입자 링크 원문 (기간이 지나면 열리지 않아야 한다) */
+	String victimToken;
+
+	/** 피해자 계약의 닫힌 세입자 링크 원문 */
+	String revokedVictimToken;
+
 	@BeforeEach
 	void setUp() throws Exception {
 		clock.set(MutableClockConfiguration.START);
@@ -121,8 +131,11 @@ class IdorTests {
 		long lease = leaseService.register(victim.landlordId(), new LeaseRegistration(unit, new PersonName("피해자세입자"),
 				PhoneNumber.parse("01011112222"), null, 500000, 0, terms, false));
 		leaseChangeService.changeRent(victim.landlordId(), lease, YearMonth.of(2027, 1), 550000, 0, null);
-		// 피해자 계약의 열린 세입자 링크 (공격자가 닫거나 바꾸지 못해야 한다)
-		tenantLinkService.issue(victim.landlordId(), lease, null);
+		// 피해자 계약의 세입자 링크: 닫힌 것 하나, 열린 것 하나 (공격자가 닫거나 바꾸지 못해야 한다)
+		revokedVictimToken = tenantLinkService.issue(victim.landlordId(), lease, null).rawToken();
+		long firstLink = jdbc.queryForObject("select id from tenant_access_token where lease_id = ?", Long.class,
+				lease);
+		victimToken = tenantLinkService.issue(victim.landlordId(), lease, firstLink).rawToken();
 		long history = jdbc.queryForObject(
 				"select id from lease_rent_history where lease_id = ? and effective_from = '2027-01-01'", Long.class,
 				lease);
@@ -299,6 +312,106 @@ class IdorTests {
 		covered.addAll(NO_FOREIGN_ID);
 		assertThat(covered).as("새 엔드포인트는 attacks() 표에 넣어 IDOR를 시험한다").containsAll(mapped);
 		assertThat(mapped).as("표에 없어진 엔드포인트가 남아 있지 않다").containsAll(covered);
+	}
+
+	// ---------------------------------------------------------------- 세입자 링크 (로그인
+	// 없이 토큰으로만, 별도 표)
+
+	/** 세입자 링크 엔드포인트의 경로 앞부분 */
+	private static final String TENANT_LINK_PREFIX = "/t/";
+
+	/**
+	 * (메서드 경로) → 공격 경로. {token} 자리에 쓸 수 없는 토큰을 넣는다. 메서드를 정하지 않은 매핑은 "ANY"이고
+	 * GET·POST 둘 다 보낸다.
+	 */
+	private static Map<String, String> tenantLinkAttacks() {
+		Map<String, String> attacks = new LinkedHashMap<>();
+		attacks.put("GET /t/{token}", "/t/{token}");
+		attacks.put("GET /t/{token}/history", "/t/{token}/history");
+		attacks.put("ANY /t/**", "/t/{token}/unknown");
+		return attacks;
+	}
+
+	@Test
+	void tenantLinkEndpointsRejectEveryUnusableTokenTheSameWay() throws Exception {
+		String before = snapshot();
+		String notFound = mockMvc.perform(get("/t/" + SecureTokens.newToken())).andReturn().getResponse()
+				.getContentAsString();
+		Map<String, String> unusable = new LinkedHashMap<>();
+		unusable.put("닫힌 링크", revokedVictimToken);
+		unusable.put("임의 토큰", SecureTokens.newToken());
+		unusable.put("형식 틀림", "abc");
+		List<String> failures = new ArrayList<>();
+
+		for (Map.Entry<String, String> endpoint : tenantLinkAttacks().entrySet()) {
+			for (Map.Entry<String, String> token : unusable.entrySet()) {
+				failures.addAll(tenantAttack(endpoint, token.getKey(), token.getValue(), notFound));
+			}
+		}
+		// 기간이 지난 열린 링크 (피해자 계약 끝 2027-07-01 + 90일 = 2027-09-29까지)
+		clock.set(Instant.parse("2027-09-29T15:00:00Z"));
+		for (Map.Entry<String, String> endpoint : tenantLinkAttacks().entrySet()) {
+			failures.addAll(tenantAttack(endpoint, "기간이 지난 링크", victimToken, notFound));
+		}
+
+		assertThat(failures).isEmpty();
+		assertThat(snapshot()).as("세입자 링크로 아무것도 바뀌지 않음").isEqualTo(before);
+	}
+
+	@Test
+	void ownTenantLinkShowsOnlyOwnLease() throws Exception {
+		long property = propertyService.create(attacker.landlordId(), new PropertyInput("공격자빌라", "서울", null));
+		long unit = propertyService.addUnit(attacker.landlordId(), property,
+				new UnitInput("201호", UnitType.ONE_ROOM, null));
+		LeaseTerms terms = new LeaseTerms(0, 5, LocalDate.of(2026, 1, 1), LocalDate.of(2027, 1, 1), "국민은행",
+				new AccountNumber("9999999999"), new PersonName("공격자"), null);
+		long own = leaseService.register(attacker.landlordId(), new LeaseRegistration(unit, new PersonName("공격자세입자"),
+				PhoneNumber.parse("01099998888"), null, 1, 0, terms, false));
+		String ownToken = tenantLinkService.issue(attacker.landlordId(), own, null).rawToken();
+
+		String body = mockMvc.perform(get("/t/" + ownToken)).andReturn().getResponse().getContentAsString();
+
+		assertThat(body).contains("공격자빌라").doesNotContain("피해자").doesNotContain("1234567890");
+	}
+
+	@Test
+	void everyTenantLinkEndpointIsInTheTenantTable() {
+		Set<String> mapped = new TreeSet<>();
+		handlerMapping.getHandlerMethods().keySet().forEach(info -> info.getPatternValues().forEach(pattern -> {
+			if (pattern.startsWith(TENANT_LINK_PREFIX)) {
+				Set<RequestMethod> methods = info.getMethodsCondition().getMethods();
+				if (methods.isEmpty()) {
+					mapped.add("ANY " + pattern);
+				}
+				methods.forEach(method -> mapped.add(method.name() + " " + pattern));
+			}
+		}));
+		assertThat(mapped).as("세입자 링크 엔드포인트가 있어야 한다").isNotEmpty();
+		assertThat(tenantLinkAttacks().keySet()).as("새 세입자 링크 엔드포인트는 tenantLinkAttacks() 표에 넣는다").containsAll(mapped);
+		assertThat(mapped).as("표에 없어진 엔드포인트가 남아 있지 않다").containsAll(tenantLinkAttacks().keySet());
+	}
+
+	/** 쓸 수 없는 토큰으로 부르면 404이고, 본문은 임의 토큰의 404와 같고, 피해자 데이터가 없다. 공격자 쿠키는 영향이 없다 */
+	private List<String> tenantAttack(Map.Entry<String, String> endpoint, String tokenName, String token,
+			String notFound) throws Exception {
+		List<String> failures = new ArrayList<>();
+		String path = endpoint.getValue().replace("{token}", token);
+		List<HttpMethod> methods = endpoint.getKey().startsWith("ANY ")
+				? List.of(HttpMethod.GET, HttpMethod.POST)
+				: List.of(HttpMethod.valueOf(endpoint.getKey().substring(0, endpoint.getKey().indexOf(' '))));
+		for (HttpMethod method : methods) {
+			MvcResult result = mockMvc.perform(request(method, path).cookie(attacker.cookie())).andReturn();
+			String label = endpoint.getKey() + " [" + tokenName + ", " + method + "]";
+			if (result.getResponse().getStatus() != 404) {
+				failures.add(label + " → " + result.getResponse().getStatus() + " (404여야 함)");
+			} else if (!result.getResponse().getContentAsString().equals(notFound)) {
+				failures.add(label + " → 404 본문이 임의 토큰의 404와 다름");
+			}
+			if (result.getResponse().getContentAsString().contains("피해자")) {
+				failures.add(label + " → 피해자 데이터가 응답에 보임");
+			}
+		}
+		return failures;
 	}
 
 	// ---------------------------------------------------------------- 도우미

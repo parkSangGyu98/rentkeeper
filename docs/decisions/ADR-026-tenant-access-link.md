@@ -30,6 +30,17 @@
 - **세입자가 한 일의 이력**: 상태 이력의 `actor_type = TENANT`, `actor_id` = 쓴 링크의 `tenant_access_token.id`(M4 결정 12, V17에서 컬럼 설명 갱신).
 - **마지막으로 연 날**: 세입자가 링크를 열 때 `last_used_at`을 서울 날짜 기준 하루에 한 번만 갱신한다(GET마다 쓰기가 생기지 않게). 계약 상세에 "세입자가 마지막으로 열어 본 날"로 보인다.
 
+- **세입자 화면의 입구** (M4 커밋 2)
+  - `TenantAccessService.open`이 토큰 형식 → 해시로 찾기 → 열림·기간 확인을 하고, 링크가 가리키는 (landlordId, leaseId)만 담은 `TenantAccess`를 돌려준다. 이후 모든 조회는 이 값으로 한다.
+  - `TenantAccessTokenRepository.findByTokenHash`는 "소유 저장소는 landlordId 없이 찾지 않는다" 규칙(ADR-018)의 **유일한 예외**다. `OwnedRepositoryConventionTest`에 이름과 이유를 적었다.
+  - 형식이 틀린·없는·닫힌·기간이 지난 링크, `/t/` 아래의 없는 주소는 모두 같은 404 화면이다.
+- **보안 체인** (`/t/**`, `SecurityConfig.tenantLinkFilterChain`)
+  - 세션·로그인 유지·요청 저장·CSRF 토큰을 쓰지 않는다. 세입자 POST는 Origin 헤더로 같은 출처만 받는다(커밋 3).
+  - `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow, noarchive`, `Cache-Control: no-store`, 기존 CSP를 붙인다. 화면에는 외부 주소가 없다(테스트).
+  - 세입자 화면은 로그인 정보(auth)를 전혀 쓰지 않는다(ArchUnit `tenantLinkUsesNoLoginInfo`).
+- **요청 수**: `/t/**`의 모든 요청을 IP당 1분에 30회로 센다(`TenantLinkRateLimitInterceptor`, ADR-012 표). 토큰을 확인하기 전에 센다.
+- **로그**: 세입자 화면의 오류는 토큰을 가린 주소(`TenantPaths.mask`)와 예외 종류만 남긴다. 예외 메시지·스택에 경로 값이 섞일 수 있어 그대로 넘기지 않는다. Caddy 접근 로그는 M6에서 가린다.
+
 ## 검토한 대안
 - **원문을 암호화해 저장하고 다시 보여 주기**: 임대인은 편하지만, DB와 키가 함께 새면 모든 링크가 열린다. 해시만 저장하라는 PRD 요구와도 맞지 않아 쓰지 않았다.
 - **계약 등록 때 자동 발급**: 원문을 보여 줄 기회가 없어 쓰지 않았다(M4 결정 1).
