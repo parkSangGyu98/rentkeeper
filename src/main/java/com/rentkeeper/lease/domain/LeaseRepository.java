@@ -5,9 +5,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 /** 계약 저장소. landlordId 없이 조회할 방법이 없다 (ADR-018) */
 public interface LeaseRepository extends Repository<Lease, Long> {
@@ -20,6 +23,18 @@ public interface LeaseRepository extends Repository<Lease, Long> {
 
 	Optional<Lease> findByIdAndLandlordId(long id, long landlordId);
 
+	/** 계약의 호실 ID (엔티티를 읽지 않고). 수정·종료가 호실 → 계약 순서로 잠그기 전에 쓴다 */
+	@Query("select l.unitId from Lease l where l.id = :id and l.landlordId = :landlordId")
+	Optional<Long> findUnitIdByIdAndLandlordId(@Param("id") long id, @Param("landlordId") long landlordId);
+
+	/**
+	 * 계약 행을 잠그고 가져온다 (청구 생성 배치, ADR-024). 배치가 청구를 만드는 동안 같은 계약의 수정·종료는 기다리고, 수정·종료가
+	 * 먼저 잠갔으면 배치가 기다린 뒤 바뀐 조건으로 계산한다.
+	 */
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select l from Lease l where l.id = :id and l.landlordId = :landlordId")
+	Optional<Lease> lockByIdAndLandlordId(@Param("id") long id, @Param("landlordId") long landlordId);
+
 	/** 호실의 모든 계약 (종료 포함), 들어오는 날 최근 순 */
 	List<Lease> findByUnitIdAndLandlordIdOrderByStartDateDesc(long unitId, long landlordId);
 
@@ -27,6 +42,8 @@ public interface LeaseRepository extends Repository<Lease, Long> {
 	List<Lease> findByTenantIdAndLandlordId(long tenantId, long landlordId);
 
 	List<Lease> findByLandlordIdAndStatusAndUnitIdIn(long landlordId, LeaseStatus status, Collection<Long> unitIds);
+
+	List<Lease> findByLandlordIdAndIdIn(long landlordId, Collection<Long> ids);
 
 	/** 같은 임대인의 가장 최근 계약 (계좌 미리 채우기, M2 결정 20) */
 	Optional<Lease> findFirstByLandlordIdOrderByIdDesc(long landlordId);

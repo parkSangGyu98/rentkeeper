@@ -67,6 +67,7 @@ public class LeaseController {
 		model.addAttribute("existingTenant",
 				leaseService.existingTenant(landlordId, registration.tenantPhone()).orElse(null));
 		model.addAttribute("registration", registration);
+		model.addAttribute("thisMonthNotAutomatic", leaseService.thisMonthNotAutomatic(registration.terms()));
 		return "lease/confirm";
 	}
 
@@ -101,6 +102,7 @@ public class LeaseController {
 			model.addAttribute("existingTenant",
 					leaseService.existingTenant(landlordId, registration.tenantPhone()).orElse(e.existing()));
 			model.addAttribute("registration", registration);
+			model.addAttribute("thisMonthNotAutomatic", leaseService.thisMonthNotAutomatic(registration.terms()));
 			return "lease/confirm";
 		}
 		redirect.addFlashAttribute("notice", "계약을 등록했어요.");

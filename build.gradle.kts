@@ -46,6 +46,9 @@ dependencies {
 	implementation("org.flywaydb:flyway-database-postgresql")
 	// 세션을 DB에 저장한다 (ADR-005). 서버 재시작·증설에도 로그인이 유지된다
 	implementation("org.springframework.boot:spring-boot-starter-session-jdbc")
+	// 배치 중복 실행 방지 잠금 (ADR-022). Boot BOM에 없어 버전을 직접 적는다. 7.10.1은 Boot 4.1.1·Spring 7.0.9로 빌드·테스트된 릴리스다
+	implementation("net.javacrumbs.shedlock:shedlock-spring:7.10.1")
+	implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:7.10.1")
 	runtimeOnly("org.postgresql:postgresql")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -61,8 +64,25 @@ dependencies {
 }
 
 tasks.withType<Test> {
-	useJUnitPlatform()
 	jvmArgs(seoulTimeZone)
+}
+
+// 처리량 측정(@Tag("perf"))은 오래 걸려 일반 빌드에서 뺀다. 필요할 때 perfTest로 따로 돌린다 (ADR-024)
+tasks.test {
+	useJUnitPlatform {
+		excludeTags("perf")
+	}
+}
+
+tasks.register<Test>("perfTest") {
+	description = "청구 배치 처리량 측정 (계약 2만 건)"
+	group = "verification"
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
+	useJUnitPlatform {
+		includeTags("perf")
+	}
+	testLogging.showStandardStreams = true
 }
 
 tasks.named<BootRun>("bootRun") {

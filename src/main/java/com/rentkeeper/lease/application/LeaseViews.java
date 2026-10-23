@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.rentkeeper.common.money.Won;
 import com.rentkeeper.lease.domain.AccountNumber;
+import com.rentkeeper.lease.domain.Lease;
 import com.rentkeeper.lease.domain.LeaseStatus;
 import com.rentkeeper.lease.domain.LeaseTerms;
 import com.rentkeeper.lease.domain.PersonName;
@@ -23,9 +24,26 @@ public final class LeaseViews {
 	private LeaseViews() {
 	}
 
+	/**
+	 * 계약 등록 입력 (검증을 마친 값).
+	 *
+	 * @param issueDaysBefore
+	 *            납부일 며칠 전에 받을 월세를 만들지 (0~28, 기본 7)
+	 */
 	/** 계약 등록 입력 (검증을 마친 값) */
 	public record LeaseRegistration(long unitId, PersonName tenantName, PhoneNumber tenantPhone, PrivateMemo tenantMemo,
-			long monthlyRent, long maintenanceFee, LeaseTerms terms, boolean useExistingTenant) {
+			long monthlyRent, long maintenanceFee, LeaseTerms terms, boolean useExistingTenant, int issueDaysBefore) {
+
+		/** 받을 월세를 기본(납부일 7일 전)에 만드는 등록 */
+		public LeaseRegistration(long unitId, PersonName tenantName, PhoneNumber tenantPhone, PrivateMemo tenantMemo,
+				long monthlyRent, long maintenanceFee, LeaseTerms terms, boolean useExistingTenant) {
+			this(unitId, tenantName, tenantPhone, tenantMemo, monthlyRent, maintenanceFee, terms, useExistingTenant,
+					Lease.DEFAULT_ISSUE_DAYS_BEFORE);
+		}
+
+		public String issueDaysText() {
+			return LeaseViews.issueDaysText(issueDaysBefore);
+		}
 
 		public String depositText() {
 			return Won.format(terms.deposit()) + " (" + Won.korean(terms.deposit()) + ")";
@@ -47,6 +65,69 @@ public final class LeaseViews {
 		public String toString() {
 			return "LeaseRegistration[unitId=" + unitId + ", tenantName=" + tenantName + ", tenantPhone=" + tenantPhone
 					+ "]";
+		}
+
+	}
+
+	/**
+	 * 받을 월세가 없는 달 (계약 상세의 [이번 달 받을 월세 만들기] 배너, M3-b 결정 11).
+	 *
+	 * @param thisMonthDueDate
+	 *            이번 달 납부일 (이번 달 받을 월세가 없고 납부일이 지났을 때만, 아니면 null)
+	 * @param recentMonths
+	 *            최근 3개월(이번 달 제외) 중 받을 월세가 없는 달
+	 */
+	public record MissingCharges(LocalDate thisMonthDueDate, List<YearMonth> recentMonths) {
+
+		public static final MissingCharges NONE = new MissingCharges(null, List.of());
+
+		public boolean thisMonthMissing() {
+			return thisMonthDueDate != null;
+		}
+
+		public boolean any() {
+			return thisMonthMissing() || !recentMonths.isEmpty();
+		}
+
+		/** "2026-10" (수동 생성 화면 주소) */
+		public String thisMonthParam() {
+			return YearMonth.from(thisMonthDueDate).toString();
+		}
+
+		public String thisMonthDueText() {
+			return thisMonthDueDate.getMonthValue() + "월 " + thisMonthDueDate.getDayOfMonth() + "일";
+		}
+
+		/** "2026년 8월, 9월" */
+		public String recentMonthsText() {
+			StringBuilder text = new StringBuilder();
+			int year = 0;
+			for (YearMonth m : recentMonths) {
+				if (!text.isEmpty()) {
+					text.append(", ");
+				}
+				if (year != m.getYear()) {
+					text.append(m.getYear()).append("년 ");
+					year = m.getYear();
+				}
+				text.append(m.getMonthValue()).append("월");
+			}
+			return text.toString();
+		}
+
+	}
+
+	/**
+	 * 다른 화면(받을 월세 목록 등)에 보일 계약 요약.
+	 *
+	 * @param startDate
+	 *            들어오는 날 (입금일 하한 = 그 달 1일, M3 결정 9)
+	 */
+	public record LeaseSummary(long leaseId, long unitId, String unitName, String tenantName, LocalDate startDate) {
+
+		@Override
+		public String toString() {
+			return "LeaseSummary[leaseId=" + leaseId + "]";
 		}
 
 	}
@@ -108,7 +189,7 @@ public final class LeaseViews {
 	public record LeaseDetail(long id, UnitView unit, String tenantName, String tenantPhone, String tenantMemo,
 			long deposit, int dueDay, LocalDate startDate, LocalDate endDate, LeaseStatus status, LocalDate endedOn,
 			String bankName, String accountNumber, String accountHolder, String memo, RentRow currentRent,
-			List<RentRow> rentHistory, List<RentRow> upcomingRent) {
+			List<RentRow> rentHistory, List<RentRow> upcomingRent, int issueDaysBefore, MissingCharges missing) {
 
 		public String depositText() {
 			return Won.format(deposit);
@@ -120,6 +201,10 @@ public final class LeaseViews {
 
 		public String dueDayText() {
 			return LeaseViews.dueDayText(dueDay);
+		}
+
+		public String issueDaysText() {
+			return LeaseViews.issueDaysText(issueDaysBefore);
 		}
 
 		public boolean active() {
@@ -149,7 +234,12 @@ public final class LeaseViews {
 			List<LeaseRow> leases) {
 	}
 
-	/** "매달 5일", 29일 이상이면 말일 보정 안내 (보정 계산은 M3) */
+	/** "매달 5일", 29일 이상이면 말일 보정 안내 (보정은 청구 계산과 같다, ADR-024) */
+	/** "납부일 7일 전" / "납부일 당일" */
+	public static String issueDaysText(int issueDaysBefore) {
+		return issueDaysBefore == 0 ? "납부일 당일" : "납부일 " + issueDaysBefore + "일 전";
+	}
+
 	public static String dueDayText(int dueDay) {
 		if (dueDay == 31) {
 			return "매달 31일 (31일이 없는 달은 그 달 마지막 날)";

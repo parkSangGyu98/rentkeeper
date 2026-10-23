@@ -50,6 +50,28 @@ public final class LeaseExceptions {
 
 	}
 
+	/** 청구(받을 월세)가 있는 계약은 지울 수 없다 (M2 결정 11). 계약이 끝났으면 종료를 쓴다 */
+	public static class LeaseHasChargesException extends BusinessException {
+
+		LeaseHasChargesException() {
+			super(ErrorCode.LEASE_HAS_CHARGES, "lease has charges");
+		}
+
+		LeaseHasChargesException(Throwable cause) {
+			super(ErrorCode.LEASE_HAS_CHARGES, "lease has charges", cause);
+		}
+
+	}
+
+	/** 첫 달 청구가 생긴 뒤에는 계약 수정에서 첫 달 금액을 고칠 수 없다. 그 달 청구의 항목에서 고친다 (M3 결정 12) */
+	public static class FirstMonthChargedException extends BusinessException {
+
+		FirstMonthChargedException() {
+			super(ErrorCode.FIRST_MONTH_CHARGED, "first month already charged");
+		}
+
+	}
+
 	/**
 	 * 같은 연락처의 세입자가 이미 있다. 그 세입자로 계약할지 확인받아야 한다 (M2 결정 6).
 	 * <p>

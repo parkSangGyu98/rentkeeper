@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>받을 월세 취소 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-4 text-3xl font-bold">이 받을 월세를 취소할까요?</h1>
+		<p class="mb-4 text-xl"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
+			· <span th:text="${charge.monthText()}">2026년 10월</span> · <span th:text="${charge.totalText()}">550,000원</span></p>
+
+		<!-- 입금 기록이 있으면 취소할 수 없다 (M3 결정 7) -->
+		<div th:unless="${charge.canCancel()}" class="alert alert-error mb-6 text-lg" role="alert">
+			입금 기록이 있어 취소할 수 없어요. 입금 기록을 먼저 지워 주세요.
+		</div>
+
+		<th:block th:if="${charge.canCancel()}">
+			<div class="alert alert-info mb-6 text-lg" role="status">
+				<p class="font-bold">이 달은 새로 만들 수 없어요. 금액이 틀렸다면 취소 대신 항목을 고치세요.</p>
+			</div>
+			<div class="alert alert-error mb-6 text-lg" role="alert" th:if="${error}" th:text="${error}">안내</div>
+			<form th:action="@{/app/charges/{id}/cancel(id=${charge.id()})}" method="post" class="space-y-6" novalidate>
+				<input type="hidden" name="version" th:value="${charge.version()}">
+				<div>
+					<label for="reason" class="form-label">취소 사유</label>
+					<p id="reason-hint" class="mb-2 text-base text-gray-700">예: 잘못 만듦, 이 달은 받지 않기로 함</p>
+					<input id="reason" type="text" name="reason" th:value="${reason}" class="form-input" aria-describedby="reason-hint">
+				</div>
+				<button type="submit" class="btn btn-danger w-full">네, 취소할게요</button>
+			</form>
+		</th:block>
+		<a th:href="@{/app/charges/{id}(id=${charge.id()})}" class="btn btn-secondary mt-4 w-full">취소하지 않고 돌아가기</a>
+	</main>
+</body>
+</html>

@@ -22,11 +22,12 @@ import org.springframework.data.repository.query.QueryByExampleExecutor;
  * {@code findById}·{@code findAll}처럼 landlordId 없이 꺼내는 메서드가 없다</li>
  * <li>저장·삭제(엔티티를 받음)와 flush를 뺀 모든 메서드는 {@code landlordId} 인자를 받는다</li>
  * </ul>
- * 대상: property·lease 모듈(앞으로 생길 billing 등 임대인 소유 모듈도 여기에 추가한다).
+ * 대상: property·lease·billing 모듈(앞으로 생길 임대인 소유 모듈도 여기에 추가한다).
  */
 class OwnedRepositoryConventionTest {
 
-	private static final String[] OWNED_MODULES = {"com.rentkeeper.property", "com.rentkeeper.lease"};
+	private static final String[] OWNED_MODULES = {"com.rentkeeper.property", "com.rentkeeper.lease",
+			"com.rentkeeper.billing"};
 
 	private static final Set<String> ENTITY_METHODS = Set.of("save", "saveAndFlush", "delete", "flush");
 

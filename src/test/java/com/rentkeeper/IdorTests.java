@@ -60,11 +60,15 @@ import com.rentkeeper.support.TestData;
 class IdorTests {
 
 	/** 소유 데이터 엔드포인트의 경로 앞부분 */
-	private static final List<String> OWNED_PREFIXES = List.of("/app/properties", "/app/units", "/app/leases");
+	private static final List<String> OWNED_PREFIXES = List.of("/app/properties", "/app/units", "/app/leases",
+			"/app/charges");
 
-	/** 남의 ID를 받지 않는 엔드포인트 (목록·새 화면·자기 건물 만들기). 여기에 넣을 때는 이유가 분명해야 한다 */
+	/**
+	 * 남의 ID를 받지 않는 엔드포인트 (목록·새 화면·자기 건물 만들기). 여기에 넣을 때는 이유가 분명해야 한다. 받을 월세 목록은 달만
+	 * 받고 로그인한 임대인 것만 보인다(chargeListShowsOnlyOwnCharges).
+	 */
 	private static final Set<String> NO_FOREIGN_ID = Set.of("GET /app/properties", "GET /app/properties/new",
-			"POST /app/properties");
+			"POST /app/properties", "GET /app/charges");
 
 	@Autowired
 	MockMvc mockMvc;
@@ -116,8 +120,22 @@ class IdorTests {
 		long history = jdbc.queryForObject(
 				"select id from lease_rent_history where lease_id = ? and effective_from = '2027-01-01'", Long.class,
 				lease);
+		// 피해자의 10월 받을 월세
+		long charge = jdbc.queryForObject("insert into charge (landlord_id, lease_id, billing_month, due_date, "
+				+ "total_amount, status, source, issued_at, created_at, updated_at) values (?, ?, '2026-10-01', "
+				+ "'2026-10-05', 500000, 'ISSUED', 'AUTO', now(), now(), now()) returning id", Long.class,
+				victim.landlordId(), lease);
+		long payment = jdbc.queryForObject(
+				"insert into payment_record (landlord_id, charge_id, amount, paid_on, source, "
+						+ "created_at, updated_at) values (?, ?, 100000, '2026-10-05', 'MANUAL', now(), now()) returning id",
+				Long.class, victim.landlordId(), charge);
+		long item = jdbc.queryForObject(
+				"insert into charge_item (landlord_id, charge_id, type, label, amount, created_at, "
+						+ "updated_at) values (?, ?, 'RENT', '월세', 500000, now(), now()) returning id",
+				Long.class, victim.landlordId(), charge);
 		victimIds = Map.of("id", "", "property", String.valueOf(property), "unit", String.valueOf(unit), "lease",
-				String.valueOf(lease), "history", String.valueOf(history));
+				String.valueOf(lease), "history", String.valueOf(history), "charge", String.valueOf(charge), "payment",
+				String.valueOf(payment), "item", String.valueOf(item));
 	}
 
 	/** (메서드 경로) → 공격자가 보낼 경로와 폼. {property}·{unit}·{lease}·{history}는 피해자의 ID */
@@ -155,6 +173,38 @@ class IdorTests {
 		attacks.put("POST /app/leases/{id}/end", Attack.post("/app/leases/{lease}/end", "endedOn", "2026-10-17"));
 		attacks.put("GET /app/leases/{id}/delete", Attack.get("/app/leases/{lease}/delete"));
 		attacks.put("POST /app/leases/{id}/delete", Attack.post("/app/leases/{lease}/delete"));
+		// 받을 월세 (billing 모듈)
+		attacks.put("GET /app/charges/{id}", Attack.get("/app/charges/{charge}"));
+		attacks.put("GET /app/charges/{id}/payments/new",
+				Attack.get("/app/charges/{charge}/payments/new", "full", "true"));
+		attacks.put("POST /app/charges/{id}/payments", Attack.post("/app/charges/{charge}/payments", "amount", "1",
+				"paidOn", "2026-10-17", "version", "0", "full", "false", "overpayConfirmed", "true"));
+		attacks.put("GET /app/charges/{id}/payments/{paymentId}/delete",
+				Attack.get("/app/charges/{charge}/payments/{payment}/delete"));
+		attacks.put("POST /app/charges/{id}/payments/{paymentId}/delete",
+				Attack.post("/app/charges/{charge}/payments/{payment}/delete", "version", "0", "reason", "탈취"));
+		attacks.put("GET /app/leases/{id}/charges/new",
+				Attack.get("/app/leases/{lease}/charges/new", "month", "2026-10"));
+		attacks.put("POST /app/leases/{id}/charges", Attack.post("/app/leases/{lease}/charges", "month", "2026-11",
+				"monthlyRent", "1", "maintenanceFee", "0"));
+		attacks.put("GET /app/charges/{id}/items/new", Attack.get("/app/charges/{charge}/items/new"));
+		attacks.put("POST /app/charges/{id}/items", Attack.post("/app/charges/{charge}/items", "type", "OTHER", "label",
+				"탈취", "amount", "1", "version", "0"));
+		attacks.put("GET /app/charges/{id}/items/{itemId}/edit", Attack.get("/app/charges/{charge}/items/{item}/edit"));
+		attacks.put("POST /app/charges/{id}/items/{itemId}", Attack.post("/app/charges/{charge}/items/{item}", "type",
+				"RENT", "label", "탈취", "amount", "1", "version", "0"));
+		attacks.put("GET /app/charges/{id}/items/{itemId}/delete",
+				Attack.get("/app/charges/{charge}/items/{item}/delete"));
+		attacks.put("POST /app/charges/{id}/items/{itemId}/delete",
+				Attack.post("/app/charges/{charge}/items/{item}/delete", "version", "0"));
+		attacks.put("GET /app/charges/{id}/cancel", Attack.get("/app/charges/{charge}/cancel"));
+		attacks.put("POST /app/charges/{id}/cancel",
+				Attack.post("/app/charges/{charge}/cancel", "version", "0", "reason", "탈취"));
+		attacks.put("GET /app/charges/{id}/payments/{paymentId}/correct",
+				Attack.get("/app/charges/{charge}/payments/{payment}/correct"));
+		attacks.put("POST /app/charges/{id}/payments/{paymentId}/correct",
+				Attack.post("/app/charges/{charge}/payments/{payment}/correct", "version", "0", "amount", "1", "paidOn",
+						"2026-10-17", "reason", "탈취", "overpayConfirmed", "true"));
 		return attacks;
 	}
 
@@ -183,6 +233,46 @@ class IdorTests {
 	}
 
 	@Test
+	void ownChargeWithVictimsPaymentOrItemIdIsNotFound() throws Exception {
+		long property = propertyService.create(attacker.landlordId(), new PropertyInput("공격자빌라", "서울", null));
+		long unit = propertyService.addUnit(attacker.landlordId(), property,
+				new UnitInput("201호", UnitType.ONE_ROOM, null));
+		LeaseTerms terms = new LeaseTerms(0, 5, LocalDate.of(2026, 1, 1), LocalDate.of(2027, 1, 1), "국민은행",
+				new AccountNumber("1234567890"), new PersonName("공격자"), null);
+		long lease = leaseService.register(attacker.landlordId(), new LeaseRegistration(unit, new PersonName("공격자세입자"),
+				PhoneNumber.parse("01099998888"), null, 300000, 0, terms, false));
+		long own = jdbc.queryForObject("insert into charge (landlord_id, lease_id, billing_month, due_date, "
+				+ "total_amount, status, source, issued_at, created_at, updated_at) values (?, ?, '2026-10-01', "
+				+ "'2026-10-05', 300000, 'ISSUED', 'AUTO', now(), now(), now()) returning id", Long.class,
+				attacker.landlordId(), lease);
+		String before = snapshot();
+
+		Map<String, String> ids = new java.util.HashMap<>(victimIds);
+		ids.put("own", String.valueOf(own));
+		for (Attack attack : List
+				.of(Attack.get("/app/charges/{own}/payments/{payment}/delete"),
+						Attack.get("/app/charges/{own}/payments/{payment}/correct"),
+						Attack.post("/app/charges/{own}/payments/{payment}/delete", "version", "0", "reason", "섞기"),
+						Attack.post("/app/charges/{own}/payments/{payment}/correct", "version", "0", "amount", "1",
+								"paidOn", "2026-10-17", "reason", "섞기", "overpayConfirmed", "true"),
+						Attack.get("/app/charges/{own}/items/{item}/edit"),
+						Attack.post("/app/charges/{own}/items/{item}", "type", "RENT", "label", "섞기", "amount", "1",
+								"version", "0"),
+						Attack.post("/app/charges/{own}/items/{item}/delete", "version", "0"))) {
+			assertThat(mockMvc.perform(attack.build(ids, attacker)).andReturn().getResponse().getStatus())
+					.as(attack.path()).isEqualTo(404);
+		}
+		assertThat(snapshot()).as("자기 청구에 남의 입금·항목 ID를 섞어도 아무것도 바뀌지 않는다").isEqualTo(before);
+	}
+
+	@Test
+	void chargeListShowsOnlyOwnCharges() throws Exception {
+		String body = mockMvc.perform(Attack.get("/app/charges", "month", "2026-10").build(victimIds, attacker))
+				.andReturn().getResponse().getContentAsString();
+		assertThat(body).contains("이 달에 받을 월세가 없어요").doesNotContain("피해자세입자").doesNotContain("피해자빌라");
+	}
+
+	@Test
 	void everyOwnedEndpointIsInTheIdorTable() {
 		Set<String> mapped = new TreeSet<>();
 		handlerMapping.getHandlerMethods().keySet().forEach(info -> info.getPatternValues().forEach(pattern -> {
@@ -203,7 +293,8 @@ class IdorTests {
 	/** 소유 데이터 전체를 한 문자열로 (바뀌었는지 비교용) */
 	private String snapshot() {
 		StringBuilder all = new StringBuilder();
-		for (String table : List.of("property", "unit", "tenant", "lease", "lease_rent_history")) {
+		for (String table : List.of("property", "unit", "tenant", "lease", "lease_rent_history", "charge",
+				"charge_item", "payment_record", "charge_status_history", "charge_item_history")) {
 			all.append(table).append(':').append(jdbc.queryForObject(
 					"select coalesce(string_agg(t::text, '|' order by t.id), '') from " + table + " t", String.class));
 		}

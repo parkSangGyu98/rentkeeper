@@ -3,10 +3,13 @@ package com.rentkeeper.lease.application;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -24,12 +27,15 @@ import com.rentkeeper.lease.application.LeaseViews.ExistingTenant;
 import com.rentkeeper.lease.application.LeaseViews.LeaseDetail;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRegistration;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRow;
+import com.rentkeeper.lease.application.LeaseViews.LeaseSummary;
+import com.rentkeeper.lease.application.LeaseViews.MissingCharges;
 import com.rentkeeper.lease.application.LeaseViews.RentRow;
 import com.rentkeeper.lease.application.LeaseViews.UnitPage;
 import com.rentkeeper.lease.domain.Lease;
 import com.rentkeeper.lease.domain.LeaseRentHistory;
 import com.rentkeeper.lease.domain.LeaseRentHistoryRepository;
 import com.rentkeeper.lease.domain.LeaseRepository;
+import com.rentkeeper.lease.domain.LeaseTerms;
 import com.rentkeeper.lease.domain.PhoneNumber;
 import com.rentkeeper.lease.domain.Tenant;
 import com.rentkeeper.lease.domain.TenantRepository;
@@ -62,15 +68,18 @@ public class LeaseService {
 
 	private final KeyedHasher hasher;
 
+	private final ChargedMonths chargedMonths;
+
 	private final Clock clock;
 
 	public LeaseService(LeaseRepository leases, TenantRepository tenants, LeaseRentHistoryRepository histories,
-			PropertyService propertyService, KeyedHasher hasher, Clock clock) {
+			PropertyService propertyService, KeyedHasher hasher, ChargedMonths chargedMonths, Clock clock) {
 		this.leases = leases;
 		this.tenants = tenants;
 		this.histories = histories;
 		this.propertyService = propertyService;
 		this.hasher = hasher;
+		this.chargedMonths = chargedMonths;
 		this.clock = clock;
 	}
 
@@ -137,7 +146,9 @@ public class LeaseService {
 
 		Lease lease;
 		try {
-			lease = leases.saveAndFlush(Lease.register(landlordId, unit.id(), tenant.getId(), registration.terms()));
+			Lease draft = Lease.register(landlordId, unit.id(), tenant.getId(), registration.terms());
+			draft.changeIssueDaysBefore(registration.issueDaysBefore());
+			lease = leases.saveAndFlush(draft);
 		} catch (DataIntegrityViolationException e) {
 			if (Constraints.isViolated(e, OVERLAP_CONSTRAINT)) {
 				throw new LeaseOverlapException(e);
@@ -159,10 +170,12 @@ public class LeaseService {
 		YearMonth thisMonth = YearMonth.now(clock);
 		List<LeaseRentHistory> history = histories.findByLeaseIdAndLandlordIdOrderByEffectiveFromAsc(leaseId,
 				landlordId);
+		// 청구가 생긴 달 이하의 변경은 취소할 수 없다 (M3 결정 13)
+		Optional<YearMonth> lastCharged = chargedMonths.latest(landlordId, leaseId);
 		List<RentRow> rows = history.stream()
 				.map(h -> new RentRow(h.getId(), h.effectiveMonth(), h.getMonthlyRent(), h.getMaintenanceFee(),
-						h.getReason(),
-						lease.isActive() && h != history.get(0) && h.effectiveMonth().isAfter(thisMonth)))
+						h.getReason(), lease.isActive() && h != history.get(0) && h.effectiveMonth().isAfter(thisMonth)
+								&& lastCharged.map(m -> h.effectiveMonth().isAfter(m)).orElse(true)))
 				.toList();
 		// 이번 달 금액: 이번 달 이하에서 가장 최근 행. 아직 들어오기 전 계약이면 첫 행
 		RentRow current = rows.stream().filter(r -> !r.effectiveMonth().isAfter(thisMonth))
@@ -173,7 +186,63 @@ public class LeaseService {
 				tenant.getMemo() == null ? null : tenant.getMemo().value(), lease.getDeposit(), lease.getDueDay(),
 				lease.getStartDate(), lease.getEndDate(), lease.getStatus(), lease.getEndedOn(), lease.getBankName(),
 				lease.getAccountNumber().digits(), lease.getAccountHolder().value(), lease.getMemo(), current, rows,
-				upcoming);
+				upcoming, lease.getIssueDaysBefore(), missingCharges(landlordId, lease, thisMonth));
+	}
+
+	/** 계약 상세 배너에서 지난 달을 몇 달까지 보는지 (M3-b 결정 11). 그보다 오래된 달은 수동 생성 화면에서 고른다 */
+	public static final int RECENT_MISSING_MONTHS = 3;
+
+	/**
+	 * 받을 월세가 없는 달 (계약 상세 배너, M3-b 결정 11). 진행 중 계약만 본다. 취소한 달도 "있음"으로 센다(다시 만들 수
+	 * 없다).
+	 * <ul>
+	 * <li>이번 달: 계약 기간 안이고, 납부일이 오늘보다 앞인데 받을 월세가 없다 (등록 전에 납부일이 지났거나 배치가 실패함)</li>
+	 * <li>지난 달: 이번 달 앞 {@value #RECENT_MISSING_MONTHS}개 달 중 계약 기간 안인데 받을 월세가 없는
+	 * 달</li>
+	 * </ul>
+	 */
+	private MissingCharges missingCharges(long landlordId, Lease lease, YearMonth thisMonth) {
+		if (!lease.isActive() || !lease.getEndDate().isAfter(lease.getStartDate())) {
+			return MissingCharges.NONE;
+		}
+		Set<YearMonth> charged = chargedMonths.months(landlordId, lease.getId());
+		YearMonth first = YearMonth.from(lease.getStartDate());
+		YearMonth last = lease.lastMonth();
+		LocalDate due = Lease.dueDateIn(thisMonth, lease.getDueDay());
+		boolean thisMonthMissing = !thisMonth.isBefore(first) && !thisMonth.isAfter(last)
+				&& !charged.contains(thisMonth) && due.isBefore(today());
+		List<YearMonth> recent = new ArrayList<>();
+		for (YearMonth m = thisMonth.minusMonths(RECENT_MISSING_MONTHS); m.isBefore(thisMonth); m = m.plusMonths(1)) {
+			if (!m.isBefore(first) && !m.isAfter(last) && !charged.contains(m)) {
+				recent.add(m);
+			}
+		}
+		return new MissingCharges(thisMonthMissing ? due : null, recent);
+	}
+
+	/** 지금 등록하면 이번 달 받을 월세가 자동으로 만들어지지 않는지 (등록 확인 화면의 안내, M3 결정 2) */
+	public boolean thisMonthNotAutomatic(LeaseTerms terms) {
+		return Lease.registrationMonthSkipped(terms.startDate(), terms.endDate(), terms.dueDay(), today());
+	}
+
+	/**
+	 * 여러 계약의 요약 (받을 월세 목록 등, billing이 쓴다). 남의 계약 ID는 결과에서 빠진다(ADR-018). 세입자 이름은
+	 * 복호화한다.
+	 */
+	public Map<Long, LeaseSummary> summaries(long landlordId, Collection<Long> leaseIds) {
+		if (leaseIds.isEmpty()) {
+			return Map.of();
+		}
+		List<Lease> found = leases.findByLandlordIdAndIdIn(landlordId, leaseIds);
+		Map<Long, UnitView> unitViews = propertyService.units(landlordId,
+				found.stream().map(Lease::getUnitId).collect(Collectors.toSet()));
+		Map<Long, Tenant> tenantById = tenants
+				.findByLandlordIdAndIdIn(landlordId, found.stream().map(Lease::getTenantId).collect(Collectors.toSet()))
+				.stream().collect(Collectors.toMap(Tenant::getId, Function.identity()));
+		return found.stream()
+				.collect(Collectors.toMap(Lease::getId,
+						l -> new LeaseSummary(l.getId(), l.getUnitId(), unitViews.get(l.getUnitId()).displayName(),
+								tenantById.get(l.getTenantId()).getName().value(), l.getStartDate())));
 	}
 
 	/**

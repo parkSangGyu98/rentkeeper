@@ -9,6 +9,7 @@ import org.springframework.validation.BindingResult;
 import com.rentkeeper.common.money.Won;
 import com.rentkeeper.lease.domain.AccountNumber;
 import com.rentkeeper.lease.domain.InvalidLeaseValueException;
+import com.rentkeeper.lease.domain.Lease;
 import com.rentkeeper.lease.domain.LeaseRentHistory;
 import com.rentkeeper.lease.domain.LeaseTerms;
 import com.rentkeeper.lease.domain.PersonName;
@@ -58,6 +59,16 @@ final class LeaseFields {
 			return null;
 		}
 		return day;
+	}
+
+	/** 납부일 며칠 전에 받을 월세를 만들지 (0~28, M3 결정 17) */
+	static Integer issueDaysBefore(BindingResult result, String raw) {
+		Integer days = raw == null || !raw.strip().matches("[0-9]{1,2}") ? null : Integer.valueOf(raw.strip());
+		if (days == null || days < 0 || days > Lease.MAX_ISSUE_DAYS_BEFORE) {
+			result.rejectValue("issueDaysBefore", "invalid", "받을 월세를 만들 날을 납부일 당일 ~ 28일 전 중에서 골라 주세요");
+			return null;
+		}
+		return days;
 	}
 
 	static LocalDate date(BindingResult result, String field, String raw, String message) {

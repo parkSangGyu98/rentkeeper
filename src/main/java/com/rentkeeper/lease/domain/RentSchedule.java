@@ -34,6 +34,9 @@ public final class RentSchedule {
 		/** 이미 시작된 달(이번 달)의 변경 */
 		ALREADY_STARTED,
 
+		/** 받을 월세(청구)가 이미 생긴 달 이하 (M3 결정 13: 과거 청구는 바꾸지 않는다) */
+		ALREADY_CHARGED,
+
 		/** 이 계약의 이력이 아님 */
 		NOT_FOUND
 
@@ -60,6 +63,8 @@ public final class RentSchedule {
 
 	private final YearMonth thisMonth;
 
+	private final Optional<YearMonth> lastCharged;
+
 	/**
 	 * @param rows
 	 *            이 계약의 이력 (순서 상관없음)
@@ -67,9 +72,19 @@ public final class RentSchedule {
 	 *            이번 달 (서울, 주입한 Clock 기준)
 	 */
 	public RentSchedule(Lease lease, List<LeaseRentHistory> rows, YearMonth thisMonth) {
+		this(lease, rows, thisMonth, Optional.empty());
+	}
+
+	/**
+	 * @param lastCharged
+	 *            청구가 있는 가장 늦은 달 (없으면 빈 값). 그 달 이하는 바꾸거나 취소할 수 없다
+	 */
+	public RentSchedule(Lease lease, List<LeaseRentHistory> rows, YearMonth thisMonth,
+			Optional<YearMonth> lastCharged) {
 		this.lease = lease;
 		this.rows = rows.stream().sorted(Comparator.comparing(LeaseRentHistory::getEffectiveFrom)).toList();
 		this.thisMonth = thisMonth;
+		this.lastCharged = lastCharged;
 	}
 
 	/** 첫 행 (들어오는 달) */
@@ -81,6 +96,9 @@ public final class RentSchedule {
 	public Optional<YearMonth> earliestChangeMonth() {
 		YearMonth afterFirst = first().effectiveMonth().plusMonths(1);
 		YearMonth earliest = afterFirst.isAfter(thisMonth) ? afterFirst : thisMonth;
+		if (lastCharged.isPresent() && !earliest.isAfter(lastCharged.get())) {
+			earliest = lastCharged.get().plusMonths(1);
+		}
 		return earliest.isAfter(lease.lastMonth()) ? Optional.empty() : Optional.of(earliest);
 	}
 
@@ -106,6 +124,9 @@ public final class RentSchedule {
 		if (month.isAfter(lease.lastMonth())) {
 			throw new RentChangeException(Violation.AFTER_LEASE);
 		}
+		if (charged(month)) {
+			throw new RentChangeException(Violation.ALREADY_CHARGED);
+		}
 		Optional<LeaseRentHistory> sameMonth = rows.stream().filter(r -> r.effectiveMonth().equals(month)).findFirst();
 		if (sameMonth.isPresent()) {
 			if (started(sameMonth.get())) {
@@ -130,13 +151,16 @@ public final class RentSchedule {
 		if (row == first()) {
 			throw new RentChangeException(Violation.FIRST_MONTH);
 		}
+		if (charged(row.effectiveMonth())) {
+			throw new RentChangeException(Violation.ALREADY_CHARGED);
+		}
 		if (started(row)) {
 			throw new RentChangeException(Violation.ALREADY_STARTED);
 		}
 		return row;
 	}
 
-	/** 첫 행(들어오는 달) 금액 정정: 계약 수정에서만 (M2 결정 4). 청구가 생기면 M3에서 제한한다 */
+	/** 첫 행(들어오는 달) 금액 정정: 계약 수정에서만 (M2 결정 4). 첫 달 청구가 생긴 뒤에는 서비스가 막는다(M3) */
 	public void correctFirst(long monthlyRent, long maintenanceFee) {
 		if (!lease.isActive()) {
 			throw new RentChangeException(Violation.LEASE_ENDED);
@@ -147,6 +171,11 @@ public final class RentSchedule {
 	/** 나가는 날을 당기면, 새 마지막 달 뒤로 잡힌 변경이 남으면 안 된다 */
 	public boolean hasChangeAfter(YearMonth lastMonth) {
 		return rows.stream().anyMatch(r -> r.effectiveMonth().isAfter(lastMonth));
+	}
+
+	/** 그 달 이하에 청구가 생겼는지 (그 달의 금액은 이미 청구에 들어갔다) */
+	public boolean charged(YearMonth month) {
+		return lastCharged.isPresent() && !month.isAfter(lastCharged.get());
 	}
 
 	private boolean started(LeaseRentHistory row) {

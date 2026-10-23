@@ -6,6 +6,7 @@ import org.springframework.validation.BindingResult;
 
 import com.rentkeeper.lease.application.LeaseChangeService.LeaseEdit;
 import com.rentkeeper.lease.domain.AccountNumber;
+import com.rentkeeper.lease.domain.Lease;
 import com.rentkeeper.lease.domain.LeaseTerms;
 import com.rentkeeper.lease.domain.PersonName;
 import com.rentkeeper.lease.domain.PhoneNumber;
@@ -30,6 +31,8 @@ public class LeaseEditForm {
 
 	private String dueDay = "1";
 
+	private String issueDaysBefore = String.valueOf(Lease.DEFAULT_ISSUE_DAYS_BEFORE);
+
 	private String endDate = "";
 
 	private String bankName = "";
@@ -49,6 +52,7 @@ public class LeaseEditForm {
 		form.firstMonthlyRent = String.valueOf(current.firstMonthlyRent());
 		form.firstMaintenanceFee = String.valueOf(current.firstMaintenanceFee());
 		form.dueDay = String.valueOf(current.dueDay());
+		form.issueDaysBefore = String.valueOf(current.issueDaysBefore());
 		form.endDate = current.endDate().toString();
 		form.bankName = current.bankName();
 		form.accountNumber = current.accountNumber().digits();
@@ -66,6 +70,7 @@ public class LeaseEditForm {
 		Long rent = LeaseFields.rent(result, "firstMonthlyRent", firstMonthlyRent);
 		Long fee = LeaseFields.fee(result, "firstMaintenanceFee", firstMaintenanceFee);
 		Integer day = LeaseFields.dueDay(result, dueDay);
+		Integer issueDays = LeaseFields.issueDaysBefore(result, issueDaysBefore);
 		LocalDate end = LeaseFields.date(result, "endDate", endDate, "나가는 날을 입력해 주세요");
 		if (end != null && !end.isAfter(startDate)) {
 			result.rejectValue("endDate", "beforeStart", "나가는 날은 들어오는 날보다 뒤여야 해요");
@@ -78,7 +83,15 @@ public class LeaseEditForm {
 			return null;
 		}
 		return new LeaseEdit(name, phone, tenantMemoValue, depositValue, day, end, bank, account, holder, leaseMemo,
-				rent, fee);
+				rent, fee, issueDays);
+	}
+
+	public String getIssueDaysBefore() {
+		return issueDaysBefore;
+	}
+
+	public void setIssueDaysBefore(String issueDaysBefore) {
+		this.issueDaysBefore = issueDaysBefore;
 	}
 
 	public String getTenantName() {

@@ -2,6 +2,7 @@ package com.rentkeeper;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideOutsideOfPackage;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import java.time.Instant;
@@ -14,6 +15,7 @@ import java.time.YearMonth;
 import java.time.ZonedDateTime;
 
 import org.springframework.data.repository.Repository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 
 import com.tngtech.archunit.core.domain.Dependency;
@@ -27,17 +29,18 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 
 import jakarta.persistence.Entity;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 /**
  * 모듈 의존 방향과 시간 규칙 (ADR-020, PRD 10장).
  *
  * <pre>
- * lease → property → landlord ← auth → consent → site
+ * billing → lease → property → landlord ← auth → consent → site
  *            (모두) → common          config → (모두)
  * </pre>
  *
- * 도메인 모듈(property·lease)의 화면은 로그인 정보(auth.security)만 쓸 수 있다. 다른 모듈의 엔티티·리포지토리는
- * 쓰지 않는다(서비스와 값 타입·예외만).
+ * 도메인 모듈(property·lease·billing)의 화면은 로그인 정보(auth.security)만 쓸 수 있다. 다른 모듈의
+ * 엔티티·리포지토리는 쓰지 않는다(서비스와 값 타입·예외만).
  */
 @AnalyzeClasses(packages = "com.rentkeeper", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTests {
@@ -49,27 +52,33 @@ class ArchitectureTests {
 	@ArchTest
 	static final ArchRule commonDependsOnNoModule = noClasses().that().resideInAPackage(ROOT + "common..").should()
 			.dependOnClassesThat()
-			.resideInAnyPackage(modules("auth", "landlord", "property", "lease", "consent", "site", "config"))
+			.resideInAnyPackage(
+					modules("auth", "landlord", "property", "lease", "billing", "consent", "site", "config"))
 			.because("common은 모든 모듈이 쓰는 공통 부품이다");
 
 	@ArchTest
 	static final ArchRule landlordDependsOnlyOnCommon = noClasses().that().resideInAPackage(ROOT + "landlord..")
 			.should().dependOnClassesThat()
-			.resideInAnyPackage(modules("auth", "property", "lease", "consent", "site", "config"))
+			.resideInAnyPackage(modules("auth", "property", "lease", "billing", "consent", "site", "config"))
 			.because("임대인 계정은 다른 도메인이 기대는 맨 아래 모듈이다");
 
 	@ArchTest
 	static final ArchRule propertyDoesNotDependOnUpperModules = noClasses().that().resideInAPackage(ROOT + "property..")
-			.should().dependOnClassesThat().resideInAnyPackage(modules("lease", "consent", "site", "config"))
+			.should().dependOnClassesThat().resideInAnyPackage(modules("lease", "billing", "consent", "site", "config"))
 			.because("호실 상태 계산처럼 계약 정보가 필요하면 lease가 property를 부르거나 조회 결과를 넘긴다");
 
 	@ArchTest
 	static final ArchRule leaseDoesNotDependOnUpperModules = noClasses().that().resideInAPackage(ROOT + "lease..")
+			.should().dependOnClassesThat().resideInAnyPackage(modules("billing", "consent", "site", "config"))
+			.because("청구가 있는지 같은 정보가 필요하면 lease가 인터페이스를 정하고 billing이 구현한다(ChargedMonths)");
+
+	@ArchTest
+	static final ArchRule billingDoesNotDependOnUpperModules = noClasses().that().resideInAPackage(ROOT + "billing..")
 			.should().dependOnClassesThat().resideInAnyPackage(modules("consent", "site", "config"));
 
 	@ArchTest
 	static final ArchRule domainModulesUseOnlyLoginInfoFromAuth = noClasses().that()
-			.resideInAnyPackage(modules("property", "lease")).should()
+			.resideInAnyPackage(modules("property", "lease", "billing")).should()
 			.dependOnClassesThat(
 					resideInAPackage(ROOT + "auth..").and(resideOutsideOfPackage(ROOT + "auth.security..")))
 			.because("화면에서 로그인한 임대인(LandlordPrincipal)만 쓴다");
@@ -88,6 +97,13 @@ class ArchitectureTests {
 	static final ArchRule controllersDoNotUseRepositories = noClasses().that().areAnnotatedWith(Controller.class)
 			.should().dependOnClassesThat().areAssignableTo(Repository.class)
 			.because("controller → service → repository 단방향 (PRD 10장)");
+
+	// ---------------------------------------------------------------- 배치
+
+	@ArchTest
+	static final ArchRule scheduledMethodsAreLocked = methods().that().areAnnotatedWith(Scheduled.class).should()
+			.beAnnotatedWith(SchedulerLock.class).andShould().bePublic()
+			.because("서버가 여러 대여도 배치는 한 곳에서만 돈다. 잠금 프록시가 확실히 가로채도록 public (ADR-022)");
 
 	// ---------------------------------------------------------------- 시간
 
