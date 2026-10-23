@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>새 세입자 링크 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-4 text-3xl font-bold">새 링크를 만들까요?</h1>
+		<p class="mb-2 text-xl font-semibold" th:text="${lease.unitName()} + ' · ' + ${lease.tenantName()} + '님'">행복빌라 101호 · 홍길동님</p>
+		<ul class="mb-8 list-disc space-y-1 pl-6 text-lg text-gray-700">
+			<li>새 링크를 만들면 <strong>예전에 보낸 링크는 더 이상 열리지 않아요.</strong></li>
+			<li>새 링크는 다음 화면에서 한 번만 보여요. 세입자에게 다시 보내 주세요.</li>
+		</ul>
+		<form th:if="${tenantLink.withinPeriod()}" th:action="@{/app/leases/{id}/tenant-link(id=${lease.leaseId()})}" method="post" class="mb-4">
+			<input type="hidden" name="openLinkId" th:value="${tenantLink.openLinkIdParam()}">
+			<button type="submit" class="btn btn-primary w-full">네, 새 링크를 만들게요</button>
+		</form>
+		<p th:unless="${tenantLink.withinPeriod()}" class="alert alert-error mb-4 text-lg" role="alert">계약이 끝나고 90일이 지나 세입자 링크를 만들 수 없어요.</p>
+		<a th:href="@{/app/leases/{id}(id=${lease.leaseId()})}" class="btn btn-secondary w-full">만들지 않고 돌아가기</a>
+	</main>
+</body>
+</html>

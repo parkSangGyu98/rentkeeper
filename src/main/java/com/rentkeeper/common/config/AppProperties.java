@@ -27,8 +27,16 @@ public record AppProperties(URI baseUrl, String rememberMeKey) {
 
 	/** 기준 주소 + 경로 + ?token=... (토큰은 Base64URL이라 따로 인코딩할 필요가 없다) */
 	public String tokenLink(String path, String token) {
-		String base = baseUrl.toString().replaceAll("/+$", "");
-		return base + path + "?token=" + token;
+		return base() + path + "?token=" + token;
+	}
+
+	/** 세입자 링크: 기준 주소 + /t/{토큰} (M4, ADR-026). 토큰이 경로에 있으므로 이 주소는 로그에 남기지 않는다 */
+	public String tenantLink(String token) {
+		return base() + "/t/" + token;
+	}
+
+	private String base() {
+		return baseUrl.toString().replaceAll("/+$", "");
 	}
 
 }

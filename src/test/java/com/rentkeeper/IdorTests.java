@@ -32,6 +32,7 @@ import com.rentkeeper.landlord.application.LandlordService;
 import com.rentkeeper.lease.application.LeaseChangeService;
 import com.rentkeeper.lease.application.LeaseService;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRegistration;
+import com.rentkeeper.lease.application.TenantLinkService;
 import com.rentkeeper.lease.domain.AccountNumber;
 import com.rentkeeper.lease.domain.LeaseTerms;
 import com.rentkeeper.lease.domain.PersonName;
@@ -92,6 +93,9 @@ class IdorTests {
 	LeaseChangeService leaseChangeService;
 
 	@Autowired
+	TenantLinkService tenantLinkService;
+
+	@Autowired
 	MutableClock clock;
 
 	@Autowired
@@ -117,6 +121,8 @@ class IdorTests {
 		long lease = leaseService.register(victim.landlordId(), new LeaseRegistration(unit, new PersonName("피해자세입자"),
 				PhoneNumber.parse("01011112222"), null, 500000, 0, terms, false));
 		leaseChangeService.changeRent(victim.landlordId(), lease, YearMonth.of(2027, 1), 550000, 0, null);
+		// 피해자 계약의 열린 세입자 링크 (공격자가 닫거나 바꾸지 못해야 한다)
+		tenantLinkService.issue(victim.landlordId(), lease, null);
 		long history = jdbc.queryForObject(
 				"select id from lease_rent_history where lease_id = ? and effective_from = '2027-01-01'", Long.class,
 				lease);
@@ -173,6 +179,13 @@ class IdorTests {
 		attacks.put("POST /app/leases/{id}/end", Attack.post("/app/leases/{lease}/end", "endedOn", "2026-10-17"));
 		attacks.put("GET /app/leases/{id}/delete", Attack.get("/app/leases/{lease}/delete"));
 		attacks.put("POST /app/leases/{id}/delete", Attack.post("/app/leases/{lease}/delete"));
+		// 세입자 링크 (M4). 열린 링크가 없다고 보내도(빈 값) 남의 계약이면 404
+		attacks.put("POST /app/leases/{id}/tenant-link",
+				Attack.post("/app/leases/{lease}/tenant-link", "openLinkId", ""));
+		attacks.put("GET /app/leases/{id}/tenant-link/reissue", Attack.get("/app/leases/{lease}/tenant-link/reissue"));
+		attacks.put("GET /app/leases/{id}/tenant-link/close", Attack.get("/app/leases/{lease}/tenant-link/close"));
+		attacks.put("POST /app/leases/{id}/tenant-link/close",
+				Attack.post("/app/leases/{lease}/tenant-link/close", "openLinkId", ""));
 		// 받을 월세 (billing 모듈)
 		attacks.put("GET /app/charges/{id}", Attack.get("/app/charges/{charge}"));
 		attacks.put("GET /app/charges/{id}/payments/new",
@@ -294,7 +307,8 @@ class IdorTests {
 	private String snapshot() {
 		StringBuilder all = new StringBuilder();
 		for (String table : List.of("property", "unit", "tenant", "lease", "lease_rent_history", "charge",
-				"charge_item", "payment_record", "charge_status_history", "charge_item_history")) {
+				"charge_item", "payment_record", "charge_status_history", "charge_item_history",
+				"tenant_access_token")) {
 			all.append(table).append(':').append(jdbc.queryForObject(
 					"select coalesce(string_agg(t::text, '|' order by t.id), '') from " + table + " t", String.class));
 		}

@@ -73,6 +73,27 @@ public final class LeaseExceptions {
 	}
 
 	/**
+	 * 화면이 보던 열린 링크와 지금 열린 링크가 다르다 (M4 결정 2). 새로고침으로 같은 POST가 다시 왔거나 다른 창에서 이미 바꿨다.
+	 * 아무것도 바꾸지 않았다.
+	 */
+	public static class TenantLinkStaleException extends BusinessException {
+
+		TenantLinkStaleException() {
+			super(ErrorCode.TENANT_LINK_STALE, "tenant link changed meanwhile");
+		}
+
+	}
+
+	/** 계약이 끝나고 링크를 쓸 수 있는 기간이 지나 새 링크를 만들 수 없다 (M4 결정 4) */
+	public static class TenantLinkExpiredException extends BusinessException {
+
+		TenantLinkExpiredException() {
+			super(ErrorCode.TENANT_LINK_EXPIRED, "tenant link period is over");
+		}
+
+	}
+
+	/**
 	 * 같은 연락처의 세입자가 이미 있다. 그 세입자로 계약할지 확인받아야 한다 (M2 결정 6).
 	 * <p>
 	 * existing이 null이면 동시에 같은 번호로 등록된 경우다(다시 조회해 보여 준다).

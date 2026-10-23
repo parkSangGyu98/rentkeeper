@@ -38,6 +38,35 @@
 			</div>
 		</section>
 
+		<!-- 세입자 링크 (M4 결정 1~4). 링크 주소는 만들 때만 보인다. 폼의 숨은 칸은 화면이 보던 열린 링크 ID -->
+		<section id="tenant-link" class="mb-6 rounded-lg border-2 border-brand-700 bg-white p-5" aria-labelledby="tenant-link-heading">
+			<h2 id="tenant-link-heading" class="mb-3 text-xl font-bold">세입자 링크</h2>
+			<div class="alert alert-error mb-4 text-lg" role="alert" th:if="${tenantLinkAlert}" th:text="${tenantLinkAlert}">안내</div>
+			<th:block th:if="${tenantLink.open()}">
+				<p class="mb-3 text-lg" th:if="${tenantLink.withinPeriod()}">링크가 열려 있어요. 세입자는 이 링크로 가입 없이 이번 달 월세와 입금 계좌를 볼 수 있어요.</p>
+				<p class="mb-3 text-lg font-semibold" th:unless="${tenantLink.withinPeriod()}">링크를 쓸 수 있는 기간이 지나 세입자가 열 수 없어요.</p>
+				<dl class="mb-3 space-y-1 text-lg">
+					<div><dt class="inline font-semibold">만든 날</dt> <dd class="inline" th:text="${#temporals.format(tenantLink.createdOn(), 'yyyy년 M월 d일')}">2026년 10월 23일</dd></div>
+					<div><dt class="inline font-semibold">세입자가 마지막으로 열어 본 날</dt>
+						<dd class="inline" th:text="${tenantLink.lastUsedOn() != null} ? ${#temporals.format(tenantLink.lastUsedOn(), 'yyyy년 M월 d일')} : '아직 열어 보지 않았어요'">아직 열어 보지 않았어요</dd></div>
+					<div th:if="${tenantLink.usableUntil() != null}"><dt class="inline font-semibold">열 수 있는 마지막 날</dt> <dd class="inline" th:text="${#temporals.format(tenantLink.usableUntil(), 'yyyy년 M월 d일')}">2027년 3월 31일</dd></div>
+				</dl>
+				<p class="mb-4 text-base text-gray-700">링크 주소는 만들 때만 보여요. 잃어버렸으면 새 링크를 만들어 다시 보내 주세요.</p>
+				<div class="flex flex-wrap gap-3">
+					<a th:if="${tenantLink.withinPeriod()}" th:href="@{/app/leases/{id}/tenant-link/reissue(id=${lease.id()})}" class="btn btn-secondary">새 링크 만들기</a>
+					<a th:href="@{/app/leases/{id}/tenant-link/close(id=${lease.id()})}" class="btn btn-secondary">링크 닫기</a>
+				</div>
+			</th:block>
+			<th:block th:unless="${tenantLink.open()}">
+				<p class="mb-4 text-lg">아직 세입자 링크가 없어요. 링크를 만들어 문자나 카카오톡으로 보내면, 세입자가 가입 없이 이번 달 월세와 입금 계좌를 볼 수 있어요.</p>
+				<form th:if="${tenantLink.withinPeriod()}" th:action="@{/app/leases/{id}/tenant-link(id=${lease.id()})}" method="post">
+					<input type="hidden" name="openLinkId" th:value="${tenantLink.openLinkIdParam()}">
+					<button type="submit" class="btn btn-primary">세입자 링크 만들기</button>
+				</form>
+				<p th:unless="${tenantLink.withinPeriod()}" class="text-lg font-semibold">계약이 끝나고 90일이 지나 세입자 링크를 만들 수 없어요.</p>
+			</th:block>
+		</section>
+
 		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="tenant-heading">
 			<h2 id="tenant-heading" class="mb-3 text-xl font-bold">세입자</h2>
 			<dl class="space-y-2 text-lg">
