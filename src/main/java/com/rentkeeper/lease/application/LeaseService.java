@@ -218,8 +218,10 @@ public class LeaseService {
 		Map<Long, Tenant> tenantById = tenants
 				.findByLandlordIdAndIdIn(landlordId, found.stream().map(Lease::getTenantId).collect(Collectors.toSet()))
 				.stream().collect(Collectors.toMap(Tenant::getId, Function.identity()));
-		return found.stream().collect(Collectors.toMap(Lease::getId, l -> new LeaseSummary(l.getId(), l.getUnitId(),
-				unitViews.get(l.getUnitId()).displayName(), tenantById.get(l.getTenantId()).getName().value())));
+		return found.stream()
+				.collect(Collectors.toMap(Lease::getId,
+						l -> new LeaseSummary(l.getId(), l.getUnitId(), unitViews.get(l.getUnitId()).displayName(),
+								tenantById.get(l.getTenantId()).getName().value(), l.getStartDate())));
 	}
 
 	/**

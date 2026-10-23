@@ -3,6 +3,7 @@ package com.rentkeeper.lease.web;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -87,6 +88,9 @@ public class LeaseChangeController {
 			result.rejectValue("firstMonthlyRent", "firstMonthCharged",
 					"첫 달 받을 월세가 이미 만들어져 여기서는 첫 달 금액을 고칠 수 없어요. 그 달 받을 월세에서 금액을 고쳐 주세요");
 			return "lease/edit";
+		} catch (OptimisticLockingFailureException e) {
+			result.reject("retry", RETRY_MESSAGE);
+			return "lease/edit";
 		}
 		redirect.addFlashAttribute("notice", "계약을 고쳤어요." + canceledText(canceled));
 		return "redirect:/app/leases/" + id;
@@ -170,6 +174,13 @@ public class LeaseChangeController {
 			model.addAttribute("today", changeService.today().toString());
 			model.addAttribute("error", "실제로 끝난 날은 들어오는 날부터 오늘까지 중에서 골라 주세요. 앞으로 나갈 예정이면 계약 수정에서 나가는 날을 고쳐 주세요");
 			return "lease/end";
+		} catch (OptimisticLockingFailureException e) {
+			// 이후 달 받을 월세를 취소하는 순간 입금 등이 겹쳤다. 아무것도 바뀌지 않았으니 다시 누르면 된다
+			model.addAttribute("lease", activeDetail(principal, id));
+			model.addAttribute("endedOn", endedOn);
+			model.addAttribute("today", changeService.today().toString());
+			model.addAttribute("error", RETRY_MESSAGE);
+			return "lease/end";
 		}
 		return backToDetail(id, redirect, "계약을 종료했어요. 호실 상태에서 빠지고, 이 계약은 더 이상 고칠 수 없어요." + canceledText(canceled));
 	}
@@ -210,6 +221,9 @@ public class LeaseChangeController {
 	private LeaseDetail activeDetail(LandlordPrincipal principal, long id) {
 		return leaseService.activeDetail(principal.getLandlordId(), id);
 	}
+
+	/** 이후 달 받을 월세를 정리하는 순간 같은 받을 월세에 입금 등이 겹쳤을 때 */
+	static final String RETRY_MESSAGE = "같은 때에 받을 월세 기록이 바뀌어 저장하지 못했어요. 바뀐 것은 없어요. 잠시 뒤 한 번 더 눌러 주세요.";
 
 	static final String HAS_CHARGES_MESSAGE = "받을 월세가 만들어진 계약은 지울 수 없어요. 세입자가 나갔다면 [계약 종료]를 눌러 주세요.";
 

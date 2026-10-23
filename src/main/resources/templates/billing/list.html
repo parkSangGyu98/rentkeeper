@@ -34,7 +34,7 @@
 				th:classappend="${r.canceled()} ? 'opacity-70' : ''">
 				<div class="flex flex-wrap items-center justify-between gap-3">
 					<div>
-						<p class="text-xl font-bold" th:text="${r.unitName()}">행복빌라 101호</p>
+						<p class="text-xl font-bold"><a th:href="@{/app/charges/{id}(id=${r.chargeId()})}" class="text-gray-900 underline" th:text="${r.unitName()}">행복빌라 101호</a></p>
 						<p class="text-lg" th:text="${r.tenantName()} + '님'">홍길동님</p>
 					</div>
 					<span th:class="${r.statusBadge()}" th:text="${r.statusLabel()}">받을 차례</span>
@@ -51,7 +51,6 @@
 			</li>
 		</ul>
 
-		<p class="text-base text-gray-700">입금 확인과 금액 고치기는 다음 업데이트에서 이 화면에 생겨요.</p>
 	</main>
 </body>
 </html>

@@ -121,11 +121,12 @@ class IdorTests {
 				"select id from lease_rent_history where lease_id = ? and effective_from = '2027-01-01'", Long.class,
 				lease);
 		// 피해자의 10월 받을 월세
-		jdbc.update("insert into charge (landlord_id, lease_id, billing_month, due_date, total_amount, status, source, "
-				+ "issued_at, created_at, updated_at) values (?, ?, '2026-10-01', '2026-10-05', 500000, 'ISSUED', "
-				+ "'AUTO', now(), now(), now())", victim.landlordId(), lease);
+		long charge = jdbc.queryForObject("insert into charge (landlord_id, lease_id, billing_month, due_date, "
+				+ "total_amount, status, source, issued_at, created_at, updated_at) values (?, ?, '2026-10-01', "
+				+ "'2026-10-05', 500000, 'ISSUED', 'AUTO', now(), now(), now()) returning id", Long.class,
+				victim.landlordId(), lease);
 		victimIds = Map.of("id", "", "property", String.valueOf(property), "unit", String.valueOf(unit), "lease",
-				String.valueOf(lease), "history", String.valueOf(history));
+				String.valueOf(lease), "history", String.valueOf(history), "charge", String.valueOf(charge));
 	}
 
 	/** (메서드 경로) → 공격자가 보낼 경로와 폼. {property}·{unit}·{lease}·{history}는 피해자의 ID */
@@ -163,6 +164,12 @@ class IdorTests {
 		attacks.put("POST /app/leases/{id}/end", Attack.post("/app/leases/{lease}/end", "endedOn", "2026-10-17"));
 		attacks.put("GET /app/leases/{id}/delete", Attack.get("/app/leases/{lease}/delete"));
 		attacks.put("POST /app/leases/{id}/delete", Attack.post("/app/leases/{lease}/delete"));
+		// 받을 월세 (billing 모듈)
+		attacks.put("GET /app/charges/{id}", Attack.get("/app/charges/{charge}"));
+		attacks.put("GET /app/charges/{id}/payments/new",
+				Attack.get("/app/charges/{charge}/payments/new", "full", "true"));
+		attacks.put("POST /app/charges/{id}/payments", Attack.post("/app/charges/{charge}/payments", "amount", "1",
+				"paidOn", "2026-10-17", "version", "0", "full", "false", "overpayConfirmed", "true"));
 		return attacks;
 	}
 

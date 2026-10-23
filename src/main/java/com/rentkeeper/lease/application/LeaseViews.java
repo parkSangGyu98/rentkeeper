@@ -69,8 +69,13 @@ public final class LeaseViews {
 
 	}
 
-	/** 다른 화면(받을 월세 목록 등)에 보일 계약 요약 */
-	public record LeaseSummary(long leaseId, long unitId, String unitName, String tenantName) {
+	/**
+	 * 다른 화면(받을 월세 목록 등)에 보일 계약 요약.
+	 *
+	 * @param startDate
+	 *            들어오는 날 (입금일 하한 = 그 달 1일, M3 결정 9)
+	 */
+	public record LeaseSummary(long leaseId, long unitId, String unitName, String tenantName, LocalDate startDate) {
 
 		@Override
 		public String toString() {

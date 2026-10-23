@@ -89,15 +89,8 @@ public final class ChargeViews {
 			return status.getLabel();
 		}
 
-		/** 상태 표시 색 (글자와 함께 쓴다. 색만으로 구분하지 않는다) */
 		public String statusBadge() {
-			return switch (status) {
-				case SCHEDULED, ISSUED, TENANT_REPORTED -> "badge badge-upcoming";
-				case PARTIALLY_PAID -> "badge badge-partial";
-				case PAID -> "badge badge-occupied";
-				case OVERDUE -> "badge badge-overdue";
-				case CANCELED -> "badge badge-vacant";
-			};
+			return badge(status);
 		}
 
 		@Override
@@ -105,6 +98,127 @@ public final class ChargeViews {
 			return "ChargeRow[chargeId=" + chargeId + ", status=" + status + "]";
 		}
 
+	}
+
+	/**
+	 * 받을 월세 상세.
+	 *
+	 * @param version
+	 *            화면이 보는 version (폼의 숨은 칸으로 보내 낙관적 락에 쓴다)
+	 * @param earliestPaidOn
+	 *            받은 날로 고를 수 있는 가장 이른 날 (계약 시작월 1일)
+	 */
+	public record ChargeDetail(long id, long version, long leaseId, String unitName, String tenantName, YearMonth month,
+			LocalDate dueDate, ChargeStatus status, long totalAmount, long paidAmount, String cancelReason,
+			List<ItemRow> items, List<PaymentRow> payments, LocalDate earliestPaidOn) {
+
+		public String monthText() {
+			return month.getYear() + "년 " + month.getMonthValue() + "월";
+		}
+
+		public String dueDateText() {
+			return dateText(dueDate);
+		}
+
+		public String totalText() {
+			return Won.format(totalAmount);
+		}
+
+		public String paidText() {
+			return Won.format(paidAmount);
+		}
+
+		public long balance() {
+			return Math.max(0, totalAmount - paidAmount);
+		}
+
+		public String balanceText() {
+			return Won.format(balance());
+		}
+
+		/** 더 받은 금액. 없으면 null */
+		public String overpaidText() {
+			return paidAmount > totalAmount ? Won.format(paidAmount - totalAmount) : null;
+		}
+
+		public String statusLabel() {
+			return status.getLabel();
+		}
+
+		public String statusBadge() {
+			return badge(status);
+		}
+
+		public boolean canceled() {
+			return status == ChargeStatus.CANCELED;
+		}
+
+		/** 입금 버튼을 보여 줄지: 다 받았거나 취소한 청구는 보이지 않는다 */
+		public boolean canPay() {
+			return status != ChargeStatus.PAID && status != ChargeStatus.CANCELED;
+		}
+
+		public List<PaymentRow> activePayments() {
+			return payments.stream().filter(p -> !p.deleted()).toList();
+		}
+
+		public List<PaymentRow> deletedPayments() {
+			return payments.stream().filter(PaymentRow::deleted).toList();
+		}
+
+		public String earliestPaidOnText() {
+			return dateText(earliestPaidOn);
+		}
+
+		@Override
+		public String toString() {
+			return "ChargeDetail[id=" + id + ", status=" + status + "]";
+		}
+
+	}
+
+	/** 상세의 항목 한 줄 */
+	public record ItemRow(long id, String typeLabel, String label, long amount, String memo) {
+
+		public String amountText() {
+			return Won.format(amount);
+		}
+
+	}
+
+	/** 상세의 입금 기록 한 줄 */
+	public record PaymentRow(long id, LocalDate paidOn, long amount, String memo, boolean deleted, String deleteReason,
+			Long replacesId) {
+
+		public String paidOnText() {
+			return dateText(paidOn);
+		}
+
+		public String amountText() {
+			return Won.format(amount);
+		}
+
+		@Override
+		public String toString() {
+			return "PaymentRow[id=" + id + "]";
+		}
+
+	}
+
+	/** "2026년 10월 5일" */
+	public static String dateText(LocalDate date) {
+		return date.getYear() + "년 " + date.getMonthValue() + "월 " + date.getDayOfMonth() + "일";
+	}
+
+	/** 상태 표시 색 (글자와 함께 쓴다. 색만으로 구분하지 않는다) */
+	static String badge(ChargeStatus status) {
+		return switch (status) {
+			case SCHEDULED, ISSUED, TENANT_REPORTED -> "badge badge-upcoming";
+			case PARTIALLY_PAID -> "badge badge-partial";
+			case PAID -> "badge badge-occupied";
+			case OVERDUE -> "badge badge-overdue";
+			case CANCELED -> "badge badge-vacant";
+		};
 	}
 
 }
