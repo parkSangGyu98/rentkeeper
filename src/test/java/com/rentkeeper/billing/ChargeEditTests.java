@@ -36,8 +36,8 @@ import com.rentkeeper.support.MutableClockConfiguration;
 import com.rentkeeper.support.TestData;
 
 /**
- * 받을 월세 항목 추가·고치기·지우기와 취소 (M3-b 커밋 3, M3 결정 7·8·12, M3-b 결정 9·10·14). 10월분 = 월세
- * 500,000 + 관리비 50,000, 납부일 10/25, 오늘 10/17.
+ * 받을 월세 항목 추가·고치기·지우기와 취소 (M3-b 커밋 3, M3 결정 7·8·12, M3-b 결정 9·10·14), 상세의 바뀐
+ * 기록(커밋 4). 10월분 = 월세 500,000 + 관리비 50,000, 납부일 10/25, 오늘 10/17.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -200,6 +200,32 @@ class ChargeEditTests {
 	}
 
 	@Test
+	void detailShowsStatusAndItemHistoryInSeoulTime() throws Exception {
+		// 배치가 10/1 03:00(서울) = 9/30 18:00(UTC)에 만들고 발행한 기록
+		statusHistory(null, "SCHEDULED", "자동 생성", "2026-09-30T18:00:00Z");
+		statusHistory("SCHEDULED", "ISSUED", "자동 발행 — 알림 발송은 M5", "2026-09-30T18:00:00Z");
+		jdbc.update(
+				"insert into charge_item_history (landlord_id, charge_id, charge_item_id, action, item_type, label, "
+						+ "after_amount, actor_type, created_at) values (?, ?, ?, 'ADD', 'RENT', '월세', 500000, 'SYSTEM', "
+						+ "cast('2026-09-30T18:00:00Z' as timestamptz))",
+				a.landlordId(), charge, rentItem);
+		// 임대인이 10/17 09:00(서울)에 고치고 취소
+		edit(rentItem, "월세", "250,000", version());
+		cancel(version(), "잘못 만듦 — 다음 달에 다시 확인");
+
+		String detail = page("/app/charges/" + charge);
+		assertThat(detail).contains("상태 기록 <span>3</span>건").contains("항목 기록 <span>2</span>건")
+				.contains("<strong>준비 중</strong>").contains("<strong>준비 중 → 받을 차례</strong>")
+				.contains("<span>2026년 10월 1일 03:00</span> · <span>자동</span><span> · 자동 발행</span>")
+				.contains("<strong>받을 차례 → 취소함</strong>")
+				.contains("<span>2026년 10월 17일 09:00</span> · <span>내가 바꿈</span><span> · 잘못 만듦 — 다음 달에 다시 확인</span>")
+				.contains("<strong>추가: 월세 500,000원</strong>").contains("<strong>고침: 월세 500,000원 → 250,000원</strong>");
+		assertThat(detail).as("개발용 메모는 화면에서만 뗀다").doesNotContain("알림 발송은 M5");
+		assertThat(jdbc.queryForObject("select count(*) from charge_status_history where reason = ?", Integer.class,
+				"자동 발행 — 알림 발송은 M5")).as("DB 기록은 그대로").isEqualTo(1);
+	}
+
+	@Test
 	void staleVersionAndOtherChargesItem() throws Exception {
 		long stale = version();
 		add("OTHER", "", "1000", stale);
@@ -224,6 +250,13 @@ class ChargeEditTests {
 				"insert into charge_item (landlord_id, charge_id, type, label, amount, created_at, "
 						+ "updated_at) values (?, ?, ?, ?, ?, now(), now()) returning id",
 				Long.class, a.landlordId(), charge, type, label, amount);
+	}
+
+	private void statusHistory(String from, String to, String reason, String at) {
+		jdbc.update(
+				"insert into charge_status_history (landlord_id, charge_id, from_status, to_status, actor_type, "
+						+ "reason, created_at) values (?, ?, ?, ?, 'SYSTEM', ?, cast(? as timestamptz))",
+				a.landlordId(), charge, from, to, reason, at);
 	}
 
 	private MvcResult add(String type, String label, String amount, long seenVersion) throws Exception {

@@ -30,8 +30,8 @@ import com.rentkeeper.support.MutableClockConfiguration;
 import com.rentkeeper.support.TestData;
 
 /**
- * 받을 월세 목록 (M3-a 읽기 전용): 합계(취소 제외), 상태 글자, 더 받은 금액, 한 달 안 세입자 교체 안내(M3 결정 3), 빈
- * 상태, 달 이동. 오늘은 2026-10-17(서울).
+ * 받을 월세 목록: 합계(취소 제외), 상태 글자, 더 받은 금액, 한 달 안 세입자 교체 안내(M3 결정 3), 빈 상태, 달 이동, 상태
+ * 고르기(M3-b 결정 12). 오늘은 2026-10-17(서울).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -104,6 +104,30 @@ class ChargeListTests {
 		charge(after, "2026-03-01", "2026-03-05", 500_000, 0, "ISSUED");
 
 		assertThat(page("/app/charges?month=2026-03")).contains("이 달은 두 계약 모두 청구됐어요");
+	}
+
+	@Test
+	void statusFilterShowsMatchingRowsButKeepsMonthTotalsAndCounts() throws Exception {
+		long kim = lease(unit101, "김세입", "01011112222", "2026-01-01", "2027-01-01");
+		long lee = lease(unit102, "이세입", "01033334444", "2026-01-01", "2027-01-01");
+		charge(kim, "2026-10-01", "2026-10-05", 550_000, 550_000, "PAID");
+		charge(lee, "2026-10-01", "2026-10-25", 400_000, 100_000, "PARTIALLY_PAID");
+		jdbc.update("update charge set status = 'TENANT_REPORTED', tenant_reported_at = now() "
+				+ "where status = 'PARTIALLY_PAID'");
+
+		String paid = page("/app/charges?month=2026-10&status=paid");
+		assertThat(paid).contains("김세입님").doesNotContain("이세입님").as("합계는 고른 상태와 관계없이 달 전체")
+				.contains("<dd class=\"inline\">950,000원</dd>").contains("<dd class=\"inline\">650,000원</dd>");
+		assertThat(paid).contains(">전체 2</a>").contains(">받을 차례 1</a>").contains(">일부 받음 0</a>").contains(">다 받음 1</a>")
+				.contains(">납부일 지남 0</a>").contains(">취소함 0</a>").contains("aria-current=\"page\"");
+		assertThat(paid).as("달을 옮겨도 고른 상태는 그대로").contains("href=\"/app/charges?month=2026-09&amp;status=paid\"")
+				.contains("href=\"/app/charges?month=2026-10&amp;status=partially-paid\"");
+
+		assertThat(page("/app/charges?month=2026-10&status=issued")).as("받을 차례에 세입자 신고도 묶는다").contains("이세입님")
+				.doesNotContain("김세입님");
+		assertThat(page("/app/charges?month=2026-10&status=overdue")).contains("이 상태인 받을 월세가 없어요")
+				.doesNotContain("이 달에 받을 월세가 없어요");
+		assertThat(page("/app/charges?month=2026-10&status=nope")).as("모르는 값이면 전체").contains("김세입님").contains("이세입님");
 	}
 
 	@Test

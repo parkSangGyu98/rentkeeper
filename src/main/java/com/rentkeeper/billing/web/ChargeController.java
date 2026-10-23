@@ -13,9 +13,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.rentkeeper.auth.security.LandlordPrincipal;
 import com.rentkeeper.billing.application.ChargeQueryService;
+import com.rentkeeper.billing.application.ChargeViews.StatusFilter;
 
 /**
- * 받을 월세 목록과 상세. 달은 주소로 고른다(GET 링크, 뒤로 가기·저장 가능, M3 결정 16). 남의 청구면 404.
+ * 받을 월세 목록과 상세. 달과 상태는 주소로 고른다(GET 링크, 뒤로 가기·저장 가능, M3 결정 16). 남의 청구면 404.
  */
 @Controller
 public class ChargeController {
@@ -32,11 +33,15 @@ public class ChargeController {
 	/**
 	 * @param month
 	 *            "2026-10" 형식. 없거나 잘못되면 이번 달
+	 * @param status
+	 *            고를 상태 (예: "paid", M3-b 결정 12). 없거나 모르는 값이면 전체
 	 */
 	@GetMapping("/app/charges")
 	public String list(@AuthenticationPrincipal LandlordPrincipal principal,
-			@RequestParam(name = "month", defaultValue = "") String month, Model model) {
-		model.addAttribute("view", queryService.month(principal.getLandlordId(), parseMonth(month)));
+			@RequestParam(name = "month", defaultValue = "") String month,
+			@RequestParam(name = "status", defaultValue = "") String status, Model model) {
+		model.addAttribute("view",
+				queryService.month(principal.getLandlordId(), parseMonth(month), StatusFilter.parse(status)));
 		return "billing/list";
 	}
 
