@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.rentkeeper.billing.application.ChargeExceptions.ChargeCanceledException;
 import com.rentkeeper.billing.application.ChargeExceptions.ChargeChangedException;
 import com.rentkeeper.billing.application.ChargeExceptions.OverpaymentException;
+import com.rentkeeper.billing.application.ChargeExceptions.PaymentDeletedException;
 import com.rentkeeper.billing.application.ChargeExceptions.PaymentInputException;
 import com.rentkeeper.billing.application.ChargeExceptions.PaymentInputException.Problem;
 import com.rentkeeper.billing.domain.ChangeActor;
@@ -34,6 +35,10 @@ import com.rentkeeper.lease.application.LeaseService;
 public class PaymentService {
 
 	static final String REASON_RECORDED = "입금 기록";
+
+	static final String REASON_DELETED = "입금 기록 삭제";
+
+	static final String REASON_CORRECTED = "입금 정정";
 
 	private final ChargeChanges changes;
 
@@ -97,6 +102,75 @@ public class PaymentService {
 		recalculate(landlordId, charge, today, REASON_RECORDED);
 		changes.finish(charge, versionBefore);
 		return charge.getStatus();
+	}
+
+	/**
+	 * 입금 기록을 지운다 (M3 결정 11): 행은 남기고 지운 시각·사유만 적는다. 받은 금액과 상태를 다시 계산한다(다 받음 → 일부
+	 * 받음·받을 차례, 납부일이 지났으면 납부일 지남).
+	 *
+	 * @return 지운 뒤의 상태
+	 * @throws PaymentDeletedException
+	 *             이미 지운 기록
+	 * @throws PaymentInputException
+	 *             사유가 비었거나 200자 초과 (REASON_INVALID)
+	 */
+	public ChargeStatus delete(long landlordId, long chargeId, long paymentId, long seenVersion, String reason) {
+		Charge charge = changes.start(landlordId, chargeId, seenVersion);
+		long versionBefore = charge.getVersion();
+		PaymentRecord record = activePayment(landlordId, chargeId, paymentId);
+		requireReason(reason);
+		record.delete(reason, clock.instant());
+		payments.saveAndFlush(record);
+		recalculate(landlordId, charge, LocalDate.now(clock), REASON_DELETED);
+		changes.finish(charge, versionBefore);
+		return charge.getStatus();
+	}
+
+	/**
+	 * 입금 기록을 고친다 (M3 결정 11, M3-b 결정 5): 원래 기록에 지운 표시(사유) + 고친 새 기록(replaces_id). 같은
+	 * 금액으로 고쳐도 version은 오른다.
+	 *
+	 * @return 고친 뒤의 상태
+	 * @throws OverpaymentException
+	 *             고친 금액이 (원래 기록을 뺀) 남은 금액보다 많은데 아직 확인받지 않았을 때
+	 */
+	public ChargeStatus correct(long landlordId, long chargeId, long paymentId, long seenVersion, PaymentInput input,
+			String reason) {
+		Charge charge = changes.start(landlordId, chargeId, seenVersion);
+		long versionBefore = charge.getVersion();
+		PaymentRecord original = activePayment(landlordId, chargeId, paymentId);
+		LocalDate today = LocalDate.now(clock);
+		validate(landlordId, charge, input.amount(), input.paidOn(), today);
+		requireReason(reason);
+		long balanceWithoutOriginal = Math.max(0,
+				charge.getTotalAmount() - (charge.getPaidAmount() - original.getAmount()));
+		if (input.amount() > balanceWithoutOriginal && !input.overpayConfirmed()) {
+			throw new OverpaymentException(input.amount() - balanceWithoutOriginal);
+		}
+		PaymentRecord corrected = PaymentRecord.correction(charge, original, input.amount(), input.paidOn(),
+				input.memo());
+		original.delete(reason, clock.instant());
+		payments.saveAndFlush(original);
+		payments.saveAndFlush(corrected);
+		recalculate(landlordId, charge, today, REASON_CORRECTED);
+		changes.finish(charge, versionBefore);
+		return charge.getStatus();
+	}
+
+	private PaymentRecord activePayment(long landlordId, long chargeId, long paymentId) {
+		PaymentRecord record = payments.findByIdAndChargeIdAndLandlordId(paymentId, chargeId, landlordId)
+				.orElseThrow(() -> new ResourceNotFoundException("payment"));
+		if (record.isDeleted()) {
+			throw new PaymentDeletedException();
+		}
+		return record;
+	}
+
+	private static void requireReason(String reason) {
+		String trimmed = reason == null ? "" : reason.strip();
+		if (trimmed.isEmpty() || trimmed.codePointCount(0, trimmed.length()) > PaymentRecord.REASON_MAX_LENGTH) {
+			throw new PaymentInputException(Problem.REASON_INVALID);
+		}
 	}
 
 	/** 금액 1원 ~ 10억 원, 받은 날은 오늘 이하이고 계약 시작월 1일 이후 (M3 결정 9) */

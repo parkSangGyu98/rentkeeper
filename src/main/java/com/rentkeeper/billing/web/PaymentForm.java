@@ -5,6 +5,7 @@ import java.time.format.DateTimeParseException;
 
 import org.springframework.validation.BindingResult;
 
+import com.rentkeeper.billing.application.ChargeViews.PaymentRow;
 import com.rentkeeper.billing.application.PaymentService.PaymentInput;
 import com.rentkeeper.billing.domain.PaymentRecord;
 import com.rentkeeper.common.money.Won;
@@ -23,6 +24,9 @@ public class PaymentForm {
 
 	private String memo = "";
 
+	/** 고치거나 지우는 사유 (정정·삭제 화면, M3 결정 11) */
+	private String reason = "";
+
 	private long version;
 
 	/** [다 받았어요]: 남은 금액 그대로 기록 (금액 칸 없음) */
@@ -30,6 +34,16 @@ public class PaymentForm {
 
 	/** 남은 금액보다 많아도 기록한다고 확인함 (M3-b 결정 3) */
 	private boolean overpayConfirmed;
+
+	/** 정정 화면: 원래 기록의 값으로 채운다 */
+	static PaymentForm correcting(long version, PaymentRow original) {
+		PaymentForm form = new PaymentForm();
+		form.version = version;
+		form.amount = String.valueOf(original.amount());
+		form.paidOn = original.paidOn().toString();
+		form.memo = original.memo() == null ? "" : original.memo();
+		return form;
+	}
 
 	static PaymentForm of(long version, boolean full, long balance, LocalDate today) {
 		PaymentForm form = new PaymentForm();
@@ -87,6 +101,14 @@ public class PaymentForm {
 
 	public void setMemo(String memo) {
 		this.memo = memo;
+	}
+
+	public String getReason() {
+		return reason;
+	}
+
+	public void setReason(String reason) {
+		this.reason = reason;
 	}
 
 	public long getVersion() {

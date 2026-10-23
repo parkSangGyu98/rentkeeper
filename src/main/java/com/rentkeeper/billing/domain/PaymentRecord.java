@@ -98,6 +98,42 @@ public class PaymentRecord extends BaseTimeEntity {
 		return record;
 	}
 
+	/**
+	 * 잘못 기록한 입금을 고친 새 기록 (M3 결정 11). 원래 기록은 서비스가 {@link #delete}로 지운 표시를 한다.
+	 *
+	 * @throws IllegalArgumentException
+	 *             금액이 1원 ~ 10억 원 밖이거나 원래 기록이 이미 지워졌을 때
+	 */
+	public static PaymentRecord correction(Charge charge, PaymentRecord original, long amount, LocalDate paidOn,
+			String memo) {
+		if (original.chargeId != charge.getId() || original.isDeleted()) {
+			throw new IllegalArgumentException("original must be an active record of the charge");
+		}
+		PaymentRecord record = manual(charge, amount, paidOn, memo);
+		record.replacesId = original.getId();
+		return record;
+	}
+
+	/**
+	 * 지운 표시를 한다. 행은 남는다(감사 기록). 되살리지 않는다(M3-b 결정 6).
+	 *
+	 * @param reason
+	 *            사유 (필수, 1~200자)
+	 * @throws IllegalStateException
+	 *             이미 지운 기록
+	 */
+	public void delete(String reason, Instant now) {
+		if (isDeleted()) {
+			throw new IllegalStateException("already deleted");
+		}
+		String trimmed = blankToNull(reason);
+		if (trimmed == null || trimmed.codePointCount(0, trimmed.length()) > REASON_MAX_LENGTH) {
+			throw new IllegalArgumentException("delete reason is required (1~200)");
+		}
+		this.deleteReason = trimmed;
+		this.deletedAt = Objects.requireNonNull(now);
+	}
+
 	public boolean isDeleted() {
 		return deletedAt != null;
 	}

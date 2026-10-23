@@ -1,6 +1,7 @@
 package com.rentkeeper.billing.domain;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
@@ -10,6 +11,9 @@ import org.springframework.data.repository.query.Param;
 public interface PaymentRecordRepository extends Repository<PaymentRecord, Long> {
 
 	PaymentRecord saveAndFlush(PaymentRecord record);
+
+	/** 청구의 입금 기록 하나 (다른 청구·다른 임대인의 기록이면 없음) */
+	Optional<PaymentRecord> findByIdAndChargeIdAndLandlordId(long id, long chargeId, long landlordId);
 
 	/** 청구의 모든 입금 기록 (지운 것 포함, 기록 순) */
 	List<PaymentRecord> findByChargeIdAndLandlordIdOrderByIdAsc(long chargeId, long landlordId);

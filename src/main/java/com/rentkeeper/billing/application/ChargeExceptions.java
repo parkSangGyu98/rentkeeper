@@ -49,7 +49,10 @@ public final class ChargeExceptions {
 			DATE_IN_FUTURE,
 
 			/** 계약 시작월 1일 전 (M3 결정 9) */
-			DATE_BEFORE_LEASE
+			DATE_BEFORE_LEASE,
+
+			/** 지우거나 고치는 사유가 비었거나 200자 초과 (M3 결정 11) */
+			REASON_INVALID
 
 		}
 
@@ -62,6 +65,15 @@ public final class ChargeExceptions {
 
 		public Problem problem() {
 			return problem;
+		}
+
+	}
+
+	/** 이미 지운 입금 기록은 다시 지우거나 고칠 수 없다 */
+	public static class PaymentDeletedException extends BusinessException {
+
+		PaymentDeletedException() {
+			super(ErrorCode.PAYMENT_INVALID, "payment already deleted");
 		}
 
 	}

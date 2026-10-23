@@ -53,8 +53,24 @@
 				<li th:each="p : ${charge.activePayments()}" class="border-b border-gray-200 pb-2">
 					<p><strong th:text="${p.amountText()}">550,000원</strong> · <span th:text="${p.paidOnText()} + ' 받음'">2026년 10월 5일 받음</span></p>
 					<p th:if="${p.memo()}" class="text-base text-gray-700" th:text="${p.memo()}">현금으로 받음</p>
+					<p th:if="${p.replacesId() != null}" class="text-base text-gray-700">고친 기록이에요.</p>
+					<div class="mt-1 flex flex-wrap gap-4" th:unless="${charge.canceled()}">
+						<a th:href="@{/app/charges/{id}/payments/{pid}/correct(id=${charge.id()},pid=${p.id()})}" class="font-semibold text-brand-700 underline">고치기</a>
+						<a th:href="@{/app/charges/{id}/payments/{pid}/delete(id=${charge.id()},pid=${p.id()})}" class="font-semibold text-brand-700 underline">지우기</a>
+					</div>
 				</li>
 			</ul>
+
+			<!-- 지운 기록은 접어서 보여 준다 (M3 결정 11) -->
+			<details th:unless="${charge.deletedPayments().isEmpty()}" class="mt-4 text-lg">
+				<summary class="cursor-pointer font-semibold">지운 입금 기록 <span th:text="${charge.deletedPayments().size()}">1</span>건</summary>
+				<ul class="mt-2 space-y-2 text-gray-700">
+					<li th:each="p : ${charge.deletedPayments()}">
+						<span class="line-through" th:text="${p.amountText()} + ' · ' + ${p.paidOnText()} + ' 받음'">550,000원 · 2026년 10월 5일 받음</span>
+						<span th:text="'(사유: ' + ${p.deleteReason()} + ')'">(사유: 금액을 잘못 입력함)</span>
+					</li>
+				</ul>
+			</details>
 		</section>
 	</main>
 </body>

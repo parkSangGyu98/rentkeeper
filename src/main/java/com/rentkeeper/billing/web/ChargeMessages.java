@@ -20,6 +20,10 @@ final class ChargeMessages {
 
 	static final String CANCELED = "취소한 받을 월세는 고칠 수 없어요.";
 
+	static final String REASON_REQUIRED = "사유를 1~200자로 입력해 주세요 (예: 금액을 잘못 입력함)";
+
+	static final String PAYMENT_DELETED = "이미 지운 입금 기록이에요. 아래 최신 내용을 확인해 주세요.";
+
 	private ChargeMessages() {
 	}
 
@@ -34,19 +38,30 @@ final class ChargeMessages {
 			case AMOUNT_TOO_LARGE -> "한 번에 기록할 수 있는 금액은 10억 원까지예요";
 			case DATE_IN_FUTURE -> "받은 날은 오늘이나 그 전 날짜로 골라 주세요";
 			case DATE_BEFORE_LEASE -> "받은 날은 계약이 시작된 달(" + detail.earliestPaidOnText() + ") 이후로 골라 주세요";
+			case REASON_INVALID -> REASON_REQUIRED;
 		};
 	}
 
-	static boolean isAmount(PaymentInputException e) {
+	/** 안내를 붙일 칸 */
+	static String field(PaymentInputException e) {
 		return switch (e.problem()) {
-			case AMOUNT_TOO_SMALL, AMOUNT_TOO_LARGE -> true;
-			case DATE_IN_FUTURE, DATE_BEFORE_LEASE -> false;
+			case AMOUNT_TOO_SMALL, AMOUNT_TOO_LARGE -> "amount";
+			case DATE_IN_FUTURE, DATE_BEFORE_LEASE -> "paidOn";
+			case REASON_INVALID -> "reason";
 		};
 	}
 
 	/** 남은 금액보다 많을 때 한 번 더 묻는다 */
 	static String overpay(long over) {
 		return "남은 금액보다 " + Won.format(over) + " 많아요. 이대로 기록할까요? 맞으면 [기록하기]를 한 번 더 눌러 주세요.";
+	}
+
+	static String deleted(ChargeStatus status) {
+		return "입금 기록을 지웠어요. 지금 상태는 '" + status.getLabel() + "'이에요.";
+	}
+
+	static String corrected(ChargeStatus status) {
+		return "입금 기록을 고쳤어요. 지금 상태는 '" + status.getLabel() + "'이에요.";
 	}
 
 	static String recorded(ChargeStatus status, long balance) {
