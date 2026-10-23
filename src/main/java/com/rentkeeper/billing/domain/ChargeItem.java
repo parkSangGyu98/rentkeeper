@@ -67,6 +67,31 @@ public class ChargeItem extends BaseTimeEntity {
 		return item;
 	}
 
+	/** 임대인이 추가한 항목 (메모 포함, M3 결정 12) */
+	public static ChargeItem of(Charge charge, ChargeItemType type, String label, long amount, String memo) {
+		ChargeItem item = of(charge, type, label, amount);
+		item.memo = requireMemo(memo);
+		return item;
+	}
+
+	/** 이름·금액·메모를 고친다 (종류는 바꾸지 않는다). 바뀐 내용 기록과 합계 계산은 서비스가 한다 */
+	public void change(String label, long amount, String memo) {
+		this.label = requireLabel(label);
+		this.amount = requireAmount(amount);
+		this.memo = requireMemo(memo);
+	}
+
+	private static String requireMemo(String memo) {
+		if (memo == null || memo.isBlank()) {
+			return null;
+		}
+		String trimmed = memo.strip();
+		if (trimmed.codePointCount(0, trimmed.length()) > MEMO_MAX_LENGTH) {
+			throw new IllegalArgumentException("memo too long");
+		}
+		return trimmed;
+	}
+
 	public static long requireAmount(long amount) {
 		if (amount < 0 || amount > AMOUNT_MAX) {
 			throw new IllegalArgumentException("item amount out of range");

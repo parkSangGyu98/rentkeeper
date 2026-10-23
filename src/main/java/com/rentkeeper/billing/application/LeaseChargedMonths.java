@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -42,6 +44,11 @@ class LeaseChargedMonths implements ChargedMonths {
 	@Override
 	public boolean exists(long landlordId, long leaseId, YearMonth month) {
 		return charges.existsByLeaseIdAndLandlordIdAndBillingMonth(leaseId, landlordId, month.atDay(1));
+	}
+
+	@Override
+	public Set<YearMonth> months(long landlordId, long leaseId) {
+		return charges.billingMonths(leaseId, landlordId).stream().map(YearMonth::from).collect(Collectors.toSet());
 	}
 
 	@Override

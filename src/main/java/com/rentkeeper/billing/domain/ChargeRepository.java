@@ -24,6 +24,8 @@ public interface ChargeRepository extends Repository<Charge, Long> {
 	@Query("select c.billingMonth from Charge c where c.leaseId = :leaseId and c.landlordId = :landlordId")
 	List<LocalDate> billingMonths(@Param("leaseId") long leaseId, @Param("landlordId") long landlordId);
 
+	Optional<Charge> findByLeaseIdAndLandlordIdAndBillingMonth(long leaseId, long landlordId, LocalDate billingMonth);
+
 	boolean existsByLeaseIdAndLandlordId(long leaseId, long landlordId);
 
 	boolean existsByLeaseIdAndLandlordIdAndBillingMonth(long leaseId, long landlordId, LocalDate billingMonth);

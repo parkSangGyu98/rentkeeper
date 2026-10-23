@@ -32,6 +32,10 @@ public class ChargeIssuer {
 
 	static final String REASON_ISSUED = "자동 발행 — 알림 발송은 M5";
 
+	static final String REASON_CREATED_MANUAL = "직접 만듦";
+
+	static final String REASON_ISSUED_MANUAL = "발행 — 알림 발송은 M5";
+
 	static final String REASON_OVERDUE = "납부일 지남";
 
 	private final ChargeRepository charges;
@@ -59,10 +63,11 @@ public class ChargeIssuer {
 			ChangeActor actor, LocalDate today, Instant now) {
 		Charge charge = charges.saveAndFlush(
 				Charge.create(landlordId, leaseId, planned.month(), planned.dueDate(), planned.total(), source));
-		record(charge, charge.created(), actor, REASON_CREATED, now);
+		boolean auto = source == ChargeSource.AUTO;
+		record(charge, charge.created(), actor, auto ? REASON_CREATED : REASON_CREATED_MANUAL, now);
 		addItem(charge, ChargeItemType.RENT, planned.monthlyRent(), actor, now);
 		addItem(charge, ChargeItemType.MAINTENANCE, planned.maintenanceFee(), actor, now);
-		record(charge, charge.issue(now), actor, REASON_ISSUED, now);
+		record(charge, charge.issue(now), actor, auto ? REASON_ISSUED : REASON_ISSUED_MANUAL, now);
 		charge.refresh(today, now).ifPresent(change -> record(charge, change, actor, REASON_OVERDUE, now));
 		return charge;
 	}

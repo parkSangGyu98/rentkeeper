@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
+import com.rentkeeper.billing.domain.ChargeItemType;
 import com.rentkeeper.billing.domain.ChargeStatus;
 import com.rentkeeper.common.money.Won;
 
@@ -153,6 +154,11 @@ public final class ChargeViews {
 			return status == ChargeStatus.CANCELED;
 		}
 
+		/** 취소 링크를 보여 줄지: 입금이 없고 아직 취소하지 않았을 때 (M3 결정 7) */
+		public boolean canCancel() {
+			return !canceled() && paidAmount == 0 && status != ChargeStatus.PAID;
+		}
+
 		/** 입금 버튼을 보여 줄지: 다 받았거나 취소한 청구는 보이지 않는다 */
 		public boolean canPay() {
 			return status != ChargeStatus.PAID && status != ChargeStatus.CANCELED;
@@ -178,7 +184,11 @@ public final class ChargeViews {
 	}
 
 	/** 상세의 항목 한 줄 */
-	public record ItemRow(long id, String typeLabel, String label, long amount, String memo) {
+	public record ItemRow(long id, ChargeItemType type, String label, long amount, String memo) {
+
+		public String typeLabel() {
+			return type.getLabel();
+		}
 
 		public String amountText() {
 			return Won.format(amount);

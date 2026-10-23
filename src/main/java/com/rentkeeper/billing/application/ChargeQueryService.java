@@ -87,8 +87,7 @@ public class ChargeQueryService {
 				.orElseThrow(() -> new ResourceNotFoundException("charge"));
 		LeaseSummary lease = leaseService.summaries(landlordId, Set.of(charge.getLeaseId())).get(charge.getLeaseId());
 		List<ItemRow> itemRows = items.findByChargeIdAndLandlordIdOrderByIdAsc(chargeId, landlordId).stream()
-				.map(i -> new ItemRow(i.getId(), i.getType().getLabel(), i.getLabel(), i.getAmount(), i.getMemo()))
-				.toList();
+				.map(i -> new ItemRow(i.getId(), i.getType(), i.getLabel(), i.getAmount(), i.getMemo())).toList();
 		List<PaymentRow> paymentRows = payments.findByChargeIdAndLandlordIdOrderByIdAsc(chargeId, landlordId).stream()
 				.map(p -> new PaymentRow(p.getId(), p.getPaidOn(), p.getAmount(), p.getMemo(), p.isDeleted(),
 						p.getDeleteReason(), p.getReplacesId()))

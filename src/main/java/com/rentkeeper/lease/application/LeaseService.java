@@ -3,11 +3,13 @@ package com.rentkeeper.lease.application;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -26,6 +28,7 @@ import com.rentkeeper.lease.application.LeaseViews.LeaseDetail;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRegistration;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRow;
 import com.rentkeeper.lease.application.LeaseViews.LeaseSummary;
+import com.rentkeeper.lease.application.LeaseViews.MissingCharges;
 import com.rentkeeper.lease.application.LeaseViews.RentRow;
 import com.rentkeeper.lease.application.LeaseViews.UnitPage;
 import com.rentkeeper.lease.domain.Lease;
@@ -183,20 +186,38 @@ public class LeaseService {
 				tenant.getMemo() == null ? null : tenant.getMemo().value(), lease.getDeposit(), lease.getDueDay(),
 				lease.getStartDate(), lease.getEndDate(), lease.getStatus(), lease.getEndedOn(), lease.getBankName(),
 				lease.getAccountNumber().digits(), lease.getAccountHolder().value(), lease.getMemo(), current, rows,
-				upcoming, lease.getIssueDaysBefore(), thisMonthNotAutomatic(landlordId, lease, thisMonth));
+				upcoming, lease.getIssueDaysBefore(), missingCharges(landlordId, lease, thisMonth));
 	}
 
+	/** 계약 상세 배너에서 지난 달을 몇 달까지 보는지 (M3-b 결정 11). 그보다 오래된 달은 수동 생성 화면에서 고른다 */
+	public static final int RECENT_MISSING_MONTHS = 3;
+
 	/**
-	 * 이번 달 받을 월세가 자동으로 만들어지지 않는 계약인지 (M3 결정 2): 이번 달에 등록했는데 이번 달 납부일이 이미 지났고, 이번 달
-	 * 청구가 아직 없다. 계약 상세에 크게 안내한다.
+	 * 받을 월세가 없는 달 (계약 상세 배너, M3-b 결정 11). 진행 중 계약만 본다. 취소한 달도 "있음"으로 센다(다시 만들 수
+	 * 없다).
+	 * <ul>
+	 * <li>이번 달: 계약 기간 안이고, 납부일이 오늘보다 앞인데 받을 월세가 없다 (등록 전에 납부일이 지났거나 배치가 실패함)</li>
+	 * <li>지난 달: 이번 달 앞 {@value #RECENT_MISSING_MONTHS}개 달 중 계약 기간 안인데 받을 월세가 없는
+	 * 달</li>
+	 * </ul>
 	 */
-	private boolean thisMonthNotAutomatic(long landlordId, Lease lease, YearMonth thisMonth) {
-		LocalDate registeredOn = LocalDate.ofInstant(lease.getCreatedAt(), clock.getZone());
-		if (!lease.isActive() || !YearMonth.from(registeredOn).equals(thisMonth)) {
-			return false;
+	private MissingCharges missingCharges(long landlordId, Lease lease, YearMonth thisMonth) {
+		if (!lease.isActive() || !lease.getEndDate().isAfter(lease.getStartDate())) {
+			return MissingCharges.NONE;
 		}
-		return Lease.registrationMonthSkipped(lease.getStartDate(), lease.getEndDate(), lease.getDueDay(), registeredOn)
-				&& !chargedMonths.exists(landlordId, lease.getId(), thisMonth);
+		Set<YearMonth> charged = chargedMonths.months(landlordId, lease.getId());
+		YearMonth first = YearMonth.from(lease.getStartDate());
+		YearMonth last = lease.lastMonth();
+		LocalDate due = Lease.dueDateIn(thisMonth, lease.getDueDay());
+		boolean thisMonthMissing = !thisMonth.isBefore(first) && !thisMonth.isAfter(last)
+				&& !charged.contains(thisMonth) && due.isBefore(today());
+		List<YearMonth> recent = new ArrayList<>();
+		for (YearMonth m = thisMonth.minusMonths(RECENT_MISSING_MONTHS); m.isBefore(thisMonth); m = m.plusMonths(1)) {
+			if (!m.isBefore(first) && !m.isAfter(last) && !charged.contains(m)) {
+				recent.add(m);
+			}
+		}
+		return new MissingCharges(thisMonthMissing ? due : null, recent);
 	}
 
 	/** 지금 등록하면 이번 달 받을 월세가 자동으로 만들어지지 않는지 (등록 확인 화면의 안내, M3 결정 2) */

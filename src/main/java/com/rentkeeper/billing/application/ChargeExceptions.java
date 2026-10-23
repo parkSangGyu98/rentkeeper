@@ -78,6 +78,71 @@ public final class ChargeExceptions {
 
 	}
 
+	/** 그 달은 직접 만들 수 없다 (M3-b 결정 7, M3 결정 8) */
+	public static class MonthUnavailableException extends BusinessException {
+
+		public enum Reason {
+
+			/** 그 달 받을 월세가 이미 있다 */
+			EXISTS,
+
+			/** 취소한 달 (다시 만들 수 없다) */
+			CANCELED,
+
+			/** 들어오는 달 ~ min(마지막 청구월, 다음 달) 밖 */
+			OUT_OF_RANGE
+
+		}
+
+		private final Reason reason;
+
+		MonthUnavailableException(Reason reason) {
+			super(ErrorCode.CHARGE_MONTH_UNAVAILABLE, "month unavailable: " + reason);
+			this.reason = reason;
+		}
+
+		public Reason reason() {
+			return reason;
+		}
+
+	}
+
+	/** 받을 금액 합계가 0원이 된다 (M3-b 결정 9). 받지 않으려면 취소를 쓴다 */
+	public static class ZeroTotalException extends BusinessException {
+
+		ZeroTotalException() {
+			super(ErrorCode.CHARGE_ZERO_TOTAL, "total would be zero");
+		}
+
+	}
+
+	/** 마지막 항목은 지울 수 없다 (M3-b 결정 9) */
+	public static class LastItemException extends BusinessException {
+
+		LastItemException() {
+			super(ErrorCode.CHARGE_ZERO_TOTAL, "cannot remove last item");
+		}
+
+	}
+
+	/** 입금 기록이 있는 받을 월세는 취소할 수 없다 (M3 결정 7) */
+	public static class HasPaymentsException extends BusinessException {
+
+		HasPaymentsException() {
+			super(ErrorCode.CHARGE_HAS_PAYMENTS, "charge has payments");
+		}
+
+	}
+
+	/** 취소 사유가 비었거나 200자 초과 */
+	public static class ReasonInvalidException extends BusinessException {
+
+		ReasonInvalidException() {
+			super(ErrorCode.PAYMENT_INVALID, "reason required");
+		}
+
+	}
+
 	/** 남은 금액보다 많이 기록하려 한다. 한 번 더 확인받는다 (M3-b 결정 3) */
 	public static class OverpaymentException extends BusinessException {
 

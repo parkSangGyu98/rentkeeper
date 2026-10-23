@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>항목 지우기 - RentKeeper</title>
+</head>
+<body>
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-4 text-3xl font-bold">이 항목을 지울까요?</h1>
+		<p class="mb-2 text-xl"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
+			· <span th:text="${charge.monthText()}">2026년 10월</span></p>
+		<p class="mb-6 text-2xl font-bold"><span th:text="${item.label()}">전기</span> · <span th:text="${item.amountText()}">30,000원</span></p>
+		<p class="mb-6 text-lg text-gray-700">받을 돈에서 빠지고, 누가 언제 지웠는지 기록이 남아요.</p>
+		<form th:action="@{/app/charges/{id}/items/{itemId}/delete(id=${charge.id()},itemId=${item.id()})}" method="post" class="mb-4">
+			<input type="hidden" name="version" th:value="${charge.version()}">
+			<button type="submit" class="btn btn-danger w-full">네, 지울게요</button>
+		</form>
+		<a th:href="@{/app/charges/{id}(id=${charge.id()})}" class="btn btn-secondary w-full">지우지 않고 돌아가기</a>
+	</main>
+</body>
+</html>

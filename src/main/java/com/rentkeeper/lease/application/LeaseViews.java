@@ -70,6 +70,54 @@ public final class LeaseViews {
 	}
 
 	/**
+	 * 받을 월세가 없는 달 (계약 상세의 [이번 달 받을 월세 만들기] 배너, M3-b 결정 11).
+	 *
+	 * @param thisMonthDueDate
+	 *            이번 달 납부일 (이번 달 받을 월세가 없고 납부일이 지났을 때만, 아니면 null)
+	 * @param recentMonths
+	 *            최근 3개월(이번 달 제외) 중 받을 월세가 없는 달
+	 */
+	public record MissingCharges(LocalDate thisMonthDueDate, List<YearMonth> recentMonths) {
+
+		public static final MissingCharges NONE = new MissingCharges(null, List.of());
+
+		public boolean thisMonthMissing() {
+			return thisMonthDueDate != null;
+		}
+
+		public boolean any() {
+			return thisMonthMissing() || !recentMonths.isEmpty();
+		}
+
+		/** "2026-10" (수동 생성 화면 주소) */
+		public String thisMonthParam() {
+			return YearMonth.from(thisMonthDueDate).toString();
+		}
+
+		public String thisMonthDueText() {
+			return thisMonthDueDate.getMonthValue() + "월 " + thisMonthDueDate.getDayOfMonth() + "일";
+		}
+
+		/** "2026년 8월, 9월" */
+		public String recentMonthsText() {
+			StringBuilder text = new StringBuilder();
+			int year = 0;
+			for (YearMonth m : recentMonths) {
+				if (!text.isEmpty()) {
+					text.append(", ");
+				}
+				if (year != m.getYear()) {
+					text.append(m.getYear()).append("년 ");
+					year = m.getYear();
+				}
+				text.append(m.getMonthValue()).append("월");
+			}
+			return text.toString();
+		}
+
+	}
+
+	/**
 	 * 다른 화면(받을 월세 목록 등)에 보일 계약 요약.
 	 *
 	 * @param startDate
@@ -141,7 +189,7 @@ public final class LeaseViews {
 	public record LeaseDetail(long id, UnitView unit, String tenantName, String tenantPhone, String tenantMemo,
 			long deposit, int dueDay, LocalDate startDate, LocalDate endDate, LeaseStatus status, LocalDate endedOn,
 			String bankName, String accountNumber, String accountHolder, String memo, RentRow currentRent,
-			List<RentRow> rentHistory, List<RentRow> upcomingRent, int issueDaysBefore, boolean thisMonthNotAutomatic) {
+			List<RentRow> rentHistory, List<RentRow> upcomingRent, int issueDaysBefore, MissingCharges missing) {
 
 		public String depositText() {
 			return Won.format(deposit);

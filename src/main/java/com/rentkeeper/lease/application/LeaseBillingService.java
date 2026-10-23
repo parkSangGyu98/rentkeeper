@@ -65,6 +65,12 @@ public class LeaseBillingService {
 		return leases.lockByIdAndLandlordId(leaseId, landlordId).map(this::terms);
 	}
 
+	/** 잠그지 않고 청구 계산 사실을 읽는다 (수동 생성 화면). 남의 계약이면 빈 값 */
+	@Transactional(readOnly = true)
+	public Optional<LeaseBillingTerms> billingTerms(long leaseId, long landlordId) {
+		return leases.findByIdAndLandlordId(leaseId, landlordId).map(this::terms);
+	}
+
 	private LeaseBillingTerms terms(Lease lease) {
 		List<LeaseBillingTerms.Rent> rents = rentHistories
 				.findByLeaseIdAndLandlordIdOrderByEffectiveFromAsc(lease.getId(), lease.getLandlordId()).stream()

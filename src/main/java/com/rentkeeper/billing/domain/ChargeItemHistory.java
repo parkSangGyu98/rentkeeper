@@ -72,6 +72,16 @@ public class ChargeItemHistory {
 		return of(item, Action.ADD, null, item.getAmount(), actor, now);
 	}
 
+	/** 항목의 이름·금액을 고침 (고치기 전 금액을 함께 남긴다) */
+	public static ChargeItemHistory changed(ChargeItem item, long beforeAmount, ChangeActor actor, Instant now) {
+		return of(item, Action.CHANGE, beforeAmount, item.getAmount(), actor, now);
+	}
+
+	/** 항목을 지움 (지우기 전 금액을 남긴다) */
+	public static ChargeItemHistory removed(ChargeItem item, ChangeActor actor, Instant now) {
+		return of(item, Action.REMOVE, item.getAmount(), null, actor, now);
+	}
+
 	private static ChargeItemHistory of(ChargeItem item, Action action, Long before, Long after, ChangeActor actor,
 			Instant now) {
 		Objects.requireNonNull(item.getId(), "item must be saved first");

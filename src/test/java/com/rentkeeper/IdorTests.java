@@ -129,9 +129,13 @@ class IdorTests {
 				"insert into payment_record (landlord_id, charge_id, amount, paid_on, source, "
 						+ "created_at, updated_at) values (?, ?, 100000, '2026-10-05', 'MANUAL', now(), now()) returning id",
 				Long.class, victim.landlordId(), charge);
+		long item = jdbc.queryForObject(
+				"insert into charge_item (landlord_id, charge_id, type, label, amount, created_at, "
+						+ "updated_at) values (?, ?, 'RENT', '월세', 500000, now(), now()) returning id",
+				Long.class, victim.landlordId(), charge);
 		victimIds = Map.of("id", "", "property", String.valueOf(property), "unit", String.valueOf(unit), "lease",
 				String.valueOf(lease), "history", String.valueOf(history), "charge", String.valueOf(charge), "payment",
-				String.valueOf(payment));
+				String.valueOf(payment), "item", String.valueOf(item));
 	}
 
 	/** (메서드 경로) → 공격자가 보낼 경로와 폼. {property}·{unit}·{lease}·{history}는 피해자의 ID */
@@ -179,6 +183,23 @@ class IdorTests {
 				Attack.get("/app/charges/{charge}/payments/{payment}/delete"));
 		attacks.put("POST /app/charges/{id}/payments/{paymentId}/delete",
 				Attack.post("/app/charges/{charge}/payments/{payment}/delete", "version", "0", "reason", "탈취"));
+		attacks.put("GET /app/leases/{id}/charges/new",
+				Attack.get("/app/leases/{lease}/charges/new", "month", "2026-10"));
+		attacks.put("POST /app/leases/{id}/charges", Attack.post("/app/leases/{lease}/charges", "month", "2026-11",
+				"monthlyRent", "1", "maintenanceFee", "0"));
+		attacks.put("GET /app/charges/{id}/items/new", Attack.get("/app/charges/{charge}/items/new"));
+		attacks.put("POST /app/charges/{id}/items", Attack.post("/app/charges/{charge}/items", "type", "OTHER", "label",
+				"탈취", "amount", "1", "version", "0"));
+		attacks.put("GET /app/charges/{id}/items/{itemId}/edit", Attack.get("/app/charges/{charge}/items/{item}/edit"));
+		attacks.put("POST /app/charges/{id}/items/{itemId}", Attack.post("/app/charges/{charge}/items/{item}", "type",
+				"RENT", "label", "탈취", "amount", "1", "version", "0"));
+		attacks.put("GET /app/charges/{id}/items/{itemId}/delete",
+				Attack.get("/app/charges/{charge}/items/{item}/delete"));
+		attacks.put("POST /app/charges/{id}/items/{itemId}/delete",
+				Attack.post("/app/charges/{charge}/items/{item}/delete", "version", "0"));
+		attacks.put("GET /app/charges/{id}/cancel", Attack.get("/app/charges/{charge}/cancel"));
+		attacks.put("POST /app/charges/{id}/cancel",
+				Attack.post("/app/charges/{charge}/cancel", "version", "0", "reason", "탈취"));
 		attacks.put("GET /app/charges/{id}/payments/{paymentId}/correct",
 				Attack.get("/app/charges/{charge}/payments/{payment}/correct"));
 		attacks.put("POST /app/charges/{id}/payments/{paymentId}/correct",
@@ -212,7 +233,7 @@ class IdorTests {
 	}
 
 	@Test
-	void ownChargeWithVictimsPaymentIdIsNotFound() throws Exception {
+	void ownChargeWithVictimsPaymentOrItemIdIsNotFound() throws Exception {
 		long property = propertyService.create(attacker.landlordId(), new PropertyInput("공격자빌라", "서울", null));
 		long unit = propertyService.addUnit(attacker.landlordId(), property,
 				new UnitInput("201호", UnitType.ONE_ROOM, null));
@@ -228,15 +249,20 @@ class IdorTests {
 
 		Map<String, String> ids = new java.util.HashMap<>(victimIds);
 		ids.put("own", String.valueOf(own));
-		for (Attack attack : List.of(Attack.get("/app/charges/{own}/payments/{payment}/delete"),
-				Attack.get("/app/charges/{own}/payments/{payment}/correct"),
-				Attack.post("/app/charges/{own}/payments/{payment}/delete", "version", "0", "reason", "섞기"),
-				Attack.post("/app/charges/{own}/payments/{payment}/correct", "version", "0", "amount", "1", "paidOn",
-						"2026-10-17", "reason", "섞기", "overpayConfirmed", "true"))) {
+		for (Attack attack : List
+				.of(Attack.get("/app/charges/{own}/payments/{payment}/delete"),
+						Attack.get("/app/charges/{own}/payments/{payment}/correct"),
+						Attack.post("/app/charges/{own}/payments/{payment}/delete", "version", "0", "reason", "섞기"),
+						Attack.post("/app/charges/{own}/payments/{payment}/correct", "version", "0", "amount", "1",
+								"paidOn", "2026-10-17", "reason", "섞기", "overpayConfirmed", "true"),
+						Attack.get("/app/charges/{own}/items/{item}/edit"),
+						Attack.post("/app/charges/{own}/items/{item}", "type", "RENT", "label", "섞기", "amount", "1",
+								"version", "0"),
+						Attack.post("/app/charges/{own}/items/{item}/delete", "version", "0"))) {
 			assertThat(mockMvc.perform(attack.build(ids, attacker)).andReturn().getResponse().getStatus())
 					.as(attack.path()).isEqualTo(404);
 		}
-		assertThat(snapshot()).as("자기 청구에 남의 입금 ID를 섞어도 아무것도 바뀌지 않는다").isEqualTo(before);
+		assertThat(snapshot()).as("자기 청구에 남의 입금·항목 ID를 섞어도 아무것도 바뀌지 않는다").isEqualTo(before);
 	}
 
 	@Test

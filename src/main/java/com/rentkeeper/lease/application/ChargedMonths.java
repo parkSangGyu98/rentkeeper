@@ -2,6 +2,7 @@ package com.rentkeeper.lease.application;
 
 import java.time.YearMonth;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * 계약에 생긴 청구(받을 월세) 정보 (M3 필수 확인). lease는 billing에 기댈 수 없어 이 인터페이스를 정하고 billing이
@@ -15,6 +16,9 @@ public interface ChargedMonths {
 
 	/** 그 달 청구가 있는지 */
 	boolean exists(long landlordId, long leaseId, YearMonth month);
+
+	/** 청구가 있는 모든 달 (취소 포함) */
+	Set<YearMonth> months(long landlordId, long leaseId);
 
 	/** 청구가 있는 가장 늦은 달 */
 	Optional<YearMonth> latest(long landlordId, long leaseId);

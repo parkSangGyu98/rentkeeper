@@ -145,15 +145,18 @@ class LeaseBillingSettingsTests {
 
 		generator.run();
 		assertThat(jdbc.queryForObject("select count(*) from charge", Integer.class)).as("10월분은 자동으로 만들지 않았다").isZero();
+		// 저장 직후 계약 상세: 배너와 [이번 달 받을 월세 만들기] 버튼 (M3-b 결정 11)
 		mockMvc.perform(get("/app/leases/" + lease).cookie(a.cookie()))
-				.andExpect(content().string(containsString(NOT_AUTOMATIC)));
+				.andExpect(content().string(containsString("이번 달 받을 월세가 아직 없어요")))
+				.andExpect(content().string(containsString("/app/leases/" + lease + "/charges/new?month=2026-10")))
+				.andExpect(content().string(containsString("이번 달 받을 월세 만들기")));
 
-		// 임대인이 이번 달분을 직접 만든 뒤에는 안내하지 않는다 (직접 만들기 화면은 M3-b)
+		// 이번 달분이 생긴 뒤에는 안내하지 않는다
 		jdbc.update("insert into charge (landlord_id, lease_id, billing_month, due_date, total_amount, status, source, "
 				+ "issued_at, created_at, updated_at) values (?, ?, '2026-10-01', '2026-10-05', 550000, 'ISSUED', "
 				+ "'MANUAL', now(), now(), now())", a.landlordId(), lease);
 		mockMvc.perform(get("/app/leases/" + lease).cookie(a.cookie()))
-				.andExpect(content().string(not(containsString(NOT_AUTOMATIC))));
+				.andExpect(content().string(not(containsString("이번 달 받을 월세가 아직 없어요"))));
 	}
 
 	private Map<String, String> form(String dueDay, String issueDaysBefore) {
