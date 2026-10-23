@@ -66,7 +66,7 @@ class IdorTests {
 
 	/** 소유 데이터 엔드포인트의 경로 앞부분 */
 	private static final List<String> OWNED_PREFIXES = List.of("/app/properties", "/app/units", "/app/leases",
-			"/app/charges");
+			"/app/charges", "/app/dashboard");
 
 	/**
 	 * 남의 ID를 받지 않는 엔드포인트 (목록·새 화면·자기 건물 만들기). 여기에 넣을 때는 이유가 분명해야 한다. 받을 월세 목록은 달만
@@ -223,6 +223,8 @@ class IdorTests {
 				Attack.get("/app/charges/{charge}/items/{item}/delete"));
 		attacks.put("POST /app/charges/{id}/items/{itemId}/delete",
 				Attack.post("/app/charges/{charge}/items/{item}/delete", "version", "0"));
+		// 대시보드의 건물 고르기 (M4)
+		attacks.put("GET /app/dashboard", Attack.get("/app/dashboard", "propertyId", "{property}"));
 		// 세입자 신고 반려 (M4)
 		attacks.put("GET /app/charges/{id}/report/reject", Attack.get("/app/charges/{charge}/report/reject"));
 		attacks.put("POST /app/charges/{id}/report/reject",
@@ -300,6 +302,14 @@ class IdorTests {
 		String body = mockMvc.perform(Attack.get("/app/charges", "month", "2026-10").build(victimIds, attacker))
 				.andReturn().getResponse().getContentAsString();
 		assertThat(body).contains("이 달에 받을 월세가 없어요").doesNotContain("피해자세입자").doesNotContain("피해자빌라");
+	}
+
+	@Test
+	void dashboardShowsOnlyOwnData() throws Exception {
+		jdbc.update("update charge set status = 'OVERDUE' where landlord_id <> ?", attacker.landlordId());
+		String body = mockMvc.perform(Attack.get("/app/dashboard").build(victimIds, attacker)).andReturn().getResponse()
+				.getContentAsString();
+		assertThat(body).contains("아직 등록한 건물이 없어요").doesNotContain("피해자");
 	}
 
 	@Test

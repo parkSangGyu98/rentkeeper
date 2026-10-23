@@ -18,6 +18,10 @@ public final class PropertyViews {
 			int occupiedCount) {
 	}
 
+	/** 건물 고르기 칸의 한 줄 (이름만, 호실 상태를 계산하지 않는다) */
+	public record PropertyOption(long id, String name) {
+	}
+
 	public record PropertyDetail(long id, String name, String address, String memo, List<UnitRow> units) {
 
 		public boolean hasUnits() {
