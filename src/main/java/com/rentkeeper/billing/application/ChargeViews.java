@@ -83,14 +83,16 @@ public final class ChargeViews {
 	}
 
 	/**
-	 * 목록의 상태 고르기 (M3-b 결정 12). 주소의 status 값으로 고른다. "받을 차례"는 상태 표시 색과 같이 준비 중·받을
-	 * 차례·세입자가 입금했다고 함을 묶는다.
+	 * 목록의 상태 고르기 (M3-b 결정 12). 주소의 status 값으로 고른다. 세입자 신고는 임대인이 먼저 처리할 일이라 "확인
+	 * 기다림"으로 따로 둔다(M4 결정 13). "받을 차례"는 준비 중·받을 차례다.
 	 */
 	public enum StatusFilter {
 
 		ALL("전체", EnumSet.allOf(ChargeStatus.class)),
 
-		ISSUED("받을 차례", EnumSet.of(ChargeStatus.SCHEDULED, ChargeStatus.ISSUED, ChargeStatus.TENANT_REPORTED)),
+		REPORTED("확인 기다림", EnumSet.of(ChargeStatus.TENANT_REPORTED)),
+
+		ISSUED("받을 차례", EnumSet.of(ChargeStatus.SCHEDULED, ChargeStatus.ISSUED)),
 
 		PARTIALLY_PAID("일부 받음", EnumSet.of(ChargeStatus.PARTIALLY_PAID)),
 
@@ -204,11 +206,25 @@ public final class ChargeViews {
 	 *            상태가 바뀐 기록 (오래된 순)
 	 * @param itemHistory
 	 *            항목을 추가·고침·지운 기록 (오래된 순)
+	 * @param reportCount
+	 *            세입자가 "입금했어요"를 알린 횟수 (상태 이력 기준, 반려 뒤 다시 알리면 늘어난다, M4 결정 7)
+	 * @param reportedOn
+	 *            지금 신고를 알린 날 (서울, 신고 상태가 아니면 null)
 	 */
 	public record ChargeDetail(long id, long version, long leaseId, String unitName, String tenantName, YearMonth month,
 			LocalDate dueDate, ChargeStatus status, long totalAmount, long paidAmount, String cancelReason,
 			List<ItemRow> items, List<PaymentRow> payments, LocalDate earliestPaidOn,
-			List<StatusHistoryRow> statusHistory, List<ItemHistoryRow> itemHistory) {
+			List<StatusHistoryRow> statusHistory, List<ItemHistoryRow> itemHistory, long reportCount,
+			LocalDate reportedOn) {
+
+		/** 세입자 신고를 기다리는 중 (확인·반려 버튼을 보인다) */
+		public boolean reported() {
+			return status == ChargeStatus.TENANT_REPORTED;
+		}
+
+		public String reportedOnText() {
+			return reportedOn == null ? "" : dateText(reportedOn);
+		}
 
 		public String monthText() {
 			return month.getYear() + "년 " + month.getMonthValue() + "월";
@@ -407,8 +423,9 @@ public final class ChargeViews {
 	/** 상태 표시 색 (글자와 함께 쓴다. 색만으로 구분하지 않는다) */
 	static String badge(ChargeStatus status) {
 		return switch (status) {
-			case SCHEDULED, ISSUED, TENANT_REPORTED -> "badge badge-upcoming";
-			case PARTIALLY_PAID -> "badge badge-partial";
+			case SCHEDULED, ISSUED -> "badge badge-upcoming";
+			// 세입자 신고는 임대인이 먼저 볼 일이라 눈에 띄는 색 (M4 결정 13)
+			case PARTIALLY_PAID, TENANT_REPORTED -> "badge badge-partial";
 			case PAID -> "badge badge-occupied";
 			case OVERDUE -> "badge badge-overdue";
 			case CANCELED -> "badge badge-vacant";

@@ -51,4 +51,6 @@ public enum ErrorCode {
 
 	CHARGE_HAS_PAYMENTS,
 
+	CHARGE_NOT_REPORTED,
+
 }

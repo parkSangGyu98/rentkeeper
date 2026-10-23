@@ -84,6 +84,18 @@ public class PaymentRecord extends BaseTimeEntity {
 	 *             금액이 1원 ~ 10억 원 밖일 때
 	 */
 	public static PaymentRecord manual(Charge charge, long amount, LocalDate paidOn, String memo) {
+		return of(charge, amount, paidOn, memo, Source.MANUAL);
+	}
+
+	/**
+	 * 세입자의 "입금했어요" 신고를 임대인이 통장에서 확인하고 남긴 기록 (M4 결정 11). 값의 규칙은 {@link #manual}과 같고
+	 * 기록 경로만 다르다.
+	 */
+	public static PaymentRecord tenantReport(Charge charge, long amount, LocalDate paidOn, String memo) {
+		return of(charge, amount, paidOn, memo, Source.TENANT_REPORT);
+	}
+
+	private static PaymentRecord of(Charge charge, long amount, LocalDate paidOn, String memo, Source source) {
 		Objects.requireNonNull(charge.getId(), "charge must be saved first");
 		if (amount < 1 || amount > AMOUNT_MAX) {
 			throw new IllegalArgumentException("payment amount out of range");
@@ -93,7 +105,7 @@ public class PaymentRecord extends BaseTimeEntity {
 		record.chargeId = charge.getId();
 		record.amount = amount;
 		record.paidOn = Objects.requireNonNull(paidOn);
-		record.source = Source.MANUAL;
+		record.source = source;
 		record.memo = blankToNull(memo);
 		return record;
 	}

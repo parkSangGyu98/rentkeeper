@@ -40,6 +40,15 @@ final class ChargeMessages {
 
 	static final String CREATE_ZERO = "월세와 관리비가 모두 0원이에요. 받을 금액을 입력해 주세요.";
 
+	/** 세입자 신고 반려 (M4 결정 10) */
+	static final String REJECT_REASON_REQUIRED = "반려 사유를 1~180자로 입력해 주세요 (예: 통장에 입금이 없음)";
+
+	static final String NOT_REPORTED = "세입자 신고가 이미 처리됐어요. 아래 최신 내용을 확인해 주세요.";
+
+	static String rejected(ChargeStatus status) {
+		return "신고를 반려했어요. 지금 상태는 " + stateIs(status) + " 세입자 화면에는 \"집주인이 아직 입금을 확인하지 못했어요\"라고 보여요.";
+	}
+
 	private ChargeMessages() {
 	}
 

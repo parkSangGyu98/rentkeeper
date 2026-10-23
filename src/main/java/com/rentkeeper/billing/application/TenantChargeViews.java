@@ -21,9 +21,26 @@ public final class TenantChargeViews {
 	 *
 	 * @param items
 	 *            항목 (보낼 월세 화면에서만 채운다. 지난 기록에서는 빈 목록)
+	 * @param reportRejected
+	 *            마지막 상태 변경이 임대인의 신고 반려였는지 (사유는 담지 않는다, M4 결정 10)
 	 */
 	public record TenantCharge(long chargeId, YearMonth month, LocalDate dueDate, long totalAmount, long paidAmount,
-			ChargeStatus status, List<TenantItem> items) {
+			ChargeStatus status, List<TenantItem> items, boolean reportRejected) {
+
+		/** "입금했어요"를 누를 수 있는지 (M4 결정 7: 받을 차례·일부 받음·납부일 지남) */
+		public boolean canReport() {
+			return status == ChargeStatus.ISSUED || status == ChargeStatus.PARTIALLY_PAID
+					|| status == ChargeStatus.OVERDUE;
+		}
+
+		public boolean reported() {
+			return status == ChargeStatus.TENANT_REPORTED;
+		}
+
+		/** 반려 안내를 보일지 (다시 신고하거나 확인되면 사라진다) */
+		public boolean showRejectedNotice() {
+			return reportRejected && canReport();
+		}
 
 		/** "10월 월세" (해가 다르면 "2027년 1월 월세") */
 		public String title(YearMonth thisMonth) {

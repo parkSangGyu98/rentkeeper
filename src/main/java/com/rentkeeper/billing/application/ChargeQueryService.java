@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,7 @@ import com.rentkeeper.billing.domain.ChargeItemHistoryRepository;
 import com.rentkeeper.billing.domain.ChargeItemRepository;
 import com.rentkeeper.billing.domain.ChargeRepository;
 import com.rentkeeper.billing.domain.ChargeStatus;
+import com.rentkeeper.billing.domain.ChargeStatusHistory;
 import com.rentkeeper.billing.domain.ChargeStatusHistoryRepository;
 import com.rentkeeper.billing.domain.PaymentRecordRepository;
 import com.rentkeeper.common.error.ResourceNotFoundException;
@@ -133,10 +135,14 @@ public class ChargeQueryService {
 				.map(h -> new ItemHistoryRow(LocalDateTime.ofInstant(h.getCreatedAt(), zone), h.getAction(),
 						h.getLabel(), h.getBeforeAmount(), h.getAfterAmount(), h.getActorType()))
 				.toList();
+		long reportCount = statusRows.stream().filter(h -> h.to() == ChargeStatus.TENANT_REPORTED).count();
+		LocalDate reportedOn = charge.getTenantReportedAt() == null
+				? null
+				: LocalDate.ofInstant(charge.getTenantReportedAt(), zone);
 		return new ChargeDetail(charge.getId(), charge.getVersion(), charge.getLeaseId(), lease.unitName(),
 				lease.tenantName(), charge.getBillingMonth(), charge.getDueDate(), charge.getStatus(),
 				charge.getTotalAmount(), charge.getPaidAmount(), charge.getCancelReason(), itemRows, paymentRows,
-				YearMonth.from(lease.startDate()).atDay(1), statusRows, itemHistoryRows);
+				YearMonth.from(lease.startDate()).atDay(1), statusRows, itemHistoryRows, reportCount, reportedOn);
 	}
 
 	/** 세입자 화면이 보는 지난 달 수 (M4 결정 6) */
@@ -149,11 +155,22 @@ public class ChargeQueryService {
 	public List<TenantCharge> tenantDue(long landlordId, long leaseId) {
 		YearMonth thisMonth = thisMonth();
 		return tenantCharges(landlordId, leaseId, thisMonth.minusMonths(TENANT_MONTHS), thisMonth.plusMonths(1))
-				.stream().filter(
-						c -> c.getBillingMonth().equals(thisMonth) || c.getStatus() != ChargeStatus.PAID)
-				.map(c -> tenantCharge(c, items.findByChargeIdAndLandlordIdOrderByIdAsc(c.getId(), landlordId).stream()
-						.map(i -> new TenantItem(i.getLabel(), i.getAmount())).toList()))
-				.toList();
+				.stream().filter(c -> c.getBillingMonth().equals(thisMonth) || c.getStatus() != ChargeStatus.PAID)
+				.map(c -> tenantCharge(c, tenantItems(landlordId, c), landlordId)).toList();
+	}
+
+	/**
+	 * 세입자 링크의 계약에 속한 받을 월세 하나 ("입금했어요" 확인 화면). 다른 계약의 청구이거나 취소했으면 빈 값.
+	 */
+	public Optional<TenantCharge> tenantCharge(long landlordId, long leaseId, long chargeId) {
+		return charges.findByIdAndLeaseIdAndLandlordId(chargeId, leaseId, landlordId)
+				.filter(c -> c.getStatus() != ChargeStatus.CANCELED)
+				.map(c -> tenantCharge(c, tenantItems(landlordId, c), landlordId));
+	}
+
+	private List<TenantItem> tenantItems(long landlordId, Charge c) {
+		return items.findByChargeIdAndLandlordIdOrderByIdAsc(c.getId(), landlordId).stream()
+				.map(i -> new TenantItem(i.getLabel(), i.getAmount())).toList();
 	}
 
 	/**
@@ -163,7 +180,7 @@ public class ChargeQueryService {
 		YearMonth thisMonth = thisMonth();
 		List<TenantCharge> rows = new ArrayList<>(
 				tenantCharges(landlordId, leaseId, thisMonth.minusMonths(TENANT_MONTHS - 1), thisMonth.plusMonths(1))
-						.stream().map(c -> tenantCharge(c, List.of())).toList());
+						.stream().map(c -> tenantCharge(c, List.of(), landlordId)).toList());
 		Collections.reverse(rows);
 		return rows;
 	}
@@ -175,9 +192,16 @@ public class ChargeQueryService {
 				.stream().filter(c -> c.getStatus() != ChargeStatus.CANCELED).toList();
 	}
 
-	private static TenantCharge tenantCharge(Charge c, List<TenantItem> itemRows) {
+	private TenantCharge tenantCharge(Charge c, List<TenantItem> itemRows, long landlordId) {
 		return new TenantCharge(c.getId(), c.getBillingMonth(), c.getDueDate(), c.getTotalAmount(), c.getPaidAmount(),
-				c.getStatus(), itemRows);
+				c.getStatus(), itemRows, lastChangeWasRejection(c.getId(), landlordId));
+	}
+
+	/** 마지막 상태 변경이 임대인의 신고 반려인지 (세입자 화면 안내, 사유는 보이지 않는다) */
+	private boolean lastChangeWasRejection(long chargeId, long landlordId) {
+		List<ChargeStatusHistory> history = statusHistories.findByChargeIdAndLandlordIdOrderByIdAsc(chargeId,
+				landlordId);
+		return !history.isEmpty() && TenantReportService.isRejection(history.get(history.size() - 1).getReason());
 	}
 
 	/** 지금 상태 (충돌 안내 문구를 고를 때) */

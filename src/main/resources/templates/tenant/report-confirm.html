@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{tenant/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>입금했어요 - 월세 안내</title>
+</head>
+<body>
+	<!-- "입금했어요" 확인 (M4 결정 7). 잘못 누르는 것을 막으려고 한 번 더 묻는다. 금액·날짜는 받지 않는다 -->
+	<main id="main" class="mx-auto w-full max-w-xl flex-1 px-4 py-6">
+		<h1 class="mb-4 text-3xl font-bold"><span th:text="${charge.title(thisMonth)}">10월 월세</span>
+			<span th:text="${charge.balanceText()}">550,000원</span>을 보내셨나요?</h1>
+		<p class="mb-6 text-lg">누르시면 집주인에게 입금했다고 알려요. 집주인이 통장에서 확인하면 "입금이 확인됐어요"로 바뀌어요.</p>
+		<form th:action="@{/t/{token}/charges/{id}/report-paid(token=${token},id=${charge.chargeId()})}" method="post" class="mb-4">
+			<button type="submit" class="btn btn-primary w-full">네, 보냈어요</button>
+		</form>
+		<a th:href="@{/t/{token}(token=${token})}" class="btn btn-secondary w-full">아니요, 돌아갈게요</a>
+	</main>
+</body>
+</html>

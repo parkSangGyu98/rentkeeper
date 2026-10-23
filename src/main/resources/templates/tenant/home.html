@@ -25,6 +25,13 @@
 			<p th:if="${c.partlyConfirmed()}" class="mb-4 text-lg">
 				전체 <span th:text="${c.totalText()}">550,000원</span> 중 <strong th:text="${c.paidText()}">200,000원</strong>이 확인됐어요.
 			</p>
+			<!-- "입금했어요" (M4 결정 7·10): 반려 뒤에는 사유 없이 중립 문구만 -->
+			<p th:if="${c.showRejectedNotice()}" class="mb-4 rounded-lg border-2 border-amber-500 bg-amber-50 p-3 text-lg">
+				집주인이 아직 입금을 확인하지 못했어요. 이미 보내셨다면 집주인에게 직접 알려 주세요.
+			</p>
+			<p th:if="${c.reported()}" class="mb-4 text-lg">입금했다고 알려 주셨어요. 집주인이 확인하면 "입금이 확인됐어요"로 바뀌어요.</p>
+			<a th:if="${c.canReport()}" th:href="@{/t/{token}/charges/{id}/report-paid(token=${token},id=${c.chargeId()})}"
+				class="btn btn-primary mb-4 w-full">입금했어요</a>
 			<details class="text-lg">
 				<summary class="cursor-pointer font-semibold">자세히 보기</summary>
 				<ul class="mt-2 space-y-1">

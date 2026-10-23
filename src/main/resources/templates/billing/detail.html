@@ -16,6 +16,17 @@
 		<!-- 충돌·취소 같은 안내 (M3-b 결정 4) -->
 		<div class="alert alert-error mb-6 text-lg" role="alert" th:if="${chargeAlert}" th:text="${chargeAlert}">안내</div>
 
+		<!-- 세입자 "입금했어요" 신고 (M4 결정 7·10·11). 반려 뒤 다시 알리면 N번째가 늘어난다 -->
+		<section th:if="${charge.reported()}" class="mb-6 rounded-lg border-4 border-amber-500 bg-amber-50 p-5" aria-labelledby="report-heading">
+			<h2 id="report-heading" class="mb-2 text-2xl font-bold">세입자가 입금했다고 알렸어요</h2>
+			<p class="mb-4 text-lg"><strong th:text="${charge.reportCount()} + '번째 신고'">1번째 신고</strong> ·
+				<span th:text="${charge.reportedOnText()}">2026년 10월 17일</span>. 통장에서 입금을 확인해 주세요.</p>
+			<div class="flex flex-wrap gap-3">
+				<a th:href="@{/app/charges/{id}/payments/new(id=${charge.id()},report=true)}" class="btn btn-primary">입금 확인하기</a>
+				<a th:href="@{/app/charges/{id}/report/reject(id=${charge.id()})}" class="btn btn-secondary">입금이 없어요 (반려)</a>
+			</div>
+		</section>
+
 		<div class="mb-6 flex flex-wrap items-center gap-3">
 			<span th:class="${charge.statusBadge()}" th:text="${charge.statusLabel()}">받을 차례</span>
 			<span class="text-lg">납부일 <strong th:text="${charge.dueDateText()}">2026년 10월 5일</strong></span>

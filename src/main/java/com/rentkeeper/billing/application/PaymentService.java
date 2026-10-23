@@ -40,6 +40,8 @@ public class PaymentService {
 
 	static final String REASON_CORRECTED = "입금 정정";
 
+	static final String REASON_REPORT_CONFIRMED = "세입자 신고 확인";
+
 	private final ChargeChanges changes;
 
 	private final PaymentRecordRepository payments;
@@ -64,8 +66,17 @@ public class PaymentService {
 	 *
 	 * @param overpayConfirmed
 	 *            남은 금액보다 많아도 기록한다고 확인했는지
+	 * @param fromTenantReport
+	 *            세입자 신고의 [입금 확인하기]에서 왔는지 (M4 결정 11). 지금도 신고 상태일 때만 기록 경로가
+	 *            TENANT_REPORT가 된다
 	 */
-	public record PaymentInput(long amount, LocalDate paidOn, String memo, boolean overpayConfirmed) {
+	public record PaymentInput(long amount, LocalDate paidOn, String memo, boolean overpayConfirmed,
+			boolean fromTenantReport) {
+
+		/** 임대인이 직접 입력한 입금 */
+		public PaymentInput(long amount, LocalDate paidOn, String memo, boolean overpayConfirmed) {
+			this(amount, paidOn, memo, overpayConfirmed, false);
+		}
 
 		@Override
 		public String toString() {
@@ -98,8 +109,11 @@ public class PaymentService {
 		if (input.amount() > charge.balance() && !input.overpayConfirmed()) {
 			throw new OverpaymentException(input.amount() - charge.balance());
 		}
-		payments.saveAndFlush(PaymentRecord.manual(charge, input.amount(), input.paidOn(), input.memo()));
-		recalculate(landlordId, charge, today, REASON_RECORDED);
+		boolean confirmsReport = input.fromTenantReport() && charge.getStatus() == ChargeStatus.TENANT_REPORTED;
+		payments.saveAndFlush(confirmsReport
+				? PaymentRecord.tenantReport(charge, input.amount(), input.paidOn(), input.memo())
+				: PaymentRecord.manual(charge, input.amount(), input.paidOn(), input.memo()));
+		recalculate(landlordId, charge, today, confirmsReport ? REASON_REPORT_CONFIRMED : REASON_RECORDED);
 		changes.finish(charge, versionBefore);
 		return charge.getStatus();
 	}

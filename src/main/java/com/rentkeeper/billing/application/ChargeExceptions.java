@@ -25,6 +25,15 @@ public final class ChargeExceptions {
 
 	}
 
+	/** 세입자 신고가 이미 처리됐다(확인·반려됨). 반려할 것이 없다 (M4 결정 10) */
+	public static class NotReportedException extends BusinessException {
+
+		NotReportedException() {
+			super(ErrorCode.CHARGE_NOT_REPORTED, "no tenant report to reject");
+		}
+
+	}
+
 	/** 취소한 받을 월세는 고칠 수 없다 */
 	public static class ChargeCanceledException extends BusinessException {
 

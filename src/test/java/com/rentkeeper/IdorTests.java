@@ -223,6 +223,10 @@ class IdorTests {
 				Attack.get("/app/charges/{charge}/items/{item}/delete"));
 		attacks.put("POST /app/charges/{id}/items/{itemId}/delete",
 				Attack.post("/app/charges/{charge}/items/{item}/delete", "version", "0"));
+		// 세입자 신고 반려 (M4)
+		attacks.put("GET /app/charges/{id}/report/reject", Attack.get("/app/charges/{charge}/report/reject"));
+		attacks.put("POST /app/charges/{id}/report/reject",
+				Attack.post("/app/charges/{charge}/report/reject", "version", "0", "reason", "탈취"));
 		attacks.put("GET /app/charges/{id}/cancel", Attack.get("/app/charges/{charge}/cancel"));
 		attacks.put("POST /app/charges/{id}/cancel",
 				Attack.post("/app/charges/{charge}/cancel", "version", "0", "reason", "탈취"));
@@ -328,8 +332,60 @@ class IdorTests {
 		Map<String, String> attacks = new LinkedHashMap<>();
 		attacks.put("GET /t/{token}", "/t/{token}");
 		attacks.put("GET /t/{token}/history", "/t/{token}/history");
+		attacks.put("GET /t/{token}/charges/{chargeId}/report-paid", "/t/{token}/charges/{charge}/report-paid");
+		attacks.put("POST /t/{token}/charges/{chargeId}/report-paid", "/t/{token}/charges/{charge}/report-paid");
 		attacks.put("ANY /t/**", "/t/{token}/unknown");
 		return attacks;
+	}
+
+	@Test
+	void usableTenantLinkWithAnotherLeasesChargeIsNotFound() throws Exception {
+		// 피해자의 다른 계약(같은 임대인)의 청구, 공격자의 청구
+		long victimId = jdbc.queryForObject("select landlord_id from lease where id = ?", Long.class,
+				Long.valueOf(victimIds.get("lease")));
+		long property = Long.parseLong(victimIds.get("property"));
+		long otherUnit = propertyService.addUnit(victimId, property, new UnitInput("102호", UnitType.ONE_ROOM, null));
+		LeaseTerms terms = new LeaseTerms(0, 5, LocalDate.of(2026, 1, 1), LocalDate.of(2027, 1, 1), "국민은행",
+				new AccountNumber("5555555555"), new PersonName("김임대"), null);
+		long otherLease = leaseService.register(victimId, new LeaseRegistration(otherUnit, new PersonName("피해자이웃"),
+				PhoneNumber.parse("01055556666"), null, 1, 0, terms, false));
+		long otherLeaseCharge = charge(victimId, otherLease);
+		long attackerProperty = propertyService.create(attacker.landlordId(), new PropertyInput("공격자빌라", "서울", null));
+		long attackerUnit = propertyService.addUnit(attacker.landlordId(), attackerProperty,
+				new UnitInput("201호", UnitType.ONE_ROOM, null));
+		long attackerLease = leaseService.register(attacker.landlordId(), new LeaseRegistration(attackerUnit,
+				new PersonName("공격자세입자"), PhoneNumber.parse("01099998888"), null, 1, 0, terms, false));
+		long attackerCharge = charge(attacker.landlordId(), attackerLease);
+		// 쓸 수 있는 링크를 열면 "마지막으로 연 날"이 기록된다(하루에 한 번). 그것은 미리 기록해 두고 청구가 그대로인지 본다
+		mockMvc.perform(get("/t/" + victimToken));
+		String before = snapshot();
+		String notFound = mockMvc.perform(get("/t/" + SecureTokens.newToken())).andReturn().getResponse()
+				.getContentAsString();
+
+		List<String> failures = new ArrayList<>();
+		for (long foreign : new long[]{otherLeaseCharge, attackerCharge}) {
+			for (HttpMethod method : List.of(HttpMethod.GET, HttpMethod.POST)) {
+				MvcResult result = mockMvc
+						.perform(request(method, "/t/" + victimToken + "/charges/" + foreign + "/report-paid"))
+						.andReturn();
+				String label = method + " 청구 " + foreign;
+				if (result.getResponse().getStatus() != 404) {
+					failures.add(label + " → " + result.getResponse().getStatus() + " (404여야 함)");
+				} else if (!result.getResponse().getContentAsString().equals(notFound)) {
+					failures.add(label + " → 404 본문이 임의 토큰의 404와 다름");
+				}
+			}
+		}
+
+		assertThat(failures).isEmpty();
+		assertThat(snapshot()).as("다른 계약의 청구는 하나도 바뀌지 않음").isEqualTo(before);
+	}
+
+	private long charge(long landlordId, long leaseId) {
+		return jdbc.queryForObject("insert into charge (landlord_id, lease_id, billing_month, due_date, "
+				+ "total_amount, status, source, issued_at, created_at, updated_at) values (?, ?, '2026-10-01', "
+				+ "'2026-10-05', 1, 'ISSUED', 'AUTO', now(), now(), now()) returning id", Long.class, landlordId,
+				leaseId);
 	}
 
 	@Test
@@ -395,7 +451,7 @@ class IdorTests {
 	private List<String> tenantAttack(Map.Entry<String, String> endpoint, String tokenName, String token,
 			String notFound) throws Exception {
 		List<String> failures = new ArrayList<>();
-		String path = endpoint.getValue().replace("{token}", token);
+		String path = endpoint.getValue().replace("{token}", token).replace("{charge}", victimIds.get("charge"));
 		List<HttpMethod> methods = endpoint.getKey().startsWith("ANY ")
 				? List.of(HttpMethod.GET, HttpMethod.POST)
 				: List.of(HttpMethod.valueOf(endpoint.getKey().substring(0, endpoint.getKey().indexOf(' '))));

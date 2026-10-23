@@ -4,9 +4,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 /** 청구 저장소. landlordId 없이 조회할 방법이 없다 (ADR-018) */
 public interface ChargeRepository extends Repository<Charge, Long> {
@@ -25,6 +28,18 @@ public interface ChargeRepository extends Repository<Charge, Long> {
 	List<LocalDate> billingMonths(@Param("leaseId") long leaseId, @Param("landlordId") long landlordId);
 
 	Optional<Charge> findByLeaseIdAndLandlordIdAndBillingMonth(long leaseId, long landlordId, LocalDate billingMonth);
+
+	/**
+	 * 세입자 링크가 가리키는 계약의 받을 월세 하나를 잠그고 가져온다 ("입금했어요", M4 결정 7). 다른 계약의 청구면 빈 값. 같은 순간
+	 * 여러 번 눌러도 차례로 처리해 한 번만 반영한다.
+	 */
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select c from Charge c where c.id = :id and c.leaseId = :leaseId and c.landlordId = :landlordId")
+	Optional<Charge> lockForTenant(@Param("id") long id, @Param("leaseId") long leaseId,
+			@Param("landlordId") long landlordId);
+
+	/** 세입자 링크가 가리키는 계약의 받을 월세 하나 (다른 계약의 청구면 빈 값) */
+	Optional<Charge> findByIdAndLeaseIdAndLandlordId(long id, long leaseId, long landlordId);
 
 	/** 한 계약의 [from, to] 달 받을 월세, 달 순 (세입자 화면, M4 결정 6) */
 	List<Charge> findByLeaseIdAndLandlordIdAndBillingMonthBetweenOrderByBillingMonthAsc(long leaseId, long landlordId,
