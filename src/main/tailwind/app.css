@@ -165,4 +165,249 @@
 	.alert-error {
 		@apply border-danger-700 bg-red-50;
 	}
+
+	/*
+	 * 대시보드 스타일 시안 (dashboard/home만, main.dash 안에서만 적용 → 다른 화면은 그대로).
+	 * 두 안은 같은 마크업을 쓰고 아래 --dash-* 값만 다르다. 지금 값: A안 "차분한 금융"(흰 바탕, 짙은 남색, 1px 선과 여백으로 구분).
+	 * 공통 원칙: 선 1px, 모서리 12px, 굵기 2단계(보통 400·굵게 600), 라벨 16px, 금액 36px(tabular-nums),
+	 * 간격 8·16·24·40px. 크기는 rem(루트 18px 기준)으로 적어 사용자가 키운 글자 크기를 따른다.
+	 */
+	.dash {
+		--dash-page: #ffffff;
+		--dash-surface: #ffffff;
+		--dash-line: #e5e7eb;
+		--dash-line-strong: #6a7282;
+		--dash-shadow: none;
+		--dash-accent: #1f3a64;
+		--dash-accent-soft: #eef3fa;
+		--dash-attention-surface: #fffbeb;
+		--dash-attention-line: #d97706;
+		--dash-label: var(--color-gray-700);
+		--dash-radius: 12px;
+		--dash-s1: 8px;
+		--dash-s2: 16px;
+		--dash-s3: 24px;
+		--dash-s4: 40px;
+		--dash-text-label: 0.8889rem;
+		--dash-text-title: 1.1111rem;
+		--dash-text-h1: 1.5556rem;
+		--dash-text-amount: 2rem;
+	}
+
+	/* 페이지 바탕 (B안에서 옅은 회청색을 쓰려고 둔 자리). 대시보드가 들어 있는 페이지에만 */
+	body:has(main.dash) {
+		background-color: #ffffff;
+	}
+
+	.dash strong {
+		font-weight: 600;
+	}
+
+	.dash-head {
+		margin-bottom: var(--dash-s4);
+	}
+
+	.dash-h1 {
+		font-size: var(--dash-text-h1);
+		font-weight: 600;
+		line-height: 1.3;
+		margin-bottom: var(--dash-s1);
+	}
+
+	.dash-greeting {
+		color: var(--dash-label);
+	}
+
+	/* 건물 고르기: 라벨 16px 옅은 회색, 입력칸 테두리 1px (대비 3:1 이상) */
+	.dash-filter {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: var(--dash-s2);
+		margin-bottom: var(--dash-s3);
+	}
+
+	.dash .form-label {
+		font-size: var(--dash-text-label);
+		font-weight: 400;
+		color: var(--dash-label);
+		margin-bottom: var(--dash-s1);
+	}
+
+	.dash .form-input {
+		border-width: 1px;
+		border-color: var(--dash-line-strong);
+		border-radius: var(--dash-radius);
+		background-color: var(--dash-surface);
+	}
+
+	.dash .btn {
+		border-radius: var(--dash-radius);
+		font-weight: 600;
+	}
+
+	/* 윤곽선 버튼: 선 1px */
+	.dash .btn-secondary {
+		border-width: 1px;
+		border-color: var(--dash-accent);
+		background-color: var(--dash-surface);
+		color: var(--dash-accent);
+	}
+
+	.dash .btn-secondary:hover {
+		background-color: var(--dash-accent-soft);
+	}
+
+	/* 글자 버튼: 높이는 다른 버튼과 같게(48px 이상) 두고 테두리·바탕 없이 */
+	.btn-quiet {
+		@apply px-0 underline underline-offset-4;
+		color: var(--dash-accent);
+	}
+
+	.btn-quiet:hover {
+		text-decoration-thickness: 2px;
+	}
+
+	/* 묶음: 휴대폰은 한 줄에 하나, 넓은 화면(lg)은 요약 한 줄 + 아래 목록 두 칸 */
+	.dash-group {
+		display: grid;
+		gap: var(--dash-s2);
+		margin-bottom: var(--dash-s4);
+	}
+
+	@media (width >= 64rem) {
+		.dash-group {
+			gap: var(--dash-s3);
+		}
+
+		.dash-group-summary {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+
+		.dash-group-lists {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-items: start;
+		}
+
+		.dash-span-3 {
+			grid-column: span 3 / span 3;
+		}
+	}
+
+	.panel {
+		background-color: var(--dash-surface);
+		border: 1px solid var(--dash-line);
+		border-radius: var(--dash-radius);
+		box-shadow: var(--dash-shadow);
+		padding: var(--dash-s3);
+	}
+
+	/* 처리할 일이 있을 때 (세입자 입금 신고). 색만이 아니라 제목의 건수 글자로도 알 수 있다 */
+	.panel-attention {
+		background-color: var(--dash-attention-surface);
+		border-color: var(--dash-attention-line);
+	}
+
+	.panel-empty {
+		border-style: dashed;
+		border-color: var(--dash-line-strong);
+	}
+
+	.panel-title {
+		font-size: var(--dash-text-title);
+		font-weight: 600;
+		line-height: 1.4;
+		margin-bottom: var(--dash-s2);
+	}
+
+	/* 금액 요약: 라벨(16px 회색) 위, 금액(36px) 아래. 칸 폭이 금액 하나(14rem)보다 넓으면 한 줄에 두세 칸 */
+	.stat-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+		gap: var(--dash-s2);
+		margin-bottom: var(--dash-s1);
+	}
+
+	.stat-label,
+	.stat-line {
+		font-size: var(--dash-text-label);
+		color: var(--dash-label);
+	}
+
+	.stat-value {
+		font-size: var(--dash-text-amount);
+		font-weight: 600;
+		line-height: 1.25;
+		color: var(--color-gray-900);
+		font-variant-numeric: tabular-nums;
+		letter-spacing: -0.01em;
+		word-break: keep-all;
+	}
+
+	.stat-key .stat-value {
+		color: var(--dash-accent);
+	}
+
+	/* "호실 10개 중 공실 2개", "남은 돈 합계 850,000원": 강조 부분(strong)을 금액 크기로 한 줄 아래에 */
+	.stat-line {
+		margin-bottom: var(--dash-s1);
+	}
+
+	.stat-line strong {
+		display: block;
+		font-size: var(--dash-text-amount);
+		line-height: 1.25;
+		color: var(--color-gray-900);
+		font-variant-numeric: tabular-nums;
+		letter-spacing: -0.01em;
+		word-break: keep-all;
+	}
+
+	.stat-line + .row-list {
+		margin-top: var(--dash-s3);
+	}
+
+	/* 목록 한 줄 */
+	.row-list > li {
+		padding-block: var(--dash-s2);
+		border-bottom: 1px solid var(--dash-line);
+	}
+
+	.row-list > li:first-child {
+		padding-top: 0;
+	}
+
+	.row-list > li:last-child {
+		border-bottom: 0;
+		padding-bottom: 0;
+	}
+
+	.row-title {
+		font-weight: 600;
+		color: var(--color-gray-900);
+		text-decoration-line: underline;
+		text-underline-offset: 4px;
+		text-decoration-color: var(--dash-line-strong);
+	}
+
+	.row-meta {
+		font-size: var(--dash-text-label);
+		color: var(--dash-label);
+		font-variant-numeric: tabular-nums;
+		margin-top: 4px;
+	}
+
+	.row-meta strong {
+		color: var(--color-gray-900);
+	}
+
+	.dash-note {
+		font-size: var(--dash-text-label);
+		color: var(--dash-label);
+		margin-top: var(--dash-s2);
+	}
+
+	.dash-empty {
+		color: var(--dash-label);
+	}
 }

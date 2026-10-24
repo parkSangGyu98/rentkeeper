@@ -5,21 +5,24 @@
 <title th:text="|한눈에 보기 - #{app.name}|">한눈에 보기</title>
 </head>
 <body>
-	<!-- 임대인 대시보드 (DASH-1~4, M4 결정 14). 처리할 일(세입자 신고)을 맨 위에 둔다 -->
-	<main id="main" class="page-wide">
-		<h1 class="mb-1 text-3xl font-bold">한눈에 보기</h1>
-		<p class="mb-6 text-lg text-gray-700"><span sec:authentication="principal.displayName">홍길동</span>님, 안녕하세요.</p>
+	<!-- 임대인 대시보드 (DASH-1~4, M4 결정 14). 처리할 일(세입자 신고)을 맨 위에 둔다.
+	     넓은 화면(lg)은 요약(이번 달 금액·공실) 한 줄 + 아래 목록(납부일 지남·곧 끝나는 계약) 두 칸. 스타일은 app.css의 dash-* (main.dash 안에서만) -->
+	<main id="main" class="page-wide dash">
+		<div class="dash-head">
+			<h1 class="dash-h1">한눈에 보기</h1>
+			<p class="dash-greeting"><span sec:authentication="principal.displayName">홍길동</span>님, 안녕하세요.</p>
+		</div>
 
 		<!-- 빈 상태 -->
-		<section th:if="${view.empty()}" class="mb-6 rounded-lg border-2 border-dashed border-gray-400 bg-white p-5">
-			<p class="mb-4 text-lg">아직 등록한 건물이 없어요. 첫 건물을 등록해 보세요.</p>
+		<section th:if="${view.empty()}" class="panel panel-empty mb-6">
+			<p class="mb-4">아직 등록한 건물이 없어요. 첫 건물을 등록해 보세요.</p>
 			<a th:href="@{/app/properties/new}" class="btn btn-primary">건물 등록하기</a>
 		</section>
 
 		<th:block th:unless="${view.empty()}">
 			<!-- 건물 고르기 (GET, 주소로 저장 가능) -->
-			<form th:action="@{/app/dashboard}" method="get" class="mb-6 flex flex-wrap items-end gap-3">
-				<div class="min-w-0 flex-1">
+			<form th:action="@{/app/dashboard}" method="get" class="dash-filter">
+				<div class="min-w-0 flex-1 lg:max-w-md">
 					<label for="propertyId" class="form-label">건물</label>
 					<select id="propertyId" name="propertyId" class="form-input">
 						<option value="">모든 건물</option>
@@ -30,83 +33,91 @@
 				<button type="submit" class="btn btn-secondary">보기</button>
 			</form>
 
-			<!-- ① 확인 기다리는 입금 신고 (M4 결정 7·14) -->
-			<section class="mb-6 rounded-lg bg-white p-5" aria-labelledby="reported-heading"
-				th:classappend="${view.charges().reported().count() > 0} ? 'border-4 border-amber-500' : 'border-2 border-gray-200'">
-				<h2 id="reported-heading" class="mb-3 text-xl font-bold">확인 기다리는 입금 신고
-					<span th:text="${view.charges().reported().count()} + '건'">1건</span></h2>
-				<p th:if="${view.charges().reported().count() == 0}" class="text-lg text-gray-700">확인 기다리는 입금 신고가 없어요.</p>
-				<ul th:unless="${view.charges().reportedRows().isEmpty()}" class="space-y-3">
-					<li th:each="r : ${view.charges().reportedRows()}" class="border-b border-gray-200 pb-3">
-						<a th:href="@{/app/charges/{id}(id=${r.chargeId()})}" class="text-lg font-semibold text-gray-900 underline"
-							th:text="${r.unitName()} + ' · ' + ${r.tenantName()} + '님'">행복빌라 101호 · 홍길동님</a>
-						<p class="text-lg"><span th:text="${r.monthText()}">2026년 10월</span> 월세 ·
-							<strong th:text="${r.reportCount()} + '번째 신고'">1번째 신고</strong> ·
-							<span th:text="${r.reportedOnText()} + ' 알림'">10월 17일 알림</span></p>
-					</li>
-				</ul>
-				<p th:if="${view.charges().reported().count() > view.charges().reportedRows().size()}" class="mt-3 text-base text-gray-700">
-					나머지는 각 달 받을 월세 목록의 [확인 기다림]에서 볼 수 있어요.</p>
-			</section>
-
-			<!-- ② 이번 달 받을 돈 (DASH-1, 취소 제외) -->
-			<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="month-heading">
-				<h2 id="month-heading" class="mb-3 text-xl font-bold"><span th:text="${view.charges().monthText()}">2026년 10월</span> 받을 월세
-					<span th:text="${view.charges().thisMonth().count()} + '건'">10건</span></h2>
-				<dl class="mb-4 space-y-2 text-lg">
-					<div><dt class="inline font-semibold">받을 돈</dt> <dd class="inline" th:text="${view.charges().thisMonth().totalText()}">5,500,000원</dd></div>
-					<div><dt class="inline font-semibold">받은 돈</dt> <dd class="inline" th:text="${view.charges().thisMonth().paidText()}">3,300,000원</dd></div>
-					<div><dt class="inline font-semibold">남은 돈</dt> <dd class="inline text-xl font-bold" th:text="${view.charges().thisMonth().balanceText()}">2,200,000원</dd></div>
-				</dl>
-				<a th:href="@{/app/charges}" class="btn btn-secondary">이번 달 받을 월세 보기</a>
-			</section>
-
-			<!-- ③ 납부일 지남 (DASH-2, 모든 달, 오래 지난 것부터) -->
-			<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="overdue-heading">
-				<h2 id="overdue-heading" class="mb-3 text-xl font-bold">납부일 지남
-					<span th:text="${view.charges().overdue().count()} + '건'">2건</span></h2>
-				<p th:if="${view.charges().overdue().count() == 0}" class="text-lg text-gray-700">납부일이 지난 받을 월세가 없어요.</p>
-				<th:block th:unless="${view.charges().overdue().count() == 0}">
-					<p class="mb-3 text-lg">남은 돈 합계 <strong th:text="${view.charges().overdue().balanceText()}">1,100,000원</strong></p>
-					<ul class="space-y-3">
-						<li th:each="r : ${view.charges().overdueRows()}" class="border-b border-gray-200 pb-3">
-							<a th:href="@{/app/charges/{id}(id=${r.chargeId()})}" class="text-lg font-semibold text-gray-900 underline"
-								th:text="${r.unitName()} + ' · ' + ${r.tenantName()} + '님'">행복빌라 102호 · 김세입님</a>
-							<p class="text-lg"><span th:text="${r.monthText()}">2026년 9월</span> 월세 ·
-								<strong th:text="${r.daysOverdue()} + '일 지남'">22일 지남</strong> ·
-								남은 돈 <span th:text="${r.balanceText()}">550,000원</span></p>
+			<!-- ① 확인 기다리는 입금 신고 (M4 결정 7·14). 맨 위, 있을 때만 강조 -->
+			<div class="dash-group">
+				<section class="panel" aria-labelledby="reported-heading"
+					th:classappend="${view.charges().reported().count() > 0} ? 'panel-attention' : ''">
+					<h2 id="reported-heading" class="panel-title">확인 기다리는 입금 신고
+						<span th:text="${view.charges().reported().count()} + '건'">1건</span></h2>
+					<p th:if="${view.charges().reported().count() == 0}" class="dash-empty">확인 기다리는 입금 신고가 없어요.</p>
+					<ul th:unless="${view.charges().reportedRows().isEmpty()}" class="row-list">
+						<li th:each="r : ${view.charges().reportedRows()}">
+							<a th:href="@{/app/charges/{id}(id=${r.chargeId()})}" class="row-title"
+								th:text="${r.unitName()} + ' · ' + ${r.tenantName()} + '님'">행복빌라 101호 · 홍길동님</a>
+							<p class="row-meta"><span th:text="${r.monthText()}">2026년 10월</span> 월세 ·
+								<strong th:text="${r.reportCount()} + '번째 신고'">1번째 신고</strong> ·
+								<span th:text="${r.reportedOnText()} + ' 알림'">10월 17일 알림</span></p>
 						</li>
 					</ul>
-					<p th:if="${view.charges().overdue().count() > view.charges().overdueRows().size()}" class="mt-3 text-base text-gray-700">
-						나머지는 각 달 받을 월세 목록의 [납부일 지남]에서 볼 수 있어요.</p>
-				</th:block>
-			</section>
+					<p th:if="${view.charges().reported().count() > view.charges().reportedRows().size()}" class="dash-note">
+						나머지는 각 달 받을 월세 목록의 [확인 기다림]에서 볼 수 있어요.</p>
+				</section>
+			</div>
 
-			<!-- ④ 곧 끝나는 계약 (DASH-3, 나가는 날 90일 안. 나가는 날이 지났는데 종료하지 않은 계약 포함) -->
-			<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="ending-heading">
-				<h2 id="ending-heading" class="mb-3 text-xl font-bold">90일 안에 끝나는 계약
-					<span th:text="${view.ending().count()} + '건'">1건</span></h2>
-				<p th:if="${view.ending().count() == 0}" class="text-lg text-gray-700">90일 안에 끝나는 계약이 없어요.</p>
-				<ul th:unless="${view.ending().rows().isEmpty()}" class="space-y-3">
-					<li th:each="l : ${view.ending().rows()}" class="border-b border-gray-200 pb-3">
-						<a th:href="@{/app/leases/{id}(id=${l.leaseId()})}" class="text-lg font-semibold text-gray-900 underline"
-							th:text="${l.unitName()} + ' · ' + ${l.tenantName()} + '님'">행복빌라 103호 · 이세입님</a>
-						<p class="text-lg">나가는 날 <span th:text="${l.endDateText()}">2027년 1월 1일</span> ·
-							<strong th:text="${l.daysLeftText()}" th:classappend="${l.overdue()} ? 'text-danger-700' : ''">76일 남음</strong></p>
-					</li>
-				</ul>
-				<p th:if="${view.ending().count() > view.ending().rows().size()}" class="mt-3 text-base text-gray-700">
-					나머지는 각 호실 화면에서 볼 수 있어요.</p>
-			</section>
+			<!-- 요약 한 줄 -->
+			<div class="dash-group dash-group-summary">
+				<!-- ② 이번 달 받을 돈 (DASH-1, 취소 제외) -->
+				<section class="panel dash-span-3" aria-labelledby="month-heading">
+					<h2 id="month-heading" class="panel-title"><span th:text="${view.charges().monthText()}">2026년 10월</span> 받을 월세
+						<span th:text="${view.charges().thisMonth().count()} + '건'">10건</span></h2>
+					<dl class="stat-list">
+						<div><dt class="stat-label">받을 돈</dt> <dd class="stat-value" th:text="${view.charges().thisMonth().totalText()}">5,500,000원</dd></div>
+						<div><dt class="stat-label">받은 돈</dt> <dd class="stat-value" th:text="${view.charges().thisMonth().paidText()}">3,300,000원</dd></div>
+						<div class="stat-key"><dt class="stat-label">남은 돈</dt> <dd class="stat-value" th:text="${view.charges().thisMonth().balanceText()}">2,200,000원</dd></div>
+					</dl>
+					<a th:href="@{/app/charges}" class="btn btn-quiet">이번 달 받을 월세 보기</a>
+				</section>
 
-			<!-- ⑤ 공실 (DASH-4) -->
-			<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="vacant-heading">
-				<h2 id="vacant-heading" class="mb-3 text-xl font-bold">공실</h2>
-				<p class="mb-4 text-lg">호실 <span th:text="${view.unitCount()} + '개'">10개</span> 중
-					<strong th:text="'공실 ' + ${view.vacantCount()} + '개'">공실 2개</strong></p>
-				<a th:href="${view.selectedId() != null} ? @{/app/properties/{id}(id=${view.selectedId()})} : @{/app/properties}"
-					class="btn btn-secondary">내 건물 보기</a>
-			</section>
+				<!-- ⑤ 공실 (DASH-4) -->
+				<section class="panel" aria-labelledby="vacant-heading">
+					<h2 id="vacant-heading" class="panel-title">공실</h2>
+					<p class="stat-line">호실 <span th:text="${view.unitCount()} + '개'">10개</span> 중
+						<strong th:text="'공실 ' + ${view.vacantCount()} + '개'">공실 2개</strong></p>
+					<a th:href="${view.selectedId() != null} ? @{/app/properties/{id}(id=${view.selectedId()})} : @{/app/properties}"
+						class="btn btn-quiet">내 건물 보기</a>
+				</section>
+			</div>
+
+			<!-- 목록 두 칸 -->
+			<div class="dash-group dash-group-lists">
+				<!-- ③ 납부일 지남 (DASH-2, 모든 달, 오래 지난 것부터) -->
+				<section class="panel" aria-labelledby="overdue-heading">
+					<h2 id="overdue-heading" class="panel-title">납부일 지남
+						<span th:text="${view.charges().overdue().count()} + '건'">2건</span></h2>
+					<p th:if="${view.charges().overdue().count() == 0}" class="dash-empty">납부일이 지난 받을 월세가 없어요.</p>
+					<th:block th:unless="${view.charges().overdue().count() == 0}">
+						<p class="stat-line">남은 돈 합계 <strong th:text="${view.charges().overdue().balanceText()}">1,100,000원</strong></p>
+						<ul class="row-list">
+							<li th:each="r : ${view.charges().overdueRows()}">
+								<a th:href="@{/app/charges/{id}(id=${r.chargeId()})}" class="row-title"
+									th:text="${r.unitName()} + ' · ' + ${r.tenantName()} + '님'">행복빌라 102호 · 김세입님</a>
+								<p class="row-meta"><span th:text="${r.monthText()}">2026년 9월</span> 월세 ·
+									<strong th:text="${r.daysOverdue()} + '일 지남'">22일 지남</strong> ·
+									남은 돈 <span th:text="${r.balanceText()}">550,000원</span></p>
+							</li>
+						</ul>
+						<p th:if="${view.charges().overdue().count() > view.charges().overdueRows().size()}" class="dash-note">
+							나머지는 각 달 받을 월세 목록의 [납부일 지남]에서 볼 수 있어요.</p>
+					</th:block>
+				</section>
+
+				<!-- ④ 곧 끝나는 계약 (DASH-3, 나가는 날 90일 안. 나가는 날이 지났는데 종료하지 않은 계약 포함) -->
+				<section class="panel" aria-labelledby="ending-heading">
+					<h2 id="ending-heading" class="panel-title">90일 안에 끝나는 계약
+						<span th:text="${view.ending().count()} + '건'">1건</span></h2>
+					<p th:if="${view.ending().count() == 0}" class="dash-empty">90일 안에 끝나는 계약이 없어요.</p>
+					<ul th:unless="${view.ending().rows().isEmpty()}" class="row-list">
+						<li th:each="l : ${view.ending().rows()}">
+							<a th:href="@{/app/leases/{id}(id=${l.leaseId()})}" class="row-title"
+								th:text="${l.unitName()} + ' · ' + ${l.tenantName()} + '님'">행복빌라 103호 · 이세입님</a>
+							<p class="row-meta">나가는 날 <span th:text="${l.endDateText()}">2027년 1월 1일</span> ·
+								<strong th:text="${l.daysLeftText()}" th:classappend="${l.overdue()} ? 'text-danger-700' : ''">76일 남음</strong></p>
+						</li>
+					</ul>
+					<p th:if="${view.ending().count() > view.ending().rows().size()}" class="dash-note">
+						나머지는 각 호실 화면에서 볼 수 있어요.</p>
+				</section>
+			</div>
 		</th:block>
 	</main>
 </body>

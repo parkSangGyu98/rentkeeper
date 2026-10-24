@@ -15,7 +15,7 @@
 | M4 세입자 링크·대시보드 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (main `7757eb2`, 실패 F1·F2는 수정·재확인 통과) | 아래 "M4에서 확정한 결정" |
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
 | M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
-| 디자인 교체 | 진행 중 (디자인: 커밋 4/4 완료, 캡처 확인 대기) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
+| 디자인 교체 | 진행 중 (커밋 5~11 보류. 대시보드 스타일 시안: A안 커밋 완료, B안 진행 중) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -991,6 +991,7 @@ SELECT id, notify_opt_out_at FROM tenant WHERE notify_opt_out_at IS NOT NULL;
 - **커밋 4 `HeaderLayoutTest`**: 기존 검사 두 가지(머리글 링크·버튼이 모두 `whitespace-nowrap`, `<nav class="flex flex-wrap` 와 `flex-wrap items-center justify-between`)는 고치지 않고 그대로 통과한다. 검사를 **하나 더했다**(`wideAndNarrowMenusNeverShowTogetherAndHaveTheSameLinks`): 넓은 화면 메뉴는 `hidden lg:flex`, 좁은 화면 메뉴(`details`)는 `lg:hidden`이라 동시에 보이지 않고(display:none), 두 메뉴의 링크(한눈에 보기·받을 월세·내 건물·계정 설정·로그아웃)가 같다. 이유: 결정 4의 조건(보이지 않는 쪽이 읽히지 않게)을 고정하려고.
 - 커밋 1~3에서 기존 테스트는 바꾸지 않았다(새 테스트만: ServiceNameTests, AccountEmailsTextTest, FontAssetsTests, TextSizeFloorTest).
 - 머리글 메뉴 링크가 두 번 나오게 됐지만, 화면 글자를 찾는 기존 테스트(contains)는 그대로 통과했다(전체 빌드).
+- **대시보드 스타일 시안 `DashboardTests`**: 이번 달 금액 검사의 `<dd class="inline">1,450,000원</dd>`·`<dd class="inline">500,000원</dd>`를 `<dd class="stat-value">…</dd>`로 바꿨다. 이유: 금액을 한 줄 글자(inline)에서 라벨 아래 큰 금액(stat-value)으로 바꿔 클래스 이름만 달라졌다. 금액 값과 dd 요소를 정확히 찾는 강도는 같다. 나머지 검사(문구·건수·순서·404)는 그대로다.
 
 ### 디자인 교체 커밋 계획
 0. `docs: 디자인 교체 결정 기록` (이 커밋)

@@ -111,7 +111,7 @@ class DashboardTests {
 		assertThat(page).as("① 확인 기다리는 입금 신고").contains("확인 기다리는 입금 신고 <span>1건</span>").contains("행복빌라 103호 · 이세입님")
 				.contains("<strong>2번째 신고</strong>").contains("10월 16일 알림");
 		assertThat(page).as("② 이번 달 (취소 제외)").contains("받을 월세 <span>3건</span>")
-				.contains("<dd class=\"inline\">1,450,000원</dd>").contains("<dd class=\"inline\">500,000원</dd>")
+				.contains("<dd class=\"stat-value\">1,450,000원</dd>").contains("<dd class=\"stat-value\">500,000원</dd>")
 				.contains("950,000원");
 		assertThat(page).as("③ 납부일 지남 (모든 달)").contains("납부일 지남 <span>2건</span>").contains("<strong>850,000원</strong>")
 				.contains("<strong>53일 지남</strong>").contains("<strong>22일 지남</strong>");
