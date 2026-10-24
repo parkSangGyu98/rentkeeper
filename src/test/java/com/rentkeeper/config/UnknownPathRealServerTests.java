@@ -20,10 +20,13 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 import com.rentkeeper.TestcontainersConfiguration;
 import com.rentkeeper.landlord.application.LandlordService;
 import com.rentkeeper.landlord.domain.EmailAddress;
+import com.rentkeeper.support.FakeKakaoServer;
 
 /**
  * 없는 주소·권한 없는 주소의 상태 코드와 화면을 실제 내장 Tomcat에서 고정한다. MockMvc는 오류 화면 전달(/error)을 하지
@@ -47,6 +50,20 @@ class UnknownPathRealServerTests {
 	private static final String EMAIL = "unknown-path@example.com";
 
 	private static final String PASSWORD = "Haengbok-Villa-2026";
+
+	static final FakeKakaoServer kakao = FakeKakaoServer.start();
+
+	/** 카카오 로그인 경로를 켜려고 가짜 카카오 서버를 쓴다 (KakaoIntegrationTest와 같은 값) */
+	@DynamicPropertySource
+	static void kakaoProperties(DynamicPropertyRegistry registry) {
+		registry.add("app.kakao.client-id", () -> "test-client-id");
+		registry.add("app.kakao.client-secret", () -> "test-client-secret");
+		registry.add("app.kakao.admin-key", () -> "test-admin-key");
+		registry.add("app.kakao.authorization-uri", () -> kakao.baseUrl() + "/oauth/authorize");
+		registry.add("app.kakao.token-uri", () -> kakao.baseUrl() + "/oauth/token");
+		registry.add("app.kakao.user-info-uri", () -> kakao.baseUrl() + "/v2/user/me");
+		registry.add("app.kakao.unlink-uri", () -> kakao.baseUrl() + "/v1/user/unlink");
+	}
 
 	@LocalServerPort
 	int port;
@@ -121,33 +138,140 @@ class UnknownPathRealServerTests {
 		}
 	}
 
+	// ---- 새 404 필터가 정상 경로를 404로 만들지 않는지 (필터는 권한 검사 앞에 있다)
+
+	@Test
+	void staticFilesAndHealthCheckAreServed() throws Exception {
+		String session = login();
+		for (String cookie : new String[]{null, session}) {
+			HttpResponse<String> css = get("/css/app.css", cookie);
+			assertThat(css.statusCode()).as("빌드한 CSS").isEqualTo(200);
+			assertThat(css.headers().firstValue("Content-Type").orElseThrow()).startsWith("text/css");
+			assertThat(get(FONT_CHUNK, cookie).statusCode()).as("글꼴 조각").isEqualTo(200);
+			assertThat(get("/js/copy.js", cookie).statusCode()).isEqualTo(200);
+			// 운영 헬스 체크 (Dockerfile HEALTHCHECK: curl -fsS
+			// http://localhost:8080/actuator/health)
+			HttpResponse<String> health = get("/actuator/health", cookie);
+			assertThat(health.statusCode()).isEqualTo(200);
+			assertThat(health.body()).contains("UP");
+			// 저장소에 없는 파일은 없는 주소 (favicon·images는 정적 파일 체인, robots.txt는 이 필터에서 404)
+			for (String missing : new String[]{"/favicon.ico", "/images/none.png", "/robots.txt"}) {
+				assertThat(get(missing, cookie).statusCode()).as(missing).isEqualTo(404);
+			}
+		}
+	}
+
+	@Test
+	void pathsHandledBySecurityFiltersStillWork() throws Exception {
+		// 카카오 로그인 시작과 콜백 (OAuth2 필터가 처리, 컨트롤러 없음)
+		HttpResponse<String> start = get("/oauth2/authorization/kakao", null);
+		assertThat(start.statusCode()).isEqualTo(302);
+		assertThat(start.headers().firstValue("Location").orElseThrow())
+				.startsWith(kakao.baseUrl() + "/oauth/authorize");
+		HttpResponse<String> callback = get("/login/oauth2/code/kakao?code=fake&state=forged",
+				cookie(start, "SESSION"));
+		assertThat(callback.statusCode()).isEqualTo(302);
+		assertThat(callback.headers().firstValue("Location").orElseThrow()).endsWith("/login?kakaoError");
+
+		// 로그인 POST (틀린 비밀번호)
+		HttpResponse<String> wrong = postLogin("Wrong-Password-2026", false);
+		assertThat(wrong.statusCode()).isEqualTo(302);
+		assertThat(wrong.headers().firstValue("Location").orElseThrow()).endsWith("/login?error");
+
+		// 로그인 유지(remember-me): 세션 없이 remember-me 쿠키만으로 들어간다
+		HttpResponse<String> remembered = postLogin(PASSWORD, true);
+		assertThat(get("/app/dashboard", cookie(remembered, "remember-me")).statusCode()).isEqualTo(200);
+
+		// 로그아웃 POST (LogoutFilter가 처리): CSRF 토큰이 없으면 403, 있으면 로그인 화면으로
+		String session = login();
+		String csrf = "_csrf=" + URLEncoder.encode(csrfToken(session), StandardCharsets.UTF_8);
+		assertThat(send("POST", "/logout", session, "").statusCode()).isEqualTo(403);
+		HttpResponse<String> logout = send("POST", "/logout", session, csrf);
+		assertThat(logout.statusCode()).isEqualTo(302);
+		assertThat(logout.headers().firstValue("Location").orElseThrow()).endsWith("/login?logout");
+		assertThat(get("/app/dashboard", session).statusCode()).as("로그아웃한 세션").isEqualTo(302);
+	}
+
+	@Test
+	void otherMethodOnMappedPathKeepsPreviousAnswer() throws Exception {
+		// 컨트롤러가 있는 주소는 모두 허용 목록 안이라 필터가 손대지 않는다: CSRF가 없으면 403, 있으면 405
+		assertThat(send("POST", "/terms", null, "").statusCode()).isEqualTo(403);
+		String session = login();
+		String csrf = "_csrf=" + URLEncoder.encode(csrfToken(session), StandardCharsets.UTF_8);
+		assertThat(send("POST", "/terms", session, csrf).statusCode()).isEqualTo(405);
+		assertThat(send("POST", "/app/dashboard", session, csrf).statusCode()).isEqualTo(405);
+		assertThat(send("DELETE", "/app/dashboard", session, "").statusCode()).as("CSRF 없는 DELETE").isEqualTo(403);
+	}
+
+	@Test
+	void headAnswersLikeGet() throws Exception {
+		String session = login();
+		String[][] cases = {{"/", null}, {"/login", null}, {"/css/app.css", null}, {"/actuator/health", null},
+				{"/no-such-page", null}, {"/no-such-page", session}, {"/app/no-such-page", null},
+				{"/app/no-such-page", session}, {"/app/dashboard", session}, {"/signup/kakao", session},
+				{"/t/abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG", null}};
+		for (String[] c : cases) {
+			HttpResponse<String> head = send("HEAD", c[0], c[1], null);
+			assertThat(head.statusCode()).as("HEAD " + c[0] + (c[1] == null ? "" : " (로그인)"))
+					.isEqualTo(get(c[0], c[1]).statusCode());
+			assertThat(head.body()).isEmpty();
+		}
+	}
+
+	private static final String FONT_CHUNK = "/css/fonts/pretendard/woff2-dynamic-subset/PretendardVariable.subset.0.woff2";
+
 	private HttpResponse<String> get(String path, String cookie) throws Exception {
+		return send("GET", path, cookie, null);
+	}
+
+	/** form이 null이면 본문 없이 보낸다 */
+	private HttpResponse<String> send(String method, String path, String cookie, String form) throws Exception {
 		HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
-				// 브라우저처럼 HTML을 달라고 한다 (없으면 오류 응답이 JSON으로 온다)
-				.header("Accept", "text/html");
+				// 브라우저처럼 HTML을 달라고 한다 (없으면 오류 응답이 JSON으로 온다). 헬스 체크는 운영 curl처럼 아무 형식이나
+				.header("Accept", path.startsWith("/actuator") ? "*/*" : "text/html");
 		if (cookie != null) {
+			// Secure 쿠키는 Java HttpClient가 http로 다시 보내지 않으므로 Cookie 헤더를 직접 붙인다
 			request.header("Cookie", cookie);
+		}
+		if (form == null) {
+			request.method(method, HttpRequest.BodyPublishers.noBody());
+		} else {
+			request.header("Content-Type", "application/x-www-form-urlencoded").method(method,
+					HttpRequest.BodyPublishers.ofString(form));
 		}
 		return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
 	}
 
 	/** 로그인하고 SESSION 쿠키("SESSION=…")를 돌려준다 */
 	private String login() throws Exception {
-		HttpResponse<String> loginPage = get("/login", null);
-		String sessionCookie = loginPage.headers().firstValue("Set-Cookie").orElseThrow().split(";")[0];
-		Matcher csrf = Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"").matcher(loginPage.body());
-		assertThat(csrf.find()).isTrue();
-		// Secure 쿠키는 Java HttpClient가 http로 다시 보내지 않으므로 Cookie 헤더를 직접 붙인다
-		String form = "email=" + URLEncoder.encode(EMAIL, StandardCharsets.UTF_8) + "&password=" + PASSWORD + "&_csrf="
-				+ URLEncoder.encode(csrf.group(1), StandardCharsets.UTF_8);
-		HttpResponse<String> login = client
-				.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
-						.header("Cookie", sessionCookie).header("Content-Type", "application/x-www-form-urlencoded")
-						.POST(HttpRequest.BodyPublishers.ofString(form)).build(), HttpResponse.BodyHandlers.ofString());
+		HttpResponse<String> login = postLogin(PASSWORD, false);
 		assertThat(login.statusCode()).isEqualTo(302);
 		assertThat(login.headers().firstValue("Location").orElseThrow()).endsWith("/app");
-		return login.headers().allValues("Set-Cookie").stream().filter(value -> value.startsWith("SESSION="))
-				.findFirst().map(value -> value.split(";")[0]).orElse(sessionCookie);
+		return cookie(login, "SESSION");
+	}
+
+	private HttpResponse<String> postLogin(String password, boolean rememberMe) throws Exception {
+		HttpResponse<String> loginPage = get("/login", null);
+		Matcher csrf = Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"").matcher(loginPage.body());
+		assertThat(csrf.find()).isTrue();
+		String form = "email=" + URLEncoder.encode(EMAIL, StandardCharsets.UTF_8) + "&password=" + password
+				+ (rememberMe ? "&remember-me=on" : "") + "&_csrf="
+				+ URLEncoder.encode(csrf.group(1), StandardCharsets.UTF_8);
+		return send("POST", "/login", cookie(loginPage, "SESSION"), form);
+	}
+
+	/** 로그인한 화면의 로그아웃 폼에 든 CSRF 토큰 */
+	private String csrfToken(String session) throws Exception {
+		Matcher csrf = Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"")
+				.matcher(get("/app/dashboard", session).body());
+		assertThat(csrf.find()).isTrue();
+		return csrf.group(1);
+	}
+
+	/** 응답이 내려준 쿠키 하나 ("이름=값") */
+	private static String cookie(HttpResponse<String> response, String name) {
+		return response.headers().allValues("Set-Cookie").stream().filter(value -> value.startsWith(name + "="))
+				.findFirst().map(value -> value.split(";")[0]).orElseThrow();
 	}
 
 }
