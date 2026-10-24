@@ -14,7 +14,7 @@
 | M3 청구·입금 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (병합 커밋 `4b1fb30`) | 아래 "M3-b 구현 결과 메모" |
 | M4 세입자 링크·대시보드 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (main `7757eb2`, 실패 F1·F2는 수정·재확인 통과) | 아래 "M4에서 확정한 결정" |
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
-| M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 전(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
+| M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -935,7 +935,7 @@ SELECT id, notify_opt_out_at FROM tenant WHERE notify_opt_out_at IS NOT NULL;
 
 ### M6 구현 결과 메모 (2026-10-24)
 - **커밋**: 0 `2933b0e`, 1 `899576e`, 2 `43dcabe`, 3 `ad8f550`, 4 `e86674f`, 5 `f246384`, 6 `12c2b2d`, 7 `c9caae6`, 8(이 문서). 테스트 622개(처리량 측정 제외), `gradlew build` 통과. 커밋 4는 첫 빌드에서 테스트 기대 문자열 하나(시작 화면의 `<span>`)가 틀려 고친 뒤 두 번째에 통과했다.
-- **마이그레이션**: V22 `landlord.demo_expires_at`(+ 데모 전용 부분 인덱스). 확인을 기다리지 않고 커밋했고 SQL과 조건 체크리스트는 `docs/m6-migration-review.md`(검토 전). 로컬 DB에는 다음 bootRun 때 v21 → v22로 적용된다.
+- **마이그레이션**: V22 `landlord.demo_expires_at`(+ 데모 전용 부분 인덱스). 확인을 기다리지 않고 커밋했고 SQL과 조건 체크리스트는 `docs/m6-migration-review.md`(개발자 검토 이상 없음, V23 불필요). 로컬 DB에 v21 → v22 적용 확인(2026-10-24, 실패 없음).
 - **ADR**: 030 운영 배포 구성(서버·프록시 신뢰 범위·로그 가리기·메일·이미지·백업·역할), 031 공개 접근 제어(초대 코드·임시 데모). ADR-012 표에 초대 코드·데모 한도 두 줄.
 - **사람용 문서**: `docs/deploy-checklist.md`(처음 배포 단계별), `docs/runbook.md`(반복 작업·장애), `.env.prod.example`(이름·설명만).
 - **계획 대비 달라진 점·정한 세부 사항**

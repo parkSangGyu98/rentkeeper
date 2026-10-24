@@ -14,8 +14,9 @@
 - [x] 부분 인덱스 `ix_landlord_demo_expires`(데모 계정만): 정리와 동시 상한 세기에 쓴다. 일반 계정은 인덱스에 들어가지 않는다
 - [x] 새 컬럼과 인덱스에 한글 COMMENT(`SchemaCommentsTests` 통과), 시각은 UTC라고 적었다
 - [x] 기존 마이그레이션(V1~V21)을 고치지 않는다
-- [ ] 로컬 DB(v21 → v22)에 적용해 실패가 없는지: 다음 bootRun 때 확인한다 (`SELECT version, success FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1;`)
-- 검토:
+- [x] 로컬 DB(v21 → v22) 적용 확인 완료 (2026-10-24, bootRun): `Successfully applied 1 migration … now at version v22`, 앱 정상 기동. `flyway_schema_history` 마지막 줄 `22 | t`. 기존 임대인 2명은 모두 `demo_expires_at` NULL(일반 계정)
+- [x] 값을 쓰는 경로 조사(코드 기준, 2026-10-24): `demo_expires_at`에 값을 넣는 곳은 `Landlord.registerDemo` 한 곳뿐이고, 이를 부르는 곳은 `LandlordService.registerDemo` ← `DemoService.start` ← `POST /demo` 하나다. 이메일 가입(`Landlord.registerLocal`)·카카오 가입(`registerKakao`)은 이 필드를 건드리지 않아 NULL이다. 컬럼이 `@Column(updatable = false)`라 계정 수정(이메일·이름·비밀번호 변경, 인증, 탈퇴, 카카오 연결 끊기)의 JPA UPDATE에는 이 컬럼이 들어가지 않는다. 앱 코드에 `landlord`를 쓰는 SQL(insert/update)은 없고, 탈퇴 복구 기능은 없다(M1-c 결정 1). 데모 정리 SQL은 지우기만 하며 `demo_expires_at IS NOT NULL` 조건이 있다. 예외는 사람이 쓰는 운영 SQL 하나(runbook 12 "데모 초기화", 이미 데모인 행만 바꿈)
+- 검토: 개발자(채팅) 검토 이상 없음, V23 불필요 (2026-10-24)
 
 ```sql
 -- 방문자별 임시 데모 계정 (M6 결정 3, ADR-031). 공개 주소에서 방문자가 [데모로 둘러보기]를 누르면 가짜 데이터가 든 임대인 계정을
