@@ -81,10 +81,13 @@ class SecurityTests {
 
 	@Test
 	void pathsNotOnAllowListAreDenied() throws Exception {
-		// 기본 거부: 비로그인은 로그인 화면으로, 로그인 상태여도 허용 목록 밖이면 403
-		mockMvc.perform(get("/no-such-page")).andExpect(redirectedUrl("/login"));
-		mockMvc.perform(get("/no-such-page").with(user(principal()))).andExpect(status().isForbidden());
-		mockMvc.perform(get("/actuator/env").with(user(principal()))).andExpect(status().isForbidden());
+		// 기본 거부: 허용 목록 밖에서 처리할 컨트롤러가 없는 주소는 로그인 전·후 모두 404(막고 "페이지를 찾을 수 없어요")
+		mockMvc.perform(get("/no-such-page")).andExpect(status().isNotFound());
+		mockMvc.perform(get("/no-such-page").with(user(principal()))).andExpect(status().isNotFound());
+		mockMvc.perform(get("/actuator/env").with(user(principal()))).andExpect(status().isNotFound());
+		// 컨트롤러가 있는 주소는 권한 검사 그대로: 비로그인은 로그인 화면으로, 권한이 없으면 403
+		mockMvc.perform(get("/signup/kakao")).andExpect(redirectedUrl("/login"));
+		mockMvc.perform(get("/signup/kakao").with(user(principal()))).andExpect(status().isForbidden());
 	}
 
 	// ---- CSRF ----

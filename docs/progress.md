@@ -15,7 +15,7 @@
 | M4 세입자 링크·대시보드 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (main `7757eb2`, 실패 F1·F2는 수정·재확인 통과) | 아래 "M4에서 확정한 결정" |
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
 | M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
-| 디자인 교체 | 구현 완료 (커밋 11 뒤 동작 확인 테스트·문구 통일 2건·디자인 자체 점검 완료, 사람 확인 대기: 360·375px·세입자 화면) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
+| 디자인 교체 | 구현 완료 (커밋 11 뒤 동작 확인 테스트·문구 통일 2건·디자인 자체 점검 완료, `fix/unknown-path-404` 커밋 1/3: 없는 주소 404, 사람 확인 대기: 360·375px·세입자 화면) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -1041,6 +1041,7 @@ SELECT id, notify_opt_out_at FROM tenant WHERE notify_opt_out_at IS NOT NULL;
 - **남의 ID와 없는 ID의 응답 비교**: `IdorTests.victimsIdAndMissingIdGiveTheSameStatusBodyAndHeaders`를 더했다. 소유 데이터 엔드포인트 표(`attacks()`) 전체에서 피해자 ID와 없는 ID(999999999)의 상태 코드·본문·헤더(이름·값 전부)가 같은지 본다 → **모두 같음(통과)**. 기존 검사는 상태와 본문(한 가지 없는 ID와 비교)만 봤다.
 - **항목이 하나뿐인 받을 월세 지우기 요청**: 확인 화면(GET)은 열리지만, 지우기 POST는 서버(`ChargeEditService.removeItem`, `LastItemException`)가 막는다. `ChargeEditTests`에 두 검사를 더했다: 화면 없이 올바른 version으로 POST만 보내도 항목 수·이력·합계·version이 그대로(`lastItemDeleteRequestIsBlockedEvenWithoutConfirmPage`), 두 로그인 세션이 남은 두 항목을 동시에 지워도 5번 모두 하나가 남음(`deletingTwoLastItemsAtTheSameMomentLeavesOne`, version 확인과 행 잠금으로 늦은 쪽이 되돌려짐) → **통과**.
 - **고칠 계획 (별도 브랜치 `fix/unknown-path-404`, 승인 뒤)**: ① 로그인 상태의 모르는 경로를 404 화면으로: 기본 거부(`denyAll`)는 그대로 두고, 접근 거부 처리기에서 "처리할 컨트롤러가 없는 경로"면 404 화면을 보낸다(매핑된 경로의 권한 부족은 지금처럼 403). 테스트: 로그인·비로그인에서 `/no-such-page`, 매핑된 경로의 권한 부족 403 유지, 404 본문이 `/app/` 아래 없는 주소와 같음. ② 마지막 항목 확인 화면: GET에서도 항목이 하나면 상세로 돌려보내고 같은 안내(`LAST_ITEM`)를 띄운다. 동작 변경이라 이번 브랜치에서는 하지 않는다.
+- **fix/unknown-path-404 커밋 1 (없는 주소 404)**: 기본 체인에 `UnmappedPathNotFoundFilter`를 권한 검사 앞에 넣었다. 허용 목록(공개 경로·`/app/**`·`/signup/kakao`) 밖에서 처리할 컨트롤러가 없는 주소만 로그인 전·후 모두 404 "페이지를 찾을 수 없어요"로 끝낸다. 기본 거부(`denyAll`)는 그대로라 컨트롤러가 있는 주소는 권한 검사(비로그인 → 로그인 화면, 권한 없음 → 403)를 거친다. `/app/` 안과 세입자 링크 체인(`/t/**`)은 바뀌지 않는다. 테스트: `SecurityTests.pathsNotOnAllowListAreDenied`를 새 동작으로(같은 강도, 403 → 404, 권한 없는 주소 403 검사 추가), 실서버 `UnknownPathRealServerTests`(상태 코드·화면 글자·`/t/**`의 Set-Cookie 없음·X-Robots-Tag·no-store).
 - **테스트 작성 중 알게 된 것**: 같은 로그인 세션으로 두 요청을 동시에 보내면 Spring Session JDBC가 플래시 메시지 속성을 동시에 넣다가 키 중복으로 한쪽 요청이 500이 될 수 있다(데이터는 바뀌지 않음). 같은 화면에서 버튼을 두 번 빠르게 누르는 경우다. 보안 문제는 아니며, 고칠지는 개발자 판단(후보: 세션 속성 저장 방식 확인).
 
 ### 글꼴 출처와 용량 (디자인 교체 커밋 2)

@@ -1,11 +1,14 @@
 package com.rentkeeper.config;
 
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -17,11 +20,13 @@ import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.NullSecurityContextRepository;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import com.rentkeeper.auth.kakao.KakaoLoginSuccessHandler;
 import com.rentkeeper.auth.kakao.KakaoOAuth2UserService;
@@ -130,7 +135,9 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimiter rateLimiter,
 			RememberMeServices rememberMeServices, ObjectProvider<ClientRegistrationRepository> clientRegistrations,
 			KakaoOAuth2UserService kakaoUserService, KakaoLoginSuccessHandler kakaoSuccessHandler,
-			KakaoWithdrawalCallback kakaoWithdrawalCallback, Clock clock) throws Exception {
+			KakaoWithdrawalCallback kakaoWithdrawalCallback, Clock clock,
+			@Qualifier("requestMappingHandlerMapping") ObjectProvider<RequestMappingHandlerMapping> handlerMappings)
+			throws Exception {
 		// 로그인 시도 IP 한도 (ADR-012). 빈으로 등록하지 않는다: 빈이면 서블릿 필터로도 자동 등록되어 두 번 실행된다
 		http.addFilterBefore(new LoginRateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class);
 
@@ -143,6 +150,12 @@ public class SecurityConfig {
 				.requestMatchers(PUBLIC_PATHS).permitAll().requestMatchers("/app/**").hasRole("LANDLORD")
 				// 카카오로 처음 온 사람의 가입 단계. 아직 계정이 없어 /app은 못 쓴다 (ADR-014)
 				.requestMatchers("/signup/kakao").hasAuthority(KakaoSignupPrincipal.ROLE).anyRequest().denyAll());
+
+		// 허용 목록 밖의 없는 주소는 막기 전에 404 화면으로 (로그인 전·후 같게). 컨트롤러가 있는 주소는 위 규칙대로 403·로그인 화면
+		List<String> allowList = new ArrayList<>(List.of(PUBLIC_PATHS));
+		allowList.addAll(List.of("/app/**", "/signup/kakao"));
+		http.addFilterBefore(new UnmappedPathNotFoundFilter(allowList, handlerMappings::getObject),
+				AuthorizationFilter.class);
 
 		http.formLogin(form -> form.loginPage("/login").usernameParameter("email").passwordParameter("password")
 				.defaultSuccessUrl("/app", true)
