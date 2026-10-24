@@ -1,5 +1,7 @@
 package com.rentkeeper.landlord.application;
 
+import java.time.Instant;
+
 import com.rentkeeper.landlord.domain.AuthProvider;
 import com.rentkeeper.landlord.domain.Landlord;
 import com.rentkeeper.landlord.domain.LandlordStatus;
@@ -13,10 +15,15 @@ import com.rentkeeper.landlord.domain.LandlordStatus;
  *            카카오 회원번호. 이메일 가입 계정은 null
  */
 public record LandlordAccount(long id, String email, String name, boolean emailVerified, LandlordStatus status,
-		AuthProvider authProvider, String kakaoId) {
+		AuthProvider authProvider, String kakaoId, Instant demoExpiresAt) {
 
 	/** 이름(호칭) 최대 길이. 다른 모듈은 엔티티(Landlord) 대신 이 값을 쓴다 (ADR-020) */
 	public static final int NAME_MAX_LENGTH = Landlord.NAME_MAX_LENGTH;
+
+	/** 방문자용 임시 데모 계정인지 (M6 결정 3) */
+	public boolean demo() {
+		return demoExpiresAt != null;
+	}
 
 	public boolean isKakao() {
 		return authProvider == AuthProvider.KAKAO;

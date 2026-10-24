@@ -14,6 +14,12 @@
 			<li class="rounded-lg border-2 border-gray-200 bg-white p-4">계약이 끝나기 전에 미리 알려 드려요</li>
 		</ul>
 
+		<!-- 방문자용 임시 데모 (M6 결정 3). 가짜 데이터가 든 계정을 하나 만들어 바로 들어간다 -->
+		<form th:if="${demoEnabled}" th:action="@{/demo}" method="post" class="mb-4" id="demo-start">
+			<button type="submit" class="btn btn-primary w-full">데모로 둘러보기 (가입 없이)</button>
+			<p class="mt-2 text-base text-gray-700">가짜 데이터가 든 데모 계정을 바로 만들어 드려요. 24시간 뒤 모두 지워져요. 실제 정보는 넣지 마세요.</p>
+		</form>
+
 		<div class="flex flex-col gap-3 sm:flex-row">
 			<a th:href="@{/signup}" class="btn btn-primary">무료로 가입하기</a>
 			<a th:href="@{/login}" class="btn btn-secondary">이미 가입했어요 (로그인)</a>

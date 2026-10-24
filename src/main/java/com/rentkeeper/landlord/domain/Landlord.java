@@ -47,6 +47,10 @@ public class Landlord extends BaseTimeEntity {
 	@Column(nullable = false, length = 20)
 	private LandlordStatus status;
 
+	// NULL=일반 계정. 값이 있으면 방문자용 임시 데모 계정이고 이 시각에 지워진다 (V22, M6 결정 3)
+	@Column(name = "demo_expires_at", updatable = false)
+	private Instant demoExpiresAt;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private Plan plan;
@@ -88,6 +92,16 @@ public class Landlord extends BaseTimeEntity {
 			throw new IllegalArgumentException("passwordHash is required");
 		}
 		return new Landlord(email, passwordHash, AuthProvider.LOCAL, normalizeName(name));
+	}
+
+	/**
+	 * 방문자용 임시 데모 계정을 만든다 (M6 결정 3). 가짜 주소(인증하지 않음)라 메일을 받지 않는다. 비밀번호는 아무도 모르는 값의
+	 * 해시라 비밀번호로는 로그인할 수 없다.
+	 */
+	public static Landlord registerDemo(EmailAddress email, String passwordHash, String name, Instant expiresAt) {
+		Landlord landlord = registerLocal(email, passwordHash, name);
+		landlord.demoExpiresAt = Objects.requireNonNull(expiresAt, "expiresAt");
+		return landlord;
 	}
 
 	/**
@@ -219,6 +233,14 @@ public class Landlord extends BaseTimeEntity {
 
 	public String getName() {
 		return name;
+	}
+
+	public Instant getDemoExpiresAt() {
+		return demoExpiresAt;
+	}
+
+	public boolean isDemo() {
+		return demoExpiresAt != null;
 	}
 
 	public LandlordStatus getStatus() {

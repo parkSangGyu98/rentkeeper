@@ -28,7 +28,9 @@ public class EmailVerificationBannerAdvice {
 		if (authentication == null || !(authentication.getPrincipal() instanceof LandlordPrincipal principal)) {
 			return null;
 		}
-		return landlordService.findAccount(principal.getLandlordId()).map(EmailBanner::of).orElse(null);
+		// 데모 계정은 가짜 주소라 인증 안내를 보이지 않는다 (M6 결정 3)
+		return landlordService.findAccount(principal.getLandlordId()).filter(account -> !account.demo())
+				.map(EmailBanner::of).orElse(null);
 	}
 
 	/**

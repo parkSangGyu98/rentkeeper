@@ -38,7 +38,13 @@ public enum RateLimitRule {
 	 * 안내 문자 그만 받기·다시 받기 POST: 열린 링크(토큰 ID)당 1시간에 10회 (M5 결정 9). 연타와 자동 반복을 막는다. 키는
 	 * 토큰 ID
 	 */
-	TENANT_OPTOUT_PER_LINK("tenant-optout:link", 10, Duration.ofHours(1));
+	TENANT_OPTOUT_PER_LINK("tenant-optout:link", 10, Duration.ofHours(1)),
+
+	/** 초대 코드 입력(이메일·카카오 가입): IP당 1시간에 10회 (M6 결정 3). 맞든 틀리든 센다 */
+	INVITE_CODE_PER_IP("invite-code:ip", 10, Duration.ofHours(1)),
+
+	/** 임시 데모 계정 만들기: IP당 1시간에 5회 (M6 결정 3). 동시 데모 수 상한과 별개 */
+	DEMO_START_PER_IP("demo-start:ip", 5, Duration.ofHours(1));
 
 	private final String keyPrefix;
 

@@ -1,8 +1,11 @@
 package com.rentkeeper.landlord.application;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -57,6 +60,45 @@ public class LandlordService {
 			}
 			throw e;
 		}
+	}
+
+	/** 데모 계정 만들기 줄 세우기 잠금 키 (pg_advisory_xact_lock, 이 앱 안에서만 쓰는 임의의 수) */
+	static final long DEMO_LOCK_KEY = 7_130_001L;
+
+	/**
+	 * 방문자용 임시 데모 계정을 만들고 id를 돌려준다 (M6 결정 3). 동시에 있는 데모 계정이 상한이면 만들지 않는다. 잠금으로 줄을 세워
+	 * 동시에 눌러도 상한을 넘지 않는다.
+	 *
+	 * @param passwordHash
+	 *            아무도 모르는 값의 해시 (비밀번호로는 로그인할 수 없다)
+	 * @throws DemoCapacityException
+	 *             데모 계정이 상한만큼 있을 때
+	 */
+	@Transactional
+	public long registerDemo(String passwordHash, Duration lifetime, int maxAccounts) {
+		landlordRepository.lockDemoCreation(DEMO_LOCK_KEY);
+		Instant now = clock.instant();
+		if (landlordRepository.countByDemoExpiresAtAfter(now) >= maxAccounts) {
+			throw new DemoCapacityException();
+		}
+		EmailAddress email = EmailAddress.of("demo-" + UUID.randomUUID().toString().replace("-", "") + "@demo.invalid");
+		return landlordRepository
+				.saveAndFlush(Landlord.registerDemo(email, passwordHash, DEMO_NAME, now.plus(lifetime))).getId();
+	}
+
+	/** 데모 계정의 이름(호칭) */
+	public static final String DEMO_NAME = "데모 임대인";
+
+	/** 지울 때가 된 데모 계정 id */
+	public List<Long> expiredDemoIds(Instant now) {
+		return landlordRepository.findExpiredDemoIds(now);
+	}
+
+	/** 동시에 있는 데모 계정이 상한이라 새로 만들지 않았다 */
+	public static class DemoCapacityException extends RuntimeException {
+
+		private static final long serialVersionUID = 1L;
+
 	}
 
 	/**
@@ -203,7 +245,8 @@ public class LandlordService {
 
 	private static LandlordAccount toAccount(Landlord landlord) {
 		return new LandlordAccount(landlord.getId(), landlord.getEmail(), landlord.getName(),
-				landlord.isEmailVerified(), landlord.getStatus(), landlord.getAuthProvider(), landlord.getKakaoId());
+				landlord.isEmailVerified(), landlord.getStatus(), landlord.getAuthProvider(), landlord.getKakaoId(),
+				landlord.getDemoExpiresAt());
 	}
 
 	static boolean isLocalEmailUniqueViolation(Throwable e) {

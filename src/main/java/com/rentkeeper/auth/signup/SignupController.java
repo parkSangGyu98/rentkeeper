@@ -9,6 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.rentkeeper.auth.security.LandlordPrincipal;
 import com.rentkeeper.auth.web.AuthenticatedSessionHelper;
@@ -33,17 +34,28 @@ public class SignupController {
 
 	static final String VIEW = "auth/signup";
 
+	static final String INVITE_ERROR = "초대 코드가 맞지 않아요. 받은 초대 코드를 다시 확인해 주세요";
+
 	private final SignupService signupService;
 
 	private final AuthenticatedSessionHelper sessionHelper;
 
 	private final RateLimiter rateLimiter;
 
+	private final InviteCodeGate inviteCodeGate;
+
 	public SignupController(SignupService signupService, AuthenticatedSessionHelper sessionHelper,
-			RateLimiter rateLimiter) {
+			RateLimiter rateLimiter, InviteCodeGate inviteCodeGate) {
+		this.inviteCodeGate = inviteCodeGate;
 		this.signupService = signupService;
 		this.sessionHelper = sessionHelper;
 		this.rateLimiter = rateLimiter;
+	}
+
+	/** 가입 화면에 초대 코드 칸을 보일지 (M6 결정 3) */
+	@ModelAttribute("inviteRequired")
+	boolean inviteRequired() {
+		return inviteCodeGate.required();
 	}
 
 	@GetMapping("/signup")
@@ -57,9 +69,15 @@ public class SignupController {
 
 	@PostMapping("/signup")
 	public String signup(@Validated @ModelAttribute("form") SignupForm form, BindingResult result,
+			@RequestParam(name = "inviteCode", defaultValue = "") String inviteCode, Model model,
 			HttpServletRequest request, HttpServletResponse response) {
 		// IP당 1시간에 10회. "이미 가입된 이메일" 안내로 계정 존재를 대량으로 캐는 것을 늦춘다 (ADR-012)
 		rateLimiter.acquireOrThrow(RateLimitRule.SIGNUP_PER_IP, ClientIp.of(request));
+		// 초대 코드가 틀리면 다른 확인(이메일 중복 등)을 하지 않는다: 코드 없이 계정 존재를 캐지 못하게 (M6 결정 3)
+		if (!inviteCodeGate.accepts(inviteCode, ClientIp.of(request))) {
+			model.addAttribute("inviteError", INVITE_ERROR);
+			return VIEW;
+		}
 		if (!result.hasFieldErrors("password") && !result.hasFieldErrors("passwordConfirm")
 				&& !form.password().equals(form.passwordConfirm())) {
 			result.rejectValue("passwordConfirm", "mismatch", "비밀번호가 서로 달라요. 같은 비밀번호를 두 번 입력해 주세요");

@@ -67,6 +67,13 @@
 		</div>
 	</div>
 
+	<!-- 데모 계정 띠 (M6 결정 3). 데모 계정이면 모든 화면 맨 위에 -->
+	<div th:if="${demoExpiresAt}" id="demo-banner" class="border-b-2 border-amber-500 bg-amber-100" role="note">
+		<p class="mx-auto w-full max-w-2xl px-4 py-3 text-lg font-semibold">
+			데모입니다. 실제 정보를 입력하지 마세요. 이 데모는 <span th:text="${#temporals.format(demoExpiresAt, 'M월 d일 HH:mm')}">10월 25일 14:00</span>에 모두 지워져요.
+		</p>
+	</div>
+
 	<!-- 한 번만 보여 주는 안내 (리다이렉트 후 flash 속성) -->
 	<div class="mx-auto w-full max-w-2xl px-4 pt-6" th:if="${notice}">
 		<div class="alert alert-info mb-0" role="status" th:text="${notice}">안내</div>

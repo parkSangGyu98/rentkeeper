@@ -50,6 +50,15 @@
 				<p id="name-error" class="form-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">이름 오류</p>
 			</div>
 
+			<!-- 초대 코드 (M6 결정 3). 칸 값은 다시 채우지 않는다 -->
+			<div th:if="${inviteRequired}">
+				<label for="inviteCode" class="form-label">초대 코드</label>
+				<p id="inviteCode-hint" class="mb-2 text-base text-gray-700">지금은 초대받은 분만 가입할 수 있어요. 둘러보려면 첫 화면의 [데모로 둘러보기]를 눌러 주세요.</p>
+				<input id="inviteCode" type="text" name="inviteCode" class="form-input" autocomplete="off" required
+					th:attr="aria-invalid=${inviteError != null},aria-describedby=${inviteError != null} ? 'inviteCode-hint inviteCode-error' : 'inviteCode-hint'">
+				<p id="inviteCode-error" class="form-error" th:if="${inviteError}" th:text="${inviteError}">초대 코드 오류</p>
+			</div>
+
 			<div>
 				<div class="flex items-start gap-3">
 					<input id="agreeTerms" type="checkbox" th:field="*{agreeTerms}" class="mt-1 h-6 w-6 shrink-0"

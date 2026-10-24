@@ -17,6 +17,14 @@ app:
     # 요청할 동의항목. 이메일(account_email)은 카카오 콘솔에서 "권한 없음"(개인 개발자 앱, 비즈 앱 전환 필요)이라 빼고
     # 닉네임만 요청한다. 알림 이메일은 가입 단계에서 직접 입력받아 우리 인증 메일로 확인한다 (ADR-014)
     scopes: profile_nickname
+  signup:
+    # 초대 코드 (M6 결정 3). 비어 있으면 누구나 가입한다(local). 운영은 16자 이상 필수(없으면 기동하지 않음)
+    invite-code: ${APP_SIGNUP_INVITE_CODE:}
+  demo:
+    # 방문자용 임시 데모 계정 (M6 결정 3). 동시 상한과 지우기까지의 시간
+    enabled: ${APP_DEMO_ENABLED:false}
+    max-accounts: ${APP_DEMO_MAX_ACCOUNTS:50}
+    lifetime: ${APP_DEMO_LIFETIME:24h}
   notification:
     # 알림 (M5, ADR-028). 발송 시간은 서울 9시~20시. 20시 뒤에 만든 알림은 다음 날 9시에 보내고, 그날 못 보내면 버린다
     send-window-start-hour: 9

@@ -1,0 +1,82 @@
+# 운영 구성 (M6 커밋 6, ADR-030). 서버에서 실행한다 (docs/runbook.md, docs/deploy-checklist.md):
+#   docker compose --env-file .env.prod -f docker/compose.prod.yml pull
+#   docker compose --env-file .env.prod -f docker/compose.prod.yml up -d
+# 밖으로 여는 포트는 Caddy의 80·443뿐이다. app(8080)과 postgres(5432)는 이 네트워크 안에서만 닿는다.
+name: rentkeeper
+
+services:
+  postgres:
+    # 로컬·테스트와 같은 태그 (TestcontainersConfiguration, docker-compose.yml)
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required (.env.prod)}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required (.env.prod)}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required (.env.prod)}
+    # 2GB 서버에 맞춘 작은 설정 (JVM과 메모리를 나눠 쓴다)
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=40", "-c", "timezone=UTC"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  app:
+    # GitHub Actions가 올린 이미지. 태그는 .env.prod의 APP_IMAGE로 정한다(예: 버전 태그). latest를 쓰지 않아야 되돌리기 쉽다
+    image: ${APP_IMAGE:?APP_IMAGE is required (.env.prod)}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ../.env.prod
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME}
+      # 2GB 서버: 힙 상한을 두어 Postgres·Caddy와 메모리를 나눈다 (모자라면 4GB 서버로, ADR-030)
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--Xmx640m -XX:MaxMetaspaceSize=192m -XX:+ExitOnOutOfMemoryError}
+    networks:
+      - internal
+    logging: *logging
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required (.env.prod)}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required (.env.prod)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      internal:
+        # 앱이 X-Forwarded-*를 믿는 주소는 이것 하나다 (application-prod.yml의 internal-proxies와 같아야 한다)
+        ipv4_address: 172.30.0.10
+    logging: *logging
+
+networks:
+  internal:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

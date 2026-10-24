@@ -8,9 +8,12 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.rentkeeper.auth.security.LandlordPrincipal;
+import com.rentkeeper.auth.signup.InviteCodeGate;
 import com.rentkeeper.auth.web.AuthenticatedSessionHelper;
+import com.rentkeeper.common.web.ClientIp;
 import com.rentkeeper.landlord.application.DuplicateKakaoAccountException;
 import com.rentkeeper.landlord.domain.EmailAddress.InvalidEmailException;
 import com.rentkeeper.landlord.domain.Landlord.InvalidNameException;
@@ -28,13 +31,25 @@ public class KakaoSignupController {
 
 	static final String VIEW = "auth/signup-kakao";
 
+	static final String INVITE_ERROR = "초대 코드가 맞지 않아요. 받은 초대 코드를 다시 확인해 주세요";
+
 	private final KakaoSignupService signupService;
 
 	private final AuthenticatedSessionHelper sessionHelper;
 
-	public KakaoSignupController(KakaoSignupService signupService, AuthenticatedSessionHelper sessionHelper) {
+	private final InviteCodeGate inviteCodeGate;
+
+	public KakaoSignupController(KakaoSignupService signupService, AuthenticatedSessionHelper sessionHelper,
+			InviteCodeGate inviteCodeGate) {
+		this.inviteCodeGate = inviteCodeGate;
 		this.signupService = signupService;
 		this.sessionHelper = sessionHelper;
+	}
+
+	/** 가입 화면에 초대 코드 칸을 보일지 (M6 결정 3) */
+	@ModelAttribute("inviteRequired")
+	boolean inviteRequired() {
+		return inviteCodeGate.required();
 	}
 
 	@GetMapping("/signup/kakao")
@@ -45,8 +60,14 @@ public class KakaoSignupController {
 
 	@PostMapping("/signup/kakao")
 	public String complete(@AuthenticationPrincipal KakaoSignupPrincipal pending,
-			@Validated @ModelAttribute("form") KakaoSignupForm form, BindingResult result, Model model,
+			@Validated @ModelAttribute("form") KakaoSignupForm form, BindingResult result,
+			@RequestParam(name = "inviteCode", defaultValue = "") String inviteCode, Model model,
 			HttpServletRequest request, HttpServletResponse response) {
+		// 카카오로 처음 온 사람도 초대 코드가 있어야 계정을 만든다 (M6 결정 3)
+		if (!inviteCodeGate.accepts(inviteCode, ClientIp.of(request))) {
+			model.addAttribute("inviteError", INVITE_ERROR);
+			return VIEW;
+		}
 		if (result.hasErrors()) {
 			return VIEW;
 		}
