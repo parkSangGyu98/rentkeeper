@@ -73,6 +73,8 @@
 				<div><dt class="inline font-semibold">이름</dt> <dd class="inline" th:text="${lease.tenantName()}">홍길동</dd></div>
 				<div><dt class="inline font-semibold">휴대폰</dt> <dd class="inline" th:text="${lease.tenantPhone()}">010-1234-5678</dd></div>
 				<div th:if="${lease.tenantMemo()}"><dt class="font-semibold">메모</dt> <dd class="whitespace-pre-line" th:text="${lease.tenantMemo()}">메모</dd></div>
+				<!-- 수신 거부 (TEN-6, M5 결정 9): 세입자만 바꿀 수 있고 임대인은 보기만 한다 -->
+				<div th:if="${lease.tenantNotifyOptedOut()}" id="tenant-opted-out"><dt class="inline font-semibold">안내 문자</dt> <dd class="inline">세입자가 안내 문자를 받지 않기로 했어요. 세입자 링크 화면에서 세입자가 다시 켤 수 있어요.</dd></div>
 			</dl>
 		</section>
 

@@ -32,7 +32,13 @@ public enum RateLimitRule {
 	 * "입금했어요" 신고 POST: 열린 링크(토큰 ID)당 1시간에 5회 (M4 결정 9). 이미 신고한 상태에서 다시 누른 것도 센다. 키는
 	 * 토큰 ID이고 원문·해시는 넣지 않는다
 	 */
-	TENANT_REPORT_PER_LINK("tenant-report:link", 5, Duration.ofHours(1));
+	TENANT_REPORT_PER_LINK("tenant-report:link", 5, Duration.ofHours(1)),
+
+	/**
+	 * 안내 문자 그만 받기·다시 받기 POST: 열린 링크(토큰 ID)당 1시간에 10회 (M5 결정 9). 연타와 자동 반복을 막는다. 키는
+	 * 토큰 ID
+	 */
+	TENANT_OPTOUT_PER_LINK("tenant-optout:link", 10, Duration.ofHours(1));
 
 	private final String keyPrefix;
 

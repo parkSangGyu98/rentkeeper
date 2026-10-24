@@ -1,5 +1,6 @@
 package com.rentkeeper.lease.domain;
 
+import java.time.Instant;
 import java.util.Objects;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -47,6 +48,10 @@ public class Tenant extends BaseTimeEntity {
 	@Column(name = "memo_enc")
 	private PrivateMemo memo;
 
+	// NULL=안내 문자를 받음 (M5 결정 9). 토큰이 아니라 세입자에 두어 알림 링크가 바뀌어도 유지된다
+	@Column(name = "notify_opt_out_at")
+	private Instant notifyOptOutAt;
+
 	protected Tenant() {
 	}
 
@@ -70,6 +75,40 @@ public class Tenant extends BaseTimeEntity {
 		}
 		this.phoneHash = phoneHash;
 		this.memo = memo;
+	}
+
+	/**
+	 * 세입자가 안내 문자를 그만 받기로 한다 (TEN-6). 이미 거부한 상태면 처음 거부한 시각을 그대로 둔다(멱등).
+	 *
+	 * @return 이번에 바뀌었으면 true
+	 */
+	public boolean optOutOfNotifications(Instant now) {
+		if (notifyOptOutAt != null) {
+			return false;
+		}
+		notifyOptOutAt = Objects.requireNonNull(now, "now");
+		return true;
+	}
+
+	/**
+	 * 세입자가 안내 문자를 다시 받기로 한다. 이미 받는 상태면 바꾸지 않는다(멱등).
+	 *
+	 * @return 이번에 바뀌었으면 true
+	 */
+	public boolean optInToNotifications() {
+		if (notifyOptOutAt == null) {
+			return false;
+		}
+		notifyOptOutAt = null;
+		return true;
+	}
+
+	public boolean notificationsOptedOut() {
+		return notifyOptOutAt != null;
+	}
+
+	public Instant getNotifyOptOutAt() {
+		return notifyOptOutAt;
 	}
 
 	public Long getId() {

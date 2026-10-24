@@ -97,6 +97,35 @@ public class TenantAccessService {
 		return Optional.of(new TenantAccess(token.getId(), token.getLandlordId(), token.getLeaseId()));
 	}
 
+	/** 이 링크의 세입자가 안내 문자를 그만 받기로 했는지 (TEN-6) */
+	public boolean notificationsOptedOut(TenantAccess access) {
+		return tenant(access).notificationsOptedOut();
+	}
+
+	/**
+	 * 안내 문자 그만 받기 (TEN-6, M5 결정 9). 링크가 아니라 세입자에 남기므로 같은 세입자의 다른 계약과 새 알림 링크에도 그대로
+	 * 적용된다. 이미 거부한 상태면 바꾸지 않는다.
+	 */
+	@Transactional
+	public void optOut(TenantAccess access) {
+		if (tenant(access).optOutOfNotifications(clock.instant())) {
+			tenants.flush();
+		}
+	}
+
+	/** 안내 문자 다시 받기. 이미 받는 상태면 바꾸지 않는다 */
+	@Transactional
+	public void optIn(TenantAccess access) {
+		if (tenant(access).optInToNotifications()) {
+			tenants.flush();
+		}
+	}
+
+	private Tenant tenant(TenantAccess access) {
+		Lease lease = leases.findByIdAndLandlordId(access.leaseId(), access.landlordId()).orElseThrow();
+		return tenants.findByIdAndLandlordId(lease.getTenantId(), access.landlordId()).orElseThrow();
+	}
+
 	public TenantLease lease(TenantAccess access) {
 		Lease lease = leases.findByIdAndLandlordId(access.leaseId(), access.landlordId()).orElseThrow();
 		Tenant tenant = tenants.findByIdAndLandlordId(lease.getTenantId(), access.landlordId()).orElseThrow();

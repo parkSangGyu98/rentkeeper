@@ -48,6 +48,7 @@ public class TenantPageController {
 		model.addAttribute("lease", tenantAccessService.lease(a));
 		model.addAttribute("charges", chargeQueryService.tenantDue(a.landlordId(), a.leaseId()));
 		model.addAttribute("thisMonth", chargeQueryService.thisMonth());
+		model.addAttribute("optedOut", tenantAccessService.notificationsOptedOut(a));
 		return "tenant/home";
 	}
 

@@ -344,6 +344,10 @@ class IdorTests {
 		attacks.put("GET /t/{token}/history", "/t/{token}/history");
 		attacks.put("GET /t/{token}/charges/{chargeId}/report-paid", "/t/{token}/charges/{charge}/report-paid");
 		attacks.put("POST /t/{token}/charges/{chargeId}/report-paid", "/t/{token}/charges/{charge}/report-paid");
+		// 안내 문자 그만 받기·다시 받기 (M5). 쓸 수 없는 링크로는 세입자의 선택이 바뀌지 않는다(snapshot에 tenant 포함)
+		attacks.put("GET /t/{token}/optout", "/t/{token}/optout");
+		attacks.put("POST /t/{token}/optout", "/t/{token}/optout");
+		attacks.put("POST /t/{token}/optin", "/t/{token}/optin");
 		attacks.put("ANY /t/**", "/t/{token}/unknown");
 		return attacks;
 	}
