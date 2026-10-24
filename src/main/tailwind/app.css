@@ -168,18 +168,18 @@
 
 	/*
 	 * 대시보드 스타일 시안 (dashboard/home만, main.dash 안에서만 적용 → 다른 화면은 그대로).
-	 * 두 안은 같은 마크업을 쓰고 아래 --dash-* 값만 다르다. 지금 값: A안 "차분한 금융"(흰 바탕, 짙은 남색, 1px 선과 여백으로 구분).
+	 * 두 안은 같은 마크업을 쓰고 아래 --dash-* 값만 다르다. 지금 값: B안 "부드러운 대시보드"(옅은 회청색 바탕에 흰 카드, 옅은 그림자, 밝은 파랑).
 	 * 공통 원칙: 선 1px, 모서리 12px, 굵기 2단계(보통 400·굵게 600), 라벨 16px, 금액 36px(tabular-nums),
 	 * 간격 8·16·24·40px. 크기는 rem(루트 18px 기준)으로 적어 사용자가 키운 글자 크기를 따른다.
 	 */
 	.dash {
-		--dash-page: #ffffff;
+		--dash-page: #f2f5f9;
 		--dash-surface: #ffffff;
-		--dash-line: #e5e7eb;
+		--dash-line: #e3e8ef;
 		--dash-line-strong: #6a7282;
-		--dash-shadow: none;
-		--dash-accent: #1f3a64;
-		--dash-accent-soft: #eef3fa;
+		--dash-shadow: 0 1px 2px rgb(16 40 80 / 0.04), 0 4px 16px rgb(16 40 80 / 0.05);
+		--dash-accent: #1d4ed8;
+		--dash-accent-soft: #eef4ff;
 		--dash-attention-surface: #fffbeb;
 		--dash-attention-line: #d97706;
 		--dash-label: var(--color-gray-700);
@@ -194,9 +194,9 @@
 		--dash-text-amount: 2rem;
 	}
 
-	/* 페이지 바탕 (B안에서 옅은 회청색을 쓰려고 둔 자리). 대시보드가 들어 있는 페이지에만 */
+	/* 페이지 바탕: 옅은 회청색(B안). 대시보드가 들어 있는 페이지에만 */
 	body:has(main.dash) {
-		background-color: #ffffff;
+		background-color: #f2f5f9;
 	}
 
 	.dash strong {
