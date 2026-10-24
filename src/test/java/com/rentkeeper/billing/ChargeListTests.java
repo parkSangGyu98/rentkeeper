@@ -86,13 +86,13 @@ class ChargeListTests {
 		String page = page("/app/charges");
 		assertThat(page).contains("<span>2026년 10월</span> 받을 월세").contains("이번 달").contains("행복빌라 101호")
 				.contains("김세입님").contains("10월 5일").contains("다 받음").contains("이세입님").contains("일부 받음")
-				.contains("<dt class=\"inline font-semibold\">더 받은 돈</dt> <dd class=\"inline\">50,000원</dd>");
+				.contains("<dt class=\"stat-label\">더 받은 돈</dt> <dd class=\"row-value\">50,000원</dd>");
 		// 받을 돈 95만, 받은 돈 70만, 남은 돈 30만 (더 받은 5만은 다른 청구의 남은 돈을 줄이지 않는다)
-		assertThat(page).contains("<dd class=\"inline\">950,000원</dd>").contains("<dd class=\"inline\">700,000원</dd>")
-				.contains("300,000원");
+		assertThat(page).contains("<dd class=\"stat-value\">950,000원</dd>")
+				.contains("<dd class=\"stat-value\">700,000원</dd>").contains("300,000원");
 
 		assertThat(page("/app/charges?month=2026-09")).as("취소한 청구도 보이지만 합계에서 빠진다").contains("취소함")
-				.contains("<dd class=\"inline\">0원</dd>");
+				.contains("<dd class=\"stat-value\">0원</dd>");
 	}
 
 	@Test
@@ -117,7 +117,7 @@ class ChargeListTests {
 
 		String paid = page("/app/charges?month=2026-10&status=paid");
 		assertThat(paid).contains("김세입님").doesNotContain("이세입님").as("합계는 고른 상태와 관계없이 달 전체")
-				.contains("<dd class=\"inline\">950,000원</dd>").contains("<dd class=\"inline\">650,000원</dd>");
+				.contains("<dd class=\"stat-value\">950,000원</dd>").contains("<dd class=\"stat-value\">650,000원</dd>");
 		assertThat(paid).contains(">전체 2</a>").contains(">확인 기다림 1</a>").contains(">받을 차례 0</a>")
 				.contains(">일부 받음 0</a>").contains(">다 받음 1</a>").contains(">납부일 지남 0</a>").contains(">취소함 0</a>")
 				.contains("aria-current=\"page\"");

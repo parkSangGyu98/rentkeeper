@@ -215,6 +215,25 @@
 		@apply text-gray-900;
 	}
 
+	/* 목록 카드 한 장: 휴대폰은 위아래로, 넓은 화면(lg)은 [이름·상태 | 사실 묶음] 한 줄 (디자인 결정 6, <table> 없이) */
+	.item-row {
+		@apply flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-center lg:gap-8;
+	}
+
+	/* 이름표(16px 회색) 위, 값 아래로 놓는 사실 묶음 (납부일·금액 등). 휴대폰 두 칸, 640px부터 네 칸 */
+	.facts {
+		@apply grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4;
+	}
+
+	.row-value {
+		@apply font-semibold tabular-nums;
+	}
+
+	/* 이름표와 값 한 줄 목록 (항목·입금 기록 등) */
+	.line-item {
+		@apply flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1;
+	}
+
 	/* 보조 안내 (16px 회색) */
 	.note {
 		@apply text-label text-gray-700;
@@ -257,6 +276,16 @@
 	/* 글자 버튼: 높이는 다른 버튼과 같게(48px 이상) 두고 테두리·바탕 없이 밑줄 */
 	.btn-quiet {
 		@apply px-0 text-brand-700 underline underline-offset-4 hover:decoration-2;
+	}
+
+	/* 고른 탭(상태 고르기 등): 꽉 찬 주요 버튼과 구분되게 옅은 포인트 바탕 + 포인트 선 */
+	.btn-selected {
+		@apply border border-brand-700 bg-brand-50 text-brand-900;
+	}
+
+	/* 위험 행동으로 가는 글자 링크 (취소·지우기 확인 화면으로) */
+	.link-danger {
+		@apply font-semibold text-danger-700 underline underline-offset-4;
 	}
 
 	/* 되돌릴 수 없는 작업(회원 탈퇴·삭제 등): 채도를 낮춘 빨강 */

@@ -15,7 +15,7 @@
 | M4 세입자 링크·대시보드 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (main `7757eb2`, 실패 F1·F2는 수정·재확인 통과) | 아래 "M4에서 확정한 결정" |
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
 | M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
-| 디자인 교체 | 진행 중 (공통 스타일 확정 커밋 완료, 다음: 커밋 5 대시보드·받을 월세) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
+| 디자인 교체 | 진행 중 (커밋 5 대시보드·받을 월세 완료, 다음: 커밋 6 계약·건물·호실) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -1008,6 +1008,7 @@ SELECT id, notify_opt_out_at FROM tenant WHERE notify_opt_out_at IS NOT NULL;
 - 커밋 1~3에서 기존 테스트는 바꾸지 않았다(새 테스트만: ServiceNameTests, AccountEmailsTextTest, FontAssetsTests, TextSizeFloorTest).
 - 머리글 메뉴 링크가 두 번 나오게 됐지만, 화면 글자를 찾는 기존 테스트(contains)는 그대로 통과했다(전체 빌드).
 - **대시보드 스타일 시안 `DashboardTests`**: 이번 달 금액 검사의 `<dd class="inline">1,450,000원</dd>`·`<dd class="inline">500,000원</dd>`를 `<dd class="stat-value">…</dd>`로 바꿨다. 이유: 금액을 한 줄 글자(inline)에서 라벨 아래 큰 금액(stat-value)으로 바꿔 클래스 이름만 달라졌다. 금액 값과 dd 요소를 정확히 찾는 강도는 같다. 나머지 검사(문구·건수·순서·404)는 그대로다.
+- **커밋 5 `ChargeListTests`**: 받을 월세 목록의 달 합계 검사 `<dd class="inline">950,000원</dd>`·`700,000원`·`650,000원`·`0원`을 `<dd class="stat-value">…</dd>`로, 목록 한 줄의 `<dt class="inline font-semibold">더 받은 돈</dt> <dd class="inline">50,000원</dd>`을 `<dt class="stat-label">더 받은 돈</dt> <dd class="row-value">50,000원</dd>`로 바꿨다. 이유: 합계는 대시보드와 같은 큰 금액(stat-value), 목록 한 줄은 이름표 위·값 아래(stat-label·row-value)로 바뀌어 클래스 이름만 달라졌다. 같은 dt·dd 요소와 금액 값을 정확히 찾는 강도는 같고, 합계 dd와 목록 dd의 클래스가 달라져 "합계에 들어간 금액"을 더 정확히 가리킨다. 나머지 검사는 그대로다.
 
 ### 디자인 교체 커밋 계획
 0. `docs: 디자인 교체 결정 기록` (이 커밋)

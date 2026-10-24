@@ -5,8 +5,10 @@
 </head>
 <body>
 	<main id="main" class="page-wide">
-		<h1 class="mb-2 text-3xl font-bold"><span th:text="${view.monthText()}">2026년 10월</span> 받을 월세</h1>
-		<p class="mb-4 text-lg text-gray-700" th:if="${view.thisMonth()}">이번 달</p>
+		<div class="page-head">
+			<h1 class="page-title"><span th:text="${view.monthText()}">2026년 10월</span> 받을 월세</h1>
+			<p class="page-lead" th:if="${view.thisMonth()}">이번 달</p>
+		</div>
 
 		<!-- 달 이동은 GET 링크 (주소로 저장·뒤로 가기 가능). 고른 상태는 그대로 둔다 -->
 		<nav class="mb-6 flex flex-wrap gap-3" aria-label="달 이동">
@@ -15,48 +17,51 @@
 			<a th:href="@{${view.nextHref()}}" class="btn btn-secondary">다음 달</a>
 		</nav>
 
-		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="sum-heading">
-			<h2 id="sum-heading" class="mb-3 text-xl font-bold">이 달 합계</h2>
-			<dl class="space-y-2 text-lg">
-				<div><dt class="inline font-semibold">받을 돈</dt> <dd class="inline" th:text="${view.totalText()}">1,100,000원</dd></div>
-				<div><dt class="inline font-semibold">받은 돈</dt> <dd class="inline" th:text="${view.paidText()}">550,000원</dd></div>
-				<div><dt class="inline font-semibold">남은 돈</dt> <dd class="inline text-xl font-bold" th:text="${view.balanceText()}">550,000원</dd></div>
+		<section class="card section" aria-labelledby="sum-heading">
+			<h2 id="sum-heading" class="card-title">이 달 합계</h2>
+			<dl class="stat-list">
+				<div><dt class="stat-label">받을 돈</dt> <dd class="stat-value" th:text="${view.totalText()}">1,100,000원</dd></div>
+				<div><dt class="stat-label">받은 돈</dt> <dd class="stat-value" th:text="${view.paidText()}">550,000원</dd></div>
+				<div class="stat-key"><dt class="stat-label">남은 돈</dt> <dd class="stat-value" th:text="${view.balanceText()}">550,000원</dd></div>
 			</dl>
 		</section>
 
-		<!-- 상태 고르기 (M3-b 결정 12). 건수와 위 합계는 고른 상태와 관계없이 달 전체 -->
+		<!-- 상태 고르기 (M3-b 결정 12). 건수와 위 합계는 고른 상태와 관계없이 달 전체.
+		     고른 탭은 꽉 찬 주요 버튼이 아니라 옅은 바탕(btn-selected)으로 표시한다 -->
 		<nav th:unless="${view.monthEmpty()}" class="mb-6 flex flex-wrap gap-2" aria-label="상태 고르기">
 			<a th:each="t : ${view.tabs()}" th:href="@{${t.href()}}"
-				th:class="${t.selected()} ? 'btn btn-primary' : 'btn btn-secondary'"
+				th:class="${t.selected()} ? 'btn btn-selected' : 'btn btn-secondary'"
 				th:attr="aria-current=${t.selected()} ? 'page' : null"
 				th:text="${t.label()} + ' ' + ${t.count()}">전체 3</a>
 		</nav>
 
 		<!-- 빈 상태: 달 전체가 비었는지, 고른 상태만 비었는지 구분한다 -->
-		<p th:if="${view.monthEmpty()}" class="mb-6 rounded-lg border-2 border-dashed border-gray-400 bg-white p-5 text-lg">
+		<p th:if="${view.monthEmpty()}" class="card card-empty mb-6">
 			이 달에 받을 월세가 없어요.
 		</p>
-		<p th:if="${!view.monthEmpty() and view.rows().isEmpty()}" class="mb-6 rounded-lg border-2 border-dashed border-gray-400 bg-white p-5 text-lg">
-			이 상태인 받을 월세가 없어요. <a th:href="@{/app/charges(month=${view.month()})}" class="font-semibold text-brand-700 underline">전체 보기</a>
+		<p th:if="${!view.monthEmpty() and view.rows().isEmpty()}" class="card card-empty mb-6">
+			이 상태인 받을 월세가 없어요. <a th:href="@{/app/charges(month=${view.month()})}" class="link">전체 보기</a>
 		</p>
 
-		<ul th:unless="${view.rows().isEmpty()}" class="mb-8 space-y-3">
-			<li th:each="r : ${view.rows()}" class="rounded-lg border-2 border-gray-200 bg-white p-4"
+		<ul th:unless="${view.rows().isEmpty()}" class="stack mb-8">
+			<li th:each="r : ${view.rows()}" class="card"
 				th:classappend="${r.canceled()} ? 'opacity-70' : ''">
-				<div class="flex flex-wrap items-center justify-between gap-3">
-					<div>
-						<p class="text-xl font-bold"><a th:href="@{/app/charges/{id}(id=${r.chargeId()})}" class="text-gray-900 underline" th:text="${r.unitName()}">행복빌라 101호</a></p>
-						<p class="text-lg" th:text="${r.tenantName()} + '님'">홍길동님</p>
+				<div class="item-row">
+					<div class="flex flex-wrap items-start justify-between gap-3">
+						<div>
+							<p class="text-title"><a th:href="@{/app/charges/{id}(id=${r.chargeId()})}" class="row-title" th:text="${r.unitName()}">행복빌라 101호</a></p>
+							<p class="row-meta" th:text="${r.tenantName()} + '님'">홍길동님</p>
+						</div>
+						<span th:class="${r.statusBadge()}"><th:block th:replace="~{fragments/icons :: status(${r.statusBadge()}, ${r.status().name()})}"></th:block><span th:text="${r.statusLabel()}">받을 차례</span></span>
 					</div>
-					<span th:class="${r.statusBadge()}"><th:block th:replace="~{fragments/icons :: status(${r.statusBadge()}, ${r.status().name()})}"></th:block><span th:text="${r.statusLabel()}">받을 차례</span></span>
+					<dl class="facts">
+						<div><dt class="stat-label">납부일</dt> <dd class="row-value" th:text="${r.dueDateText()}">10월 5일</dd></div>
+						<div><dt class="stat-label">받을 돈</dt> <dd class="row-value" th:text="${r.totalText()}">550,000원</dd></div>
+						<div><dt class="stat-label">받은 돈</dt> <dd class="row-value" th:text="${r.paidText()}">0원</dd></div>
+						<div th:if="${r.overpaidText() != null}"><dt class="stat-label">더 받은 돈</dt> <dd class="row-value" th:text="${r.overpaidText()}">10,000원</dd></div>
+					</dl>
 				</div>
-				<dl class="mt-3 space-y-1 text-lg">
-					<div><dt class="inline font-semibold">납부일</dt> <dd class="inline" th:text="${r.dueDateText()}">10월 5일</dd></div>
-					<div><dt class="inline font-semibold">받을 돈</dt> <dd class="inline" th:text="${r.totalText()}">550,000원</dd></div>
-					<div><dt class="inline font-semibold">받은 돈</dt> <dd class="inline" th:text="${r.paidText()}">0원</dd></div>
-					<div th:if="${r.overpaidText() != null}"><dt class="inline font-semibold">더 받은 돈</dt> <dd class="inline" th:text="${r.overpaidText()}">10,000원</dd></div>
-				</dl>
-				<p th:if="${r.sharedMonth()}" class="mt-3 text-base font-semibold text-gray-900">
+				<p th:if="${r.sharedMonth()}" class="alert alert-info mt-4 mb-0">
 					이 달은 두 계약 모두 청구됐어요. 한 달 안에 세입자가 바뀌었다면 금액을 확인해 주세요.
 				</p>
 			</li>
