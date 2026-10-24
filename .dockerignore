@@ -1,0 +1,14 @@
+# 이미지 빌드에 보내지 않는 것 (비밀값과 빌드 결과물)
+.env
+.env.*
+.git
+.gradle
+build
+bin
+.idea
+.vscode
+.settings
+.classpath
+.project
+docs
+*.log
