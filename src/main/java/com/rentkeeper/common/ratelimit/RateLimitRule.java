@@ -23,7 +23,16 @@ public enum RateLimitRule {
 	PASSWORD_RESET_REQUEST_PER_EMAIL("reset-request:email", 3, Duration.ofHours(1)),
 
 	/** 비밀번호 재설정 완료: IP당 1시간에 20회 */
-	PASSWORD_RESET_CONFIRM_PER_IP("reset-confirm:ip", 20, Duration.ofHours(1));
+	PASSWORD_RESET_CONFIRM_PER_IP("reset-confirm:ip", 20, Duration.ofHours(1)),
+
+	/** 세입자 링크 /t/** 의 모든 요청: IP당 1분에 30회 (PRD 4.7, M4 결정 9). 토큰이 틀린 요청도 센다 */
+	TENANT_LINK_PER_IP("tenant-link:ip", 30, Duration.ofMinutes(1)),
+
+	/**
+	 * "입금했어요" 신고 POST: 열린 링크(토큰 ID)당 1시간에 5회 (M4 결정 9). 이미 신고한 상태에서 다시 누른 것도 센다. 키는
+	 * 토큰 ID이고 원문·해시는 넣지 않는다
+	 */
+	TENANT_REPORT_PER_LINK("tenant-report:link", 5, Duration.ofHours(1));
 
 	private final String keyPrefix;
 

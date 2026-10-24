@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{tenant/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>지난 기록 - 월세 안내</title>
+</head>
+<body>
+	<!-- 지난 기록 (TEN-4): 최근 12개월, 최근 달이 위. 취소된 달은 보이지 않는다 -->
+	<main id="main" class="mx-auto w-full max-w-xl flex-1 px-4 py-6">
+		<p class="mb-2 text-lg"><a th:href="@{/t/{token}(token=${token})}" class="font-semibold text-brand-700 underline">월세 안내로 돌아가기</a></p>
+		<h1 class="mb-1 text-3xl font-bold">지난 기록</h1>
+		<p class="mb-6 text-lg" th:text="${lease.unitName()} + ' · 최근 12개월'">행복빌라 101호 · 최근 12개월</p>
+
+		<p th:if="${charges.isEmpty()}" class="rounded-lg border-2 border-dashed border-gray-400 bg-white p-5 text-lg">아직 기록이 없어요.</p>
+
+		<ul th:unless="${charges.isEmpty()}" class="space-y-3">
+			<li th:each="c : ${charges}" class="rounded-lg border-2 border-gray-200 bg-white p-4">
+				<div class="flex flex-wrap items-center justify-between gap-3">
+					<p class="text-xl font-bold" th:text="${c.monthText()}">2026년 10월</p>
+					<span th:class="${c.statusBadge()}" th:text="${c.statusText()}">입금이 확인됐어요</span>
+				</div>
+				<dl class="mt-2 space-y-1 text-lg">
+					<div><dt class="inline font-semibold">월세</dt> <dd class="inline" th:text="${c.totalText()}">550,000원</dd></div>
+					<div><dt class="inline font-semibold">확인된 금액</dt> <dd class="inline" th:text="${c.paidText()}">550,000원</dd></div>
+				</dl>
+			</li>
+		</ul>
+	</main>
+</body>
+</html>

@@ -21,4 +21,9 @@ public record ChangeActor(Type type, Long id) {
 		return new ChangeActor(Type.LANDLORD, landlordId);
 	}
 
+	/** 세입자 (id는 세입자가 쓴 링크의 tenant_access_token.id, M4 결정 12) */
+	public static ChangeActor tenant(long tenantLinkId) {
+		return new ChangeActor(Type.TENANT, tenantLinkId);
+	}
+
 }

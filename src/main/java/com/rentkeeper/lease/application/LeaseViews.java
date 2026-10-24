@@ -132,6 +132,44 @@ public final class LeaseViews {
 
 	}
 
+	/**
+	 * 곧 끝나는 진행 중 계약 (대시보드, M4 결정 14).
+	 *
+	 * @param count
+	 *            모두 몇 건인지 (rows는 그중 앞의 일부)
+	 */
+	public record EndingLeases(int count, List<EndingLease> rows) {
+	}
+
+	/**
+	 * @param daysLeft
+	 *            나가는 날까지 남은 날 (0이면 오늘, 음수면 나가는 날이 지났는데 아직 종료하지 않음)
+	 */
+	public record EndingLease(long leaseId, String unitName, String tenantName, LocalDate endDate, long daysLeft) {
+
+		public String endDateText() {
+			return endDate.getYear() + "년 " + endDate.getMonthValue() + "월 " + endDate.getDayOfMonth() + "일";
+		}
+
+		/** "30일 남음" / "오늘" / "나가는 날이 지났어요 (계약 종료가 필요해요)" */
+		public String daysLeftText() {
+			if (daysLeft > 0) {
+				return daysLeft + "일 남음";
+			}
+			return daysLeft == 0 ? "오늘이에요" : "나가는 날이 지났어요 (계약 종료가 필요해요)";
+		}
+
+		public boolean overdue() {
+			return daysLeft < 0;
+		}
+
+		@Override
+		public String toString() {
+			return "EndingLease[leaseId=" + leaseId + "]";
+		}
+
+	}
+
 	/** 같은 연락처로 이미 등록된 세입자 (M2 결정 6: "이미 등록된 세입자로 계약할까요?") */
 	public record ExistingTenant(String name, String phone) {
 

@@ -31,6 +31,13 @@ class OwnedRepositoryConventionTest {
 
 	private static final Set<String> ENTITY_METHODS = Set.of("save", "saveAndFlush", "delete", "flush");
 
+	/**
+	 * landlordId 없이 찾아도 되는 메서드. 세입자 링크의 입구 하나뿐이다: 세입자는 로그인하지 않아 landlordId가 없고,
+	 * 256비트 토큰의 해시로만 찾는다. 찾은 행의 landlordId·leaseId로 이후 조회를 한정한다(ADR-026). 여기에 더할 때는
+	 * 이유가 분명해야 한다.
+	 */
+	private static final Set<String> TOKEN_ENTRY_METHODS = Set.of("TenantAccessTokenRepository.findByTokenHash");
+
 	@Test
 	void ownedRepositoriesCannotLoadWithoutLandlordId() throws Exception {
 		List<Class<?>> repositories = repositories();
@@ -43,7 +50,8 @@ class OwnedRepositoryConventionTest {
 				violations.add(repository.getSimpleName() + ": CrudRepository/JpaRepository 상속 금지");
 			}
 			for (Method method : repository.getDeclaredMethods()) {
-				if (ENTITY_METHODS.contains(method.getName())) {
+				if (ENTITY_METHODS.contains(method.getName())
+						|| TOKEN_ENTRY_METHODS.contains(repository.getSimpleName() + "." + method.getName())) {
 					continue;
 				}
 				boolean hasLandlordId = false;

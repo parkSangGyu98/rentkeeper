@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{tenant/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>월세 안내</title>
+</head>
+<body>
+	<!-- 세입자 링크 첫 화면 (TEN-1·2, M4 결정 5·6). 이름·예금주는 가린 값, 계좌번호는 입금에 필요해 전체를 보인다 -->
+	<main id="main" class="mx-auto w-full max-w-xl flex-1 px-4 py-6">
+		<h1 class="mb-1 text-3xl font-bold" th:text="${lease.unitName()}">행복빌라 101호</h1>
+		<p class="mb-6 text-xl"><span th:text="${lease.maskedTenantName()}">홍*동</span>님, 안녕하세요.</p>
+
+		<p th:if="${charges.isEmpty()}" class="mb-6 rounded-lg border-2 border-dashed border-gray-400 bg-white p-5 text-lg">
+			지금 보내실 월세가 없어요.
+		</p>
+
+		<section th:each="c : ${charges}" class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5"
+			th:attr="aria-label=${c.title(thisMonth)}">
+			<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+				<h2 class="text-2xl font-bold" th:text="${c.title(thisMonth)}">10월 월세</h2>
+				<span th:class="${c.statusBadge()}" th:text="${c.statusText()}">아직 확인 전이에요</span>
+			</div>
+			<p class="mb-1 text-lg">보내실 금액</p>
+			<p class="mb-3 text-3xl font-bold" th:text="${c.paid()} ? ${c.totalText()} : ${c.balanceText()}">550,000원</p>
+			<p class="mb-4 text-lg">보내실 날짜: <strong th:text="${c.dueText()}">10월 5일까지</strong></p>
+			<p th:if="${c.partlyConfirmed()}" class="mb-4 text-lg">
+				전체 <span th:text="${c.totalText()}">550,000원</span> 중 <strong th:text="${c.paidText()}">200,000원</strong>이 확인됐어요.
+			</p>
+			<!-- "입금했어요" (M4 결정 7·10): 반려 뒤에는 사유 없이 중립 문구만 -->
+			<p th:if="${c.showRejectedNotice()}" class="mb-4 rounded-lg border-2 border-amber-500 bg-amber-50 p-3 text-lg">
+				집주인이 아직 입금을 확인하지 못했어요. 이미 보내셨다면 집주인에게 직접 알려 주세요.
+			</p>
+			<p th:if="${c.reported()}" class="mb-4 text-lg">입금했다고 알려 주셨어요. 집주인이 확인하면 "입금이 확인됐어요"로 바뀌어요.</p>
+			<a th:if="${c.canReport()}" th:href="@{/t/{token}/charges/{id}/report-paid(token=${token},id=${c.chargeId()})}"
+				class="btn btn-primary mb-4 w-full">입금했어요</a>
+			<details class="text-lg">
+				<summary class="cursor-pointer font-semibold">자세히 보기</summary>
+				<ul class="mt-2 space-y-1">
+					<li th:each="item : ${c.items()}" class="flex justify-between gap-3 border-b border-gray-200 py-1">
+						<span th:text="${item.label()}">월세</span>
+						<span th:text="${item.amountText()}">500,000원</span>
+					</li>
+				</ul>
+			</details>
+		</section>
+
+		<!-- 보내실 계좌 (TEN-2). 복사 버튼은 /js/copy.js, 안 되면 글자를 길게 눌러 복사 -->
+		<section class="mb-6 rounded-lg border-2 border-brand-700 bg-white p-5" aria-labelledby="account-heading">
+			<h2 id="account-heading" class="mb-3 text-2xl font-bold">보내실 계좌</h2>
+			<p class="mb-1 text-lg" th:text="${lease.bankName()}">국민은행</p>
+			<p id="account-number" class="mb-3 select-all break-all text-3xl font-bold tracking-wide" th:text="${lease.accountNumber()}">1234567890</p>
+			<p class="mb-4 text-lg">예금주 <span th:text="${lease.maskedAccountHolder()}">김*대</span></p>
+			<p class="flex flex-wrap items-center gap-3">
+				<button type="button" class="btn btn-primary" data-copy-target="account-number" data-copy-done="copy-done">계좌번호 복사</button>
+				<span id="copy-done" class="text-lg font-semibold" role="status" aria-live="polite"></span>
+			</p>
+		</section>
+
+		<p class="mb-4"><a th:href="@{/t/{token}/history(token=${token})}" class="btn btn-secondary w-full">지난 기록 보기 (최근 12개월)</a></p>
+		<script th:src="@{/js/copy.js}" src="/js/copy.js" defer></script>
+	</main>
+</body>
+</html>

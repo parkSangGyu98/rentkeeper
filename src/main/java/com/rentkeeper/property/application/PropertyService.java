@@ -23,6 +23,7 @@ import com.rentkeeper.property.application.PropertyExceptions.PropertyHasUnitsEx
 import com.rentkeeper.property.application.PropertyExceptions.UnitHasLeasesException;
 import com.rentkeeper.property.application.PropertyViews.PropertyDetail;
 import com.rentkeeper.property.application.PropertyViews.PropertyInput;
+import com.rentkeeper.property.application.PropertyViews.PropertyOption;
 import com.rentkeeper.property.application.PropertyViews.PropertySummary;
 import com.rentkeeper.property.application.PropertyViews.UnitInput;
 import com.rentkeeper.property.application.PropertyViews.UnitRow;
@@ -80,6 +81,12 @@ public class PropertyService {
 					return new PropertySummary(property.getId(), property.getName(), property.getAddress(),
 							propertyUnits.size(), vacant, occupied);
 				}).toList();
+	}
+
+	/** 건물 이름들 (가나다순). 호실 상태를 계산하지 않아 가볍다 (대시보드의 건물 고르기) */
+	public List<PropertyOption> options(long landlordId) {
+		return properties.findByLandlordId(landlordId).stream().sorted(Comparator.comparing(Property::getName, KOREAN))
+				.map(p -> new PropertyOption(p.getId(), p.getName())).toList();
 	}
 
 	public PropertyDetail detail(long landlordId, long propertyId) {

@@ -118,13 +118,15 @@ class ChargeListTests {
 		String paid = page("/app/charges?month=2026-10&status=paid");
 		assertThat(paid).contains("김세입님").doesNotContain("이세입님").as("합계는 고른 상태와 관계없이 달 전체")
 				.contains("<dd class=\"inline\">950,000원</dd>").contains("<dd class=\"inline\">650,000원</dd>");
-		assertThat(paid).contains(">전체 2</a>").contains(">받을 차례 1</a>").contains(">일부 받음 0</a>").contains(">다 받음 1</a>")
-				.contains(">납부일 지남 0</a>").contains(">취소함 0</a>").contains("aria-current=\"page\"");
+		assertThat(paid).contains(">전체 2</a>").contains(">확인 기다림 1</a>").contains(">받을 차례 0</a>")
+				.contains(">일부 받음 0</a>").contains(">다 받음 1</a>").contains(">납부일 지남 0</a>").contains(">취소함 0</a>")
+				.contains("aria-current=\"page\"");
 		assertThat(paid).as("달을 옮겨도 고른 상태는 그대로").contains("href=\"/app/charges?month=2026-09&amp;status=paid\"")
 				.contains("href=\"/app/charges?month=2026-10&amp;status=partially-paid\"");
 
-		assertThat(page("/app/charges?month=2026-10&status=issued")).as("받을 차례에 세입자 신고도 묶는다").contains("이세입님")
-				.doesNotContain("김세입님");
+		assertThat(page("/app/charges?month=2026-10&status=reported")).as("세입자 신고는 확인 기다림 칸 (M4 결정 13)")
+				.contains("이세입님").doesNotContain("김세입님");
+		assertThat(page("/app/charges?month=2026-10&status=issued")).as("받을 차례에서는 빠진다").contains("이 상태인 받을 월세가 없어요");
 		assertThat(page("/app/charges?month=2026-10&status=overdue")).contains("이 상태인 받을 월세가 없어요")
 				.doesNotContain("이 달에 받을 월세가 없어요");
 		assertThat(page("/app/charges?month=2026-10&status=nope")).as("모르는 값이면 전체").contains("김세입님").contains("이세입님");

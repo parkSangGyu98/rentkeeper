@@ -45,6 +45,28 @@ public interface LeaseRepository extends Repository<Lease, Long> {
 
 	List<Lease> findByLandlordIdAndIdIn(long landlordId, Collection<Long> ids);
 
+	/** 호실들의 모든 계약 ID (종료 포함, 대시보드의 건물 고르기) */
+	@Query("select l.id from Lease l where l.landlordId = :landlordId and l.unitId in :unitIds")
+	List<Long> findIdsByLandlordIdAndUnitIdIn(@Param("landlordId") long landlordId,
+			@Param("unitIds") Collection<Long> unitIds);
+
+	/** 나가는 날이 until 이하인 진행 중 계약, 나가는 날 순 (대시보드의 곧 끝나는 계약, M4 결정 14) */
+	@Query("""
+			select l from Lease l where l.landlordId = :landlordId
+			  and l.status = com.rentkeeper.lease.domain.LeaseStatus.ACTIVE and l.endDate <= :until
+			order by l.endDate, l.id
+			""")
+	List<Lease> findActiveEndingBy(@Param("landlordId") long landlordId, @Param("until") LocalDate until);
+
+	/** 위와 같고 그 호실들만 (건물 고르기) */
+	@Query("""
+			select l from Lease l where l.landlordId = :landlordId and l.unitId in :unitIds
+			  and l.status = com.rentkeeper.lease.domain.LeaseStatus.ACTIVE and l.endDate <= :until
+			order by l.endDate, l.id
+			""")
+	List<Lease> findActiveEndingByInUnits(@Param("landlordId") long landlordId, @Param("until") LocalDate until,
+			@Param("unitIds") Collection<Long> unitIds);
+
 	/** 같은 임대인의 가장 최근 계약 (계좌 미리 채우기, M2 결정 20) */
 	Optional<Lease> findFirstByLandlordIdOrderByIdDesc(long landlordId);
 

@@ -42,9 +42,14 @@ public class PaymentController {
 		this.queryService = queryService;
 	}
 
+	/**
+	 * @param report
+	 *            세입자 신고의 [입금 확인하기]에서 옴 (M4 결정 11): 남은 금액·신고한 날로 채운다
+	 */
 	@GetMapping("/app/charges/{id}/payments/new")
 	public String form(@AuthenticationPrincipal LandlordPrincipal principal, @PathVariable long id,
-			@RequestParam(name = "full", defaultValue = "false") boolean full, Model model,
+			@RequestParam(name = "full", defaultValue = "false") boolean full,
+			@RequestParam(name = "report", defaultValue = "false") boolean report, Model model,
 			RedirectAttributes redirect) {
 		ChargeDetail detail = queryService.detail(principal.getLandlordId(), id);
 		if (!detail.canPay()) {
@@ -52,7 +57,10 @@ public class PaymentController {
 					detail.canceled() ? ChargeMessages.CANCELED : ChargeMessages.ALREADY_PAID);
 		}
 		model.addAttribute("charge", detail);
-		model.addAttribute("form", PaymentForm.of(detail.version(), full, detail.balance(), queryService.today()));
+		model.addAttribute("form",
+				report && detail.reported()
+						? PaymentForm.confirmingReport(detail.version(), detail.balance(), detail.reportedOn())
+						: PaymentForm.of(detail.version(), full, detail.balance(), queryService.today()));
 		return "billing/payment-form";
 	}
 

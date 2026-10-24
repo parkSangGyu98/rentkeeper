@@ -18,6 +18,7 @@ import com.rentkeeper.lease.application.LeaseExceptions.LeaseOverlapException;
 import com.rentkeeper.lease.application.LeaseService;
 import com.rentkeeper.lease.application.LeaseViews.AccountPrefill;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRegistration;
+import com.rentkeeper.lease.application.TenantLinkService;
 import com.rentkeeper.property.application.PropertyViews.UnitView;
 
 /**
@@ -31,8 +32,11 @@ public class LeaseController {
 
 	private final LeaseService leaseService;
 
-	public LeaseController(LeaseService leaseService) {
+	private final TenantLinkService tenantLinkService;
+
+	public LeaseController(LeaseService leaseService, TenantLinkService tenantLinkService) {
 		this.leaseService = leaseService;
+		this.tenantLinkService = tenantLinkService;
 	}
 
 	@GetMapping("/app/leases/new")
@@ -112,6 +116,7 @@ public class LeaseController {
 	@GetMapping("/app/leases/{id}")
 	public String detail(@AuthenticationPrincipal LandlordPrincipal principal, @PathVariable long id, Model model) {
 		model.addAttribute("lease", leaseService.detail(principal.getLandlordId(), id));
+		model.addAttribute("tenantLink", tenantLinkService.status(principal.getLandlordId(), id));
 		return "lease/detail";
 	}
 

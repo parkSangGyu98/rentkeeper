@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{tenant/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>알렸어요 - 월세 안내</title>
+</head>
+<body>
+	<!-- "입금했어요" 결과 (M4 결정 7). 새로 알렸든 이미 알린 상태였든 같은 안내 (멱등) -->
+	<main id="main" class="mx-auto w-full max-w-xl flex-1 px-4 py-6">
+		<th:block th:if="${outcome.name() == 'ALREADY_PAID'}">
+			<h1 class="mb-4 text-3xl font-bold">이미 입금이 확인됐어요</h1>
+			<p class="mb-6 text-lg"><span th:text="${charge.title(thisMonth)}">10월 월세</span>는 집주인이 입금을 확인했어요. 따로 알리지 않아도 돼요.</p>
+		</th:block>
+		<th:block th:unless="${outcome.name() == 'ALREADY_PAID'}">
+			<h1 class="mb-4 text-3xl font-bold">집주인에게 알렸어요</h1>
+			<p class="mb-3 text-lg"><span th:text="${charge.title(thisMonth)}">10월 월세</span>를 보냈다고 알렸어요.</p>
+			<p class="mb-6 text-lg">집주인이 통장에서 확인하면 "입금이 확인됐어요"로 바뀌어요. 다시 누르지 않아도 돼요.</p>
+		</th:block>
+		<a th:href="@{/t/{token}(token=${token})}" class="btn btn-secondary w-full">월세 안내로 돌아가기</a>
+	</main>
+</body>
+</html>

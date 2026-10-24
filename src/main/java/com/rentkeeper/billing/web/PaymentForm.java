@@ -35,6 +35,19 @@ public class PaymentForm {
 	/** 남은 금액보다 많아도 기록한다고 확인함 (M3-b 결정 3) */
 	private boolean overpayConfirmed;
 
+	/** 세입자 신고의 [입금 확인하기]에서 옴 (M4 결정 11). 기록 경로가 TENANT_REPORT가 된다 */
+	private boolean fromReport;
+
+	/** 세입자 신고 확인: 금액은 남은 금액, 받은 날은 신고한 날로 채운다(고칠 수 있다) */
+	static PaymentForm confirmingReport(long version, long balance, LocalDate reportedOn) {
+		PaymentForm form = new PaymentForm();
+		form.version = version;
+		form.amount = String.valueOf(balance);
+		form.paidOn = reportedOn.toString();
+		form.fromReport = true;
+		return form;
+	}
+
 	/** 정정 화면: 원래 기록의 값으로 채운다 */
 	static PaymentForm correcting(long version, PaymentRow original) {
 		PaymentForm form = new PaymentForm();
@@ -76,7 +89,7 @@ public class PaymentForm {
 		if (result.hasErrors()) {
 			return null;
 		}
-		return new PaymentInput(value, day, note, overpayConfirmed);
+		return new PaymentInput(value, day, note, overpayConfirmed, fromReport);
 	}
 
 	public String getAmount() {
@@ -125,6 +138,14 @@ public class PaymentForm {
 
 	public void setFull(boolean full) {
 		this.full = full;
+	}
+
+	public boolean isFromReport() {
+		return fromReport;
+	}
+
+	public void setFromReport(boolean fromReport) {
+		this.fromReport = fromReport;
 	}
 
 	public boolean isOverpayConfirmed() {

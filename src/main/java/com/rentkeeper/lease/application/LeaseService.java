@@ -3,6 +3,7 @@ package com.rentkeeper.lease.application;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -23,6 +24,8 @@ import com.rentkeeper.common.jpa.Constraints;
 import com.rentkeeper.lease.application.LeaseExceptions.ExistingTenantException;
 import com.rentkeeper.lease.application.LeaseExceptions.LeaseOverlapException;
 import com.rentkeeper.lease.application.LeaseViews.AccountPrefill;
+import com.rentkeeper.lease.application.LeaseViews.EndingLease;
+import com.rentkeeper.lease.application.LeaseViews.EndingLeases;
 import com.rentkeeper.lease.application.LeaseViews.ExistingTenant;
 import com.rentkeeper.lease.application.LeaseViews.LeaseDetail;
 import com.rentkeeper.lease.application.LeaseViews.LeaseRegistration;
@@ -243,6 +246,35 @@ public class LeaseService {
 				.collect(Collectors.toMap(Lease::getId,
 						l -> new LeaseSummary(l.getId(), l.getUnitId(), unitViews.get(l.getUnitId()).displayName(),
 								tenantById.get(l.getTenantId()).getName().value(), l.getStartDate())));
+	}
+
+	/** 호실들의 모든 계약 ID (종료 포함, 대시보드의 건물 고르기). 남의 호실 ID는 결과에 없다 */
+	public List<Long> leaseIdsOfUnits(long landlordId, Collection<Long> unitIds) {
+		return unitIds.isEmpty() ? List.of() : leases.findIdsByLandlordIdAndUnitIdIn(landlordId, unitIds);
+	}
+
+	/**
+	 * 나가는 날이 오늘부터 days일 안인 진행 중 계약 (DASH-3, M4 결정 14). 나가는 날이 이미 지났는데 종료하지 않은 계약도
+	 * 들어간다(종료 처리가 필요). 나가는 날 순, 이름은 보이는 limit건만 복호화한다.
+	 *
+	 * @param unitIds
+	 *            이 호실들만 (null이면 전체)
+	 */
+	public EndingLeases endingSoon(long landlordId, Collection<Long> unitIds, int days, int limit) {
+		LocalDate today = today();
+		LocalDate until = today.plusDays(days);
+		List<Lease> found;
+		if (unitIds == null) {
+			found = leases.findActiveEndingBy(landlordId, until);
+		} else {
+			found = unitIds.isEmpty() ? List.of() : leases.findActiveEndingByInUnits(landlordId, until, unitIds);
+		}
+		List<Lease> shown = found.stream().limit(limit).toList();
+		Map<Long, LeaseSummary> names = summaries(landlordId, shown.stream().map(Lease::getId).toList());
+		List<EndingLease> rows = shown.stream().map(l -> new EndingLease(l.getId(), names.get(l.getId()).unitName(),
+				names.get(l.getId()).tenantName(), l.getEndDate(), ChronoUnit.DAYS.between(today, l.getEndDate())))
+				.toList();
+		return new EndingLeases(found.size(), rows);
 	}
 
 	/**
