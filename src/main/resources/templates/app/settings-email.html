@@ -6,22 +6,22 @@
 <body>
 	<main id="main" class="page">
 		<th:block th:if="${state == 'SENT'}">
-			<h1 class="mb-4 text-3xl font-bold">새 주소로 확인 메일을 보냈어요</h1>
-			<p class="mb-4 text-lg text-gray-700">메일의 링크를 열고 [이메일 바꾸기 완료] 버튼을 누르면 변경이 끝나요.</p>
-			<p class="mb-8 text-lg text-gray-700">그 전까지는 지금 이메일로 로그인해요. 링크는 24시간 동안 쓸 수 있어요.</p>
+			<h1 class="page-title">새 주소로 확인 메일을 보냈어요</h1>
+			<p class="mb-4 text-gray-700">메일의 링크를 열고 [이메일 바꾸기 완료] 버튼을 누르면 변경이 끝나요.</p>
+			<p class="mb-8 text-gray-700">그 전까지는 지금 이메일로 로그인해요. 링크는 24시간 동안 쓸 수 있어요.</p>
 			<a th:href="@{/app/settings}" class="btn btn-primary">계정 설정으로</a>
 		</th:block>
 
 		<th:block th:unless="${state == 'SENT'}">
-			<h1 class="mb-2 text-3xl font-bold">이메일 바꾸기</h1>
-			<p class="mb-8 text-lg text-gray-700">새 주소로 확인 메일을 보내 드려요. 메일에서 확인을 마쳐야 바뀌어요.</p>
+			<h1 class="page-title">이메일 바꾸기</h1>
+			<p class="mb-8 text-gray-700">새 주소로 확인 메일을 보내 드려요. 메일에서 확인을 마쳐야 바뀌어요.</p>
 
 			<div class="alert alert-error" role="alert" th:if="${error}" th:text="${error}">오류</div>
 
-			<form th:action="@{/app/settings/email}" method="post" class="space-y-6" novalidate>
+			<form th:action="@{/app/settings/email}" method="post" class="card space-y-6" novalidate>
 				<div>
 					<label for="currentPassword" class="form-label">지금 비밀번호</label>
-					<p id="current-password-hint" class="mb-2 text-base text-gray-700">본인 확인을 위해 입력해 주세요.</p>
+					<p id="current-password-hint" class="mb-2 note">본인 확인을 위해 입력해 주세요.</p>
 					<input id="currentPassword" name="currentPassword" type="password" class="form-input"
 						autocomplete="current-password" aria-describedby="current-password-hint" required>
 				</div>
@@ -33,7 +33,7 @@
 				<button type="submit" class="btn btn-primary w-full">확인 메일 보내기</button>
 			</form>
 
-			<p class="mt-8 text-lg"><a th:href="@{/app/settings}" class="font-semibold text-brand-700 underline">계정 설정으로 돌아가기</a></p>
+			<p class="mt-8"><a th:href="@{/app/settings}" class="link">계정 설정으로 돌아가기</a></p>
 		</th:block>
 	</main>
 </body>

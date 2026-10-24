@@ -5,12 +5,12 @@
 </head>
 <body>
 	<main id="main" class="page">
-		<h1 class="mb-2 text-3xl font-bold">알림 받을 이메일</h1>
-		<p class="mb-8 text-lg text-gray-700">월세 알림을 받을 이메일이에요. 확인 메일의 링크를 누르면 인증이 끝나요.</p>
+		<h1 class="page-title">알림 받을 이메일</h1>
+		<p class="mb-8 text-gray-700">월세 알림을 받을 이메일이에요. 확인 메일의 링크를 누르면 인증이 끝나요.</p>
 
 		<div class="alert alert-error" role="alert" th:if="${error}" th:text="${error}">오류</div>
 
-		<form th:action="@{/app/settings/notification-email}" method="post" class="space-y-6" novalidate>
+		<form th:action="@{/app/settings/notification-email}" method="post" class="card space-y-6" novalidate>
 			<div>
 				<label for="email" class="form-label">이메일</label>
 				<input id="email" name="email" type="email" class="form-input" autocomplete="email" inputmode="email"
@@ -19,7 +19,7 @@
 			<button type="submit" class="btn btn-primary w-full">확인 메일 보내기</button>
 		</form>
 
-		<p class="mt-8 text-lg"><a th:href="@{/app/settings}" class="font-semibold text-brand-700 underline">계정 설정으로 돌아가기</a></p>
+		<p class="mt-8"><a th:href="@{/app/settings}" class="link">계정 설정으로 돌아가기</a></p>
 	</main>
 </body>
 </html>
