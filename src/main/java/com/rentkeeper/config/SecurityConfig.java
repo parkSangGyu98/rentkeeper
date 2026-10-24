@@ -68,7 +68,7 @@ public class SecurityConfig {
 			"frame-ancestors 'none'", "base-uri 'self'", "object-src 'none'");
 
 	static final String[] PUBLIC_PATHS = {"/", "/login", "/signup", "/terms", "/privacy", "/error", "/css/**", "/js/**",
-			"/images/**", "/favicon.ico", "/actuator/health",
+			"/images/**", "/favicon.ico", "/robots.txt", "/actuator/health",
 			// 메일 링크는 다른 기기(로그인 안 된 상태)에서 열 수 있다
 			"/verify-email", "/password-reset", "/password-reset/confirm", "/verify-email-change",
 			// 카카오 로그인 시작과 카카오가 돌려보내는 주소 (Spring Security 필터가 처리)
@@ -80,7 +80,7 @@ public class SecurityConfig {
 
 	static final int BCRYPT_STRENGTH = 12;
 
-	static final String[] STATIC_PATHS = {"/css/**", "/js/**", "/images/**", "/favicon.ico"};
+	static final String[] STATIC_PATHS = {"/css/**", "/js/**", "/images/**", "/favicon.ico", "/robots.txt"};
 
 	/**
 	 * 정적 파일 전용 체인 (ADR-013). 세션·remember-me 없이 보안 헤더만 붙인다.

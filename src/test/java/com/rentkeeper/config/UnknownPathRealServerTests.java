@@ -154,8 +154,16 @@ class UnknownPathRealServerTests {
 			HttpResponse<String> health = get("/actuator/health", cookie);
 			assertThat(health.statusCode()).isEqualTo(200);
 			assertThat(health.body()).contains("UP");
-			// 저장소에 없는 파일은 없는 주소 (favicon·images는 정적 파일 체인, robots.txt는 이 필터에서 404)
-			for (String missing : new String[]{"/favicon.ico", "/images/none.png", "/robots.txt"}) {
+			// robots.txt: 정적 파일 체인이 내준다. 첫 화면·약관·처리방침만 열고 나머지는 막는다
+			HttpResponse<String> robots = get("/robots.txt", cookie);
+			assertThat(robots.statusCode()).isEqualTo(200);
+			assertThat(robots.headers().firstValue("Content-Type").orElseThrow()).startsWith("text/plain");
+			assertThat(robots.headers().allValues("Set-Cookie")).isEmpty();
+			assertThat(robots.body().lines().filter(line -> !line.startsWith("#")).toList()).containsExactly(
+					"User-agent: *", "Allow: /$", "Allow: /terms", "Allow: /privacy", "Allow: /css/", "Allow: /js/",
+					"Disallow: /");
+			// 저장소에 없는 파일은 없는 주소 (favicon·images는 정적 파일 체인)
+			for (String missing : new String[]{"/favicon.ico", "/images/none.png"}) {
 				assertThat(get(missing, cookie).statusCode()).as(missing).isEqualTo(404);
 			}
 		}
