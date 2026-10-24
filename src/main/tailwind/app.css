@@ -34,7 +34,7 @@
 	--text-amount: 2rem;
 	--text-amount--line-height: 1.25;
 
-	/* 굵기 2단계: 보통(400)과 굵게(600). font-bold도 600으로 맞춘다 */
+	/* 굵기 3단계: 보통(400), 중간(500, 버튼·링크·뱃지·본문 강조), 굵게(600, 금액·제목만). font-bold도 600으로 맞춘다 */
 	--font-weight-bold: 600;
 
 	/* 포인트 색: 짙은 남색 #1f3a64 하나(흰 바탕 대비 11.6:1). 800·900은 누른 상태, 50·100·200은 옅은 바탕·선 */
@@ -57,6 +57,11 @@
 	--color-danger-700: #9b2c2c;
 	--color-danger-800: #7f2222;
 
+	/* 확인할 일(입금 신고·데모 안내 띠·확인 기다림 뱃지): 채도 낮춘 모래색 한 벌. 글자 대비 7:1 이상 */
+	--color-attention-50: #fbf4e4;
+	--color-attention-200: #ecd8ad;
+	--color-attention-800: #6b4510;
+
 	--radius-card: 12px;
 	--shadow-card: 0 1px 2px rgb(16 40 80 / 0.04), 0 4px 16px rgb(16 40 80 / 0.05);
 }
@@ -74,10 +79,10 @@
 		overflow-wrap: break-word;
 	}
 
-	/* 굵기 2단계 (보통 400·굵게 600) */
+	/* 본문 속 강조는 중간 굵기(500). 굵게(600)는 금액·제목에만 쓴다 (디자인 자체 점검) */
 	strong,
 	b {
-		font-weight: 600;
+		font-weight: 500;
 	}
 
 	/* 키보드로 이동할 때 현재 위치가 분명히 보이게 한다 */
@@ -109,7 +114,7 @@
 
 	/* 첫 화면 (site/landing): 한 줄 소개를 크게(휴대폰 32px → 640px부터 40px → lg 48px), 그 아래 주요 행동 */
 	.hero {
-		@apply max-w-3xl pt-6 pb-16 lg:pt-12 lg:pb-20;
+		@apply max-w-3xl pt-6 pb-16 lg:pt-12 lg:pb-20 lg:mx-auto lg:text-center;
 	}
 
 	.hero-title {
@@ -117,10 +122,15 @@
 	}
 
 	.hero-lead {
-		@apply mb-10 text-title leading-relaxed text-gray-700;
+		@apply mb-10 text-title leading-relaxed text-gray-700 lg:mx-auto lg:max-w-2xl;
 	}
 
 	/* 기능 소개 카드: 휴대폰 한 줄에 하나, 넓은 화면(lg) 세 칸. 위쪽 짧은 포인트 색 막대는 꾸밈(aria-hidden) */
+	/* 첫 화면 가입·로그인 줄: 넓은 화면(lg)에서는 가운데 정렬한 소개와 맞춘다 */
+	.hero-actions {
+		@apply flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-center;
+	}
+
 	.feature-grid {
 		@apply grid gap-4 lg:grid-cols-3 lg:gap-6;
 	}
@@ -153,7 +163,7 @@
 
 	/* 처리할 일이 있을 때(세입자 입금 신고 등). 색만이 아니라 제목 글자로도 알 수 있다 */
 	.card-attention {
-		@apply border-amber-600 bg-amber-50;
+		@apply border-attention-200 bg-attention-50;
 	}
 
 	/* 비어 있을 때 첫 행동을 권하는 상자 */
@@ -199,7 +209,7 @@
 	}
 
 	.list-grid {
-		@apply grid items-start gap-4 lg:grid-cols-2 lg:gap-6;
+		@apply grid gap-4 lg:grid-cols-2 lg:gap-6;
 	}
 
 	/* 이름표와 값 한 줄 (금액 등). 좁은 화면에서는 값이 다음 줄로 넘어간다 */
@@ -238,7 +248,7 @@
 	}
 
 	.stat-line strong {
-		@apply block text-amount text-gray-900 tracking-tight tabular-nums;
+		@apply block text-amount font-semibold text-gray-900 tracking-tight tabular-nums;
 		word-break: keep-all;
 	}
 
@@ -306,13 +316,13 @@
 
 	/* 글자 링크: 포인트 색 밑줄 */
 	.link {
-		@apply font-semibold text-brand-700 underline underline-offset-4;
+		@apply font-medium text-brand-700 underline underline-offset-4;
 	}
 
-	/* 버튼: 높이 54px(3rem), 모서리 12px, 굵게(600). 템플릿에서 "btn btn-primary"처럼 함께 쓴다.
+	/* 버튼: 높이 54px(3rem), 모서리 12px, 중간 굵기(500). 템플릿에서 "btn btn-primary"처럼 함께 쓴다.
 	   꽉 찬 버튼(btn-primary)은 화면당 주요 행동 하나, 나머지는 윤곽선(btn-secondary)·글자(btn-quiet) 버튼 */
 	.btn {
-		@apply inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-card px-6 text-lg font-semibold no-underline transition-colors;
+		@apply inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-card px-6 text-lg font-medium no-underline transition-colors;
 	}
 
 	/* 첫 화면의 가장 큰 행동 (데모로 둘러보기) */
@@ -351,7 +361,7 @@
 
 	/* 위험 행동으로 가는 글자 링크 (취소·지우기 확인 화면으로) */
 	.link-danger {
-		@apply font-semibold text-danger-700 underline underline-offset-4;
+		@apply font-medium text-danger-700 underline underline-offset-4;
 	}
 
 	/* 위험 행동으로 가는 윤곽선 버튼 (계약 종료·지우기 확인 화면으로) */
@@ -367,7 +377,7 @@
 	/* 상태 표시. 옅은 바탕 + 진한 글자 + 작은 아이콘(fragments/icons.html). 색만으로 구분하지 않는다 (PRD 6.3, 디자인 결정 7).
 	   포인트 색과 겹치지 않게 의미 색을 채도 낮게 쓴다. 글자 대비는 모두 7:1 이상 */
 	.badge {
-		@apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-label font-semibold;
+		@apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-label font-medium;
 	}
 
 	/* 공실·취소함 */
@@ -392,7 +402,16 @@
 
 	/* 받을 월세: 일부 받음·확인 기다림 */
 	.badge-partial {
-		@apply border-[#ecd8ad] bg-[#fbf4e4] text-[#6b4510];
+		@apply border-attention-200 bg-attention-50 text-attention-800;
+	}
+
+	/* 머리글 메뉴 글자: 보통 굵기, 짙은 회색. 넓은 화면은 글자만, 좁은 화면 메뉴 상자는 한 줄 48px */
+	.nav-link {
+		@apply text-lg text-gray-800 no-underline underline-offset-4 hover:text-brand-700 hover:underline;
+	}
+
+	.nav-link-menu {
+		@apply flex min-h-12 items-center rounded-card px-3 text-lg text-gray-800 no-underline hover:bg-brand-50;
 	}
 
 	/* 좁은 화면의 [메뉴] (details/summary, JS 없음, 디자인 결정 4). Safari의 기본 삼각형 표시를 숨긴다 */
@@ -420,7 +439,7 @@
 	}
 
 	.form-error {
-		@apply mt-2 text-label font-semibold text-danger-700;
+		@apply mt-2 text-label font-medium text-danger-700;
 	}
 
 	/* 안내 상자: "alert alert-info"처럼 함께 쓴다 */
@@ -438,10 +457,15 @@
 
 	/* 화면 맨 위 띠 (이메일 인증 안내, 데모 안내) */
 	.banner {
-		@apply border-b border-amber-300 bg-amber-50;
+		@apply border-b border-attention-200 bg-attention-50;
 	}
 
 	.banner-inner {
 		@apply mx-auto flex w-full max-w-2xl flex-wrap items-center gap-3 px-4 py-3 lg:max-w-6xl lg:px-8;
+	}
+
+	/* 데모 안내 띠의 글자 한 줄 (굵게 하지 않는다) */
+	.banner-text {
+		@apply mx-auto w-full max-w-2xl px-4 py-3 text-gray-900 lg:max-w-6xl lg:px-8;
 	}
 }

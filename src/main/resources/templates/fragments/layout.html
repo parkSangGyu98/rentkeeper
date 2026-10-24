@@ -41,10 +41,10 @@
 					<a th:href="@{/app}" class="whitespace-nowrap text-lg text-gray-700 no-underline">
 						<span sec:authentication="principal.displayName">홍길동</span>님
 					</a>
-					<a th:href="@{/app/dashboard}" class="whitespace-nowrap text-lg font-semibold text-gray-900 no-underline hover:text-brand-700 hover:underline underline-offset-4">한눈에 보기</a>
-					<a th:href="@{/app/charges}" class="whitespace-nowrap text-lg font-semibold text-gray-900 no-underline hover:text-brand-700 hover:underline underline-offset-4">받을 월세</a>
-					<a th:href="@{/app/properties}" class="whitespace-nowrap text-lg font-semibold text-gray-900 no-underline hover:text-brand-700 hover:underline underline-offset-4">내 건물</a>
-					<a th:href="@{/app/settings}" class="whitespace-nowrap text-lg font-semibold text-gray-900 no-underline hover:text-brand-700 hover:underline underline-offset-4">계정 설정</a>
+					<a th:href="@{/app/dashboard}" class="nav-link whitespace-nowrap">한눈에 보기</a>
+					<a th:href="@{/app/charges}" class="nav-link whitespace-nowrap">받을 월세</a>
+					<a th:href="@{/app/properties}" class="nav-link whitespace-nowrap">내 건물</a>
+					<a th:href="@{/app/settings}" class="nav-link whitespace-nowrap">계정 설정</a>
 					<!-- 로그아웃은 POST만 받는다. th:action이 CSRF 토큰을 넣는다 -->
 					<form th:action="@{/logout}" method="post">
 						<button type="submit" class="btn btn-secondary whitespace-nowrap">로그아웃</button>
@@ -55,10 +55,10 @@
 					<summary class="menu-toggle btn btn-secondary cursor-pointer list-none whitespace-nowrap">메뉴</summary>
 					<nav class="card absolute inset-x-4 top-full z-10 mt-2 flex flex-col gap-1 p-4" aria-label="메뉴">
 						<p class="px-3 pb-2 text-label text-gray-700"><span sec:authentication="principal.displayName">홍길동</span>님</p>
-						<a th:href="@{/app/dashboard}" class="flex min-h-12 items-center whitespace-nowrap rounded-card px-3 text-lg font-semibold text-gray-900 no-underline hover:bg-brand-50">한눈에 보기</a>
-						<a th:href="@{/app/charges}" class="flex min-h-12 items-center whitespace-nowrap rounded-card px-3 text-lg font-semibold text-gray-900 no-underline hover:bg-brand-50">받을 월세</a>
-						<a th:href="@{/app/properties}" class="flex min-h-12 items-center whitespace-nowrap rounded-card px-3 text-lg font-semibold text-gray-900 no-underline hover:bg-brand-50">내 건물</a>
-						<a th:href="@{/app/settings}" class="flex min-h-12 items-center whitespace-nowrap rounded-card px-3 text-lg font-semibold text-gray-900 no-underline hover:bg-brand-50">계정 설정</a>
+						<a th:href="@{/app/dashboard}" class="nav-link-menu whitespace-nowrap">한눈에 보기</a>
+						<a th:href="@{/app/charges}" class="nav-link-menu whitespace-nowrap">받을 월세</a>
+						<a th:href="@{/app/properties}" class="nav-link-menu whitespace-nowrap">내 건물</a>
+						<a th:href="@{/app/settings}" class="nav-link-menu whitespace-nowrap">계정 설정</a>
 						<form th:action="@{/logout}" method="post">
 							<button type="submit" class="btn btn-secondary mt-2 w-full whitespace-nowrap">로그아웃</button>
 						</form>
@@ -89,7 +89,7 @@
 
 	<!-- 데모 계정 띠 (M6 결정 3). 데모 계정이면 모든 화면 맨 위에 -->
 	<div th:if="${demoExpiresAt}" id="demo-banner" class="banner" role="note">
-		<p class="mx-auto w-full max-w-2xl px-4 py-3 font-semibold lg:max-w-6xl lg:px-8">
+		<p class="banner-text">
 			데모입니다. 실제 정보를 입력하지 마세요. 이 데모는 <span th:text="${#temporals.format(demoExpiresAt, 'M월 d일 HH:mm')}">10월 25일 14:00</span>에 모두 지워져요.
 		</p>
 	</div>

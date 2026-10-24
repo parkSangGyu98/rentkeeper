@@ -17,7 +17,7 @@
 				<p class="note mt-3">가짜 데이터가 든 데모 계정을 바로 만들어 드려요. 24시간 뒤 모두 지워져요. 실제 정보는 넣지 마세요.</p>
 			</form>
 
-			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+			<div class="hero-actions">
 				<a th:href="@{/signup}" th:class="${demoEnabled} ? 'btn btn-secondary' : 'btn btn-primary btn-lg'">무료로 가입하기</a>
 				<a th:href="@{/login}" class="btn btn-quiet sm:px-4">이미 가입했어요 (로그인)</a>
 			</div>
