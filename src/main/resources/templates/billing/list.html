@@ -48,7 +48,7 @@
 						<p class="text-xl font-bold"><a th:href="@{/app/charges/{id}(id=${r.chargeId()})}" class="text-gray-900 underline" th:text="${r.unitName()}">행복빌라 101호</a></p>
 						<p class="text-lg" th:text="${r.tenantName()} + '님'">홍길동님</p>
 					</div>
-					<span th:class="${r.statusBadge()}" th:text="${r.statusLabel()}">받을 차례</span>
+					<span th:class="${r.statusBadge()}"><th:block th:replace="~{fragments/icons :: status(${r.statusBadge()}, ${r.status().name()})}"></th:block><span th:text="${r.statusLabel()}">받을 차례</span></span>
 				</div>
 				<dl class="mt-3 space-y-1 text-lg">
 					<div><dt class="inline font-semibold">납부일</dt> <dd class="inline" th:text="${r.dueDateText()}">10월 5일</dd></div>

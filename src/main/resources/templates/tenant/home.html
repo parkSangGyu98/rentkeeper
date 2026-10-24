@@ -17,7 +17,7 @@
 			th:attr="aria-label=${c.title(thisMonth)}">
 			<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
 				<h2 class="text-2xl font-bold" th:text="${c.title(thisMonth)}">10월 월세</h2>
-				<span th:class="${c.statusBadge()}" th:text="${c.statusText()}">아직 확인 전이에요</span>
+				<span th:class="${c.statusBadge()}"><th:block th:replace="~{fragments/icons :: status(${c.statusBadge()}, ${c.status().name()})}"></th:block><span th:text="${c.statusText()}">아직 확인 전이에요</span></span>
 			</div>
 			<p class="mb-1 text-lg">보내실 금액</p>
 			<p class="mb-3 text-3xl font-bold" th:text="${c.paid()} ? ${c.totalText()} : ${c.balanceText()}">550,000원</p>

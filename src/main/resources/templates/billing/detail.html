@@ -28,7 +28,7 @@
 		</section>
 
 		<div class="mb-6 flex flex-wrap items-center gap-3">
-			<span th:class="${charge.statusBadge()}" th:text="${charge.statusLabel()}">받을 차례</span>
+			<span th:class="${charge.statusBadge()}"><th:block th:replace="~{fragments/icons :: status(${charge.statusBadge()}, ${charge.status().name()})}"></th:block><span th:text="${charge.statusLabel()}">받을 차례</span></span>
 			<span class="text-lg">납부일 <strong th:text="${charge.dueDateText()}">2026년 10월 5일</strong></span>
 		</div>
 		<p th:if="${charge.canceled()}" class="mb-6 text-lg">취소 사유: <span th:text="${charge.cancelReason()}">잘못 만듦</span></p>

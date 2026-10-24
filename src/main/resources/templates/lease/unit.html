@@ -8,9 +8,8 @@
 		<p class="mb-2 text-lg"><a th:href="@{/app/properties/{id}(id=${page.unit().propertyId()})}" class="font-semibold text-brand-700 underline" th:text="${page.unit().propertyName()}">행복빌라</a></p>
 		<div class="mb-2 flex flex-wrap items-center gap-3">
 			<h1 class="text-3xl font-bold" th:text="${page.unit().name()}">101호</h1>
-			<span class="badge"
-				th:classappend="${page.status().name() == 'OCCUPIED'} ? 'badge-occupied' : (${page.status().name() == 'UPCOMING'} ? 'badge-upcoming' : (${page.status().name() == 'OVERDUE'} ? 'badge-overdue' : 'badge-vacant'))"
-				th:text="${page.status().label()}">공실</span>
+			<span th:with="badge=${page.status().name() == 'OCCUPIED'} ? 'badge-occupied' : (${page.status().name() == 'UPCOMING'} ? 'badge-upcoming' : (${page.status().name() == 'OVERDUE'} ? 'badge-overdue' : 'badge-vacant'))"
+				th:class="|badge ${badge}|"><th:block th:replace="~{fragments/icons :: status(${badge}, null)}"></th:block><span th:text="${page.status().label()}">공실</span></span>
 		</div>
 		<p class="mb-4 text-lg text-gray-700" th:text="${page.unit().type().label()}">원룸</p>
 

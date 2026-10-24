@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!--
+  상태 아이콘 (디자인 교체 결정 7). 상태 뱃지 안에서 글자 앞에 둔다. 글자가 함께 있으므로 화면 읽기 프로그램에는 숨긴다(aria-hidden).
+  모양은 뱃지 색(badgeClass)을 따른다. 세입자 화면은 납부일이 지나도 중립 색(받을 차례)이라 아이콘도 중립이다(M4 결정 5).
+  세입자가 입금했다고 알린 것(TENANT_REPORTED)만 상태 이름으로 따로 고른다(기다림 표시).
+  쓰는 법: <th:block th:replace="~{fragments/icons :: status(${뱃지 클래스}, ${상태 이름 또는 null})}"></th:block>
+  인라인 style 속성은 쓰지 않는다(CSP, TemplateGuardTest). 선 색은 글자색(currentColor)을 따른다.
+-->
+<body>
+	<th:block th:fragment="status(badgeClass, status)">
+		<!-- 확인 기다림: 모래시계 -->
+		<svg th:if="${status == 'TENANT_REPORTED'}" class="icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"
+			fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+			<path d="M7 3h10M7 21h10M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9" />
+		</svg>
+		<th:block th:unless="${status == 'TENANT_REPORTED'}">
+			<!-- 다 받음·입주중: 체크 -->
+			<svg th:if="${#strings.contains(badgeClass, 'badge-occupied')}" class="icon" aria-hidden="true" focusable="false"
+				viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M5 12.5l4.5 4.5L19 7" />
+			</svg>
+			<!-- 일부 받음: 반쯤 찬 원 -->
+			<svg th:if="${#strings.contains(badgeClass, 'badge-partial')}" class="icon" aria-hidden="true" focusable="false"
+				viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+				<circle cx="12" cy="12" r="8" />
+				<path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" />
+			</svg>
+			<!-- 납부일 지남·기간 지남: 느낌표 -->
+			<svg th:if="${#strings.contains(badgeClass, 'badge-overdue')}" class="icon" aria-hidden="true" focusable="false"
+				viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M12 3l9.5 17h-19z" />
+				<path d="M12 10v4.5" />
+				<path d="M12 17.5v.01" />
+			</svg>
+			<!-- 받을 차례·입주 예정: 빈 원 -->
+			<svg th:if="${#strings.contains(badgeClass, 'badge-upcoming')}" class="icon" aria-hidden="true" focusable="false"
+				viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+				<circle cx="12" cy="12" r="8" />
+			</svg>
+			<!-- 공실·취소함: 가로줄 -->
+			<svg th:if="${#strings.contains(badgeClass, 'badge-vacant')}" class="icon" aria-hidden="true" focusable="false"
+				viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+				<path d="M6 12h12" />
+			</svg>
+		</th:block>
+	</th:block>
+</body>
+</html>

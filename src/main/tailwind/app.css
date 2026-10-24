@@ -2,6 +2,12 @@
  * RentKeeper 공통 스타일 (Tailwind CSS v4, standalone CLI로 빌드 — ADR-007)
  * 임대인 UI 원칙 (PRD 6.3): 큰 글씨, 48px 이상 버튼, 높은 대비, 쉬운 단계.
  * 인라인 style 속성은 CSP(style-src 'self')에 막히므로 쓰지 않는다. 필요한 스타일은 여기 클래스로 만든다.
+ *
+ * 디자인 토큰은 이 파일 한 곳에만 둔다 (디자인 교체, progress "디자인 교체에서 확정한 결정"):
+ *   - 색·글꼴: @theme. 흰 바탕에 짙은 남색 포인트(brand) 하나. 상태색(녹색·호박색·빨강·회색)은 의미 색이고 늘 글자·아이콘과 함께 쓴다
+ *   - 공통 요소: @layer components. 템플릿은 이 클래스 이름(btn·badge·form-*·alert·card·page 등)만 쓴다
+ * 가독성 기준(40~60대): 본문 18px(루트 112.5%), 16px 아래 글자 금지(Tailwind의 xs·sm 글자 크기를 쓰지 않는다, TextSizeFloorTest),
+ * 버튼·입력칸 높이 54px(3rem), 테두리·아이콘 대비 3:1 이상(gray-500 이상), 회색 글자는 gray-700 이상.
  */
 @import "tailwindcss";
 
@@ -12,19 +18,26 @@
 	/* 한글 글꼴 Pretendard를 서버에 포함해 쓴다(static/css/fonts/pretendard, CSP font-src 'self'). 받기 전·실패하면 시스템 한글 글꼴 (디자인 교체 결정 2) */
 	--font-sans: "Pretendard Variable", system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
 
-	--color-brand-700: #1d4ed8;
-	--color-brand-800: #1e40af;
+	/* 포인트 색: 짙은 남색 하나. 700이 기본(흰 바탕 대비 약 11:1), 800·900은 누른 상태, 50·100은 옅은 바탕 */
+	--color-brand-50: #eef3fa;
+	--color-brand-100: #dbe5f3;
+	--color-brand-200: #b7cbe6;
+	--color-brand-600: #2c4f80;
+	--color-brand-700: #1f3a64;
+	--color-brand-800: #172c4d;
+	--color-brand-900: #0f1f38;
+
 	--color-danger-700: #b91c1c;
 }
 
 @layer base {
-	/* 브라우저 기본 16px의 112.5% = 18px. %로 지정해 사용자가 키운 시스템 글꼴 크기를 존중한다 (PRD 8.5) */
+	/* 브라우저 기본 16px의 112.5% = 18px. %로 지정해 사용자가 키운 시스템 글꼴 크기를 존중한다 (PRD 8.5, 디자인 결정 9) */
 	html {
 		font-size: 112.5%;
 	}
 
 	body {
-		@apply bg-gray-50 font-sans text-gray-900 antialiased;
+		@apply bg-white font-sans leading-relaxed text-gray-900 antialiased;
 	}
 
 	/* 키보드로 이동할 때 현재 위치가 분명히 보이게 한다 */
@@ -35,13 +48,37 @@
 }
 
 @layer components {
-	/* 주요 버튼: 높이 48px(3rem) 이상, 넓은 터치 영역. 템플릿에서 "btn btn-primary"처럼 함께 쓴다 */
+	/* 화면 폭 (디자인 결정 5): 폼·확인·세입자 화면은 모든 폭에서 좁게, 목록·대시보드·상세는 넓은 화면(lg)에서 넓힌다 */
+	.page {
+		@apply mx-auto w-full max-w-2xl flex-1 px-4 py-8;
+	}
+
+	.page-wide {
+		@apply mx-auto w-full max-w-2xl flex-1 px-4 py-8 lg:max-w-6xl lg:px-8;
+	}
+
+	/* 내용 묶음 상자 */
+	.card {
+		@apply rounded-xl border-2 border-gray-200 bg-white p-5;
+	}
+
+	/* 이름표와 값 한 줄 (금액 등). 좁은 화면에서는 값이 다음 줄로 넘어간다 */
+	.dl-row {
+		@apply flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1;
+	}
+
+	/* 목록 한 줄: 휴대폰은 카드처럼 세로로, 넓은 화면(lg)은 표처럼 한 줄 (디자인 결정 6) */
+	.list-row {
+		@apply flex flex-col gap-2 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-center lg:gap-6;
+	}
+
+	/* 주요 버튼: 높이 48px 이상(3rem = 54px), 넓은 터치 영역. 템플릿에서 "btn btn-primary"처럼 함께 쓴다 */
 	.btn {
-		@apply inline-flex min-h-12 items-center justify-center rounded-lg px-6 text-lg font-semibold no-underline;
+		@apply inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-6 text-lg font-semibold no-underline transition-colors;
 	}
 
 	.btn-primary {
-		@apply bg-brand-700 text-white hover:bg-brand-800;
+		@apply bg-brand-700 text-white hover:bg-brand-800 active:bg-brand-900;
 	}
 
 	/* 카카오 로그인 버튼: 카카오 디자인 가이드의 배경색(#FEE500)과 글자색(검정 85%). 공식 심볼 이미지는 출시 전에 적용한다 */
@@ -55,33 +92,7 @@
 	}
 
 	.btn-secondary {
-		@apply border-2 border-gray-400 bg-white text-gray-900 hover:bg-gray-100;
-	}
-
-	/* 호실 상태 표시. 색만으로 구분하지 않고 글자를 함께 쓴다 (PRD 6.3) */
-	.badge {
-		@apply inline-flex items-center rounded-full border-2 px-3 py-1 text-base font-semibold;
-	}
-
-	.badge-vacant {
-		@apply border-gray-400 bg-gray-100 text-gray-900;
-	}
-
-	.badge-occupied {
-		@apply border-green-700 bg-green-50 text-green-900;
-	}
-
-	.badge-upcoming {
-		@apply border-blue-700 bg-blue-50 text-blue-900;
-	}
-
-	.badge-overdue {
-		@apply border-danger-700 bg-red-50 text-red-900;
-	}
-
-	/* 받을 월세: 일부 받음 */
-	.badge-partial {
-		@apply border-amber-700 bg-amber-50 text-amber-900;
+		@apply border-2 border-brand-700 bg-white text-brand-700 hover:bg-brand-50 active:bg-brand-100;
 	}
 
 	/* 되돌릴 수 없는 작업(회원 탈퇴 등) */
@@ -89,12 +100,48 @@
 		@apply bg-danger-700 text-white hover:bg-red-800;
 	}
 
+	/* 상태 표시. 색만으로 구분하지 않고 글자와 아이콘(fragments/icons.html)을 함께 쓴다 (PRD 6.3, 디자인 결정 7) */
+	.badge {
+		@apply inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-base font-semibold;
+	}
+
+	/* 공실·취소함 */
+	.badge-vacant {
+		@apply border-gray-500 bg-gray-100 text-gray-900;
+	}
+
+	/* 입주중·다 받음 */
+	.badge-occupied {
+		@apply border-green-700 bg-green-50 text-green-900;
+	}
+
+	/* 입주 예정·받을 차례 */
+	.badge-upcoming {
+		@apply border-brand-700 bg-brand-50 text-brand-900;
+	}
+
+	/* 기간 지남·납부일 지남 */
+	.badge-overdue {
+		@apply border-danger-700 bg-red-50 text-red-900;
+	}
+
+	/* 받을 월세: 일부 받음·세입자가 입금했다고 함 */
+	.badge-partial {
+		@apply border-amber-700 bg-amber-50 text-amber-900;
+	}
+
+	/* 상태 아이콘 (글자와 함께 쓰므로 aria-hidden, fragments/icons.html) */
+	.icon {
+		@apply inline-block size-5 shrink-0;
+	}
+
 	.form-label {
 		@apply mb-2 block text-lg font-semibold;
 	}
 
+	/* 입력칸: 높이 54px, 테두리 2px(gray-500, 대비 3:1 이상) */
 	.form-input {
-		@apply block min-h-12 w-full rounded-lg border-2 border-gray-400 bg-white px-4 text-lg;
+		@apply block min-h-12 w-full rounded-lg border-2 border-gray-500 bg-white px-4 text-lg focus:border-brand-700;
 	}
 
 	.form-error {
@@ -107,7 +154,7 @@
 	}
 
 	.alert-info {
-		@apply border-brand-700 bg-blue-50;
+		@apply border-brand-700 bg-brand-50;
 	}
 
 	.alert-error {
