@@ -5,20 +5,22 @@
 </head>
 <body>
 	<!-- 안내 문자 그만 받기·다시 받기 결과 (TEN-6). 새로 바꿨든 이미 그 상태였든 같은 안내 (멱등) -->
-	<main id="main" class="mx-auto w-full max-w-xl flex-1 px-4 py-6">
+	<main id="main" class="page-tenant">
+		<div class="card">
 		<th:block th:if="${optedOut}">
-			<h1 class="mb-4 text-3xl font-bold">안내 문자를 그만 받기로 했어요</h1>
-			<p class="mb-3 text-lg">이제 월세 안내 문자를 보내지 않아요. 월세와 입금 계좌는 이 링크에서 계속 볼 수 있어요.</p>
-			<p class="mb-6 text-lg">마음이 바뀌면 아래 버튼을 눌러 주세요.</p>
+			<h1 class="page-title">안내 문자를 그만 받기로 했어요</h1>
+			<p class="mb-3">이제 월세 안내 문자를 보내지 않아요. 월세와 입금 계좌는 이 링크에서 계속 볼 수 있어요.</p>
+			<p class="mb-6">마음이 바뀌면 아래 버튼을 눌러 주세요.</p>
 			<form th:action="@{/t/{token}/optin(token=${token})}" method="post" class="mb-4">
 				<button type="submit" class="btn btn-secondary w-full">안내 문자 다시 받기</button>
 			</form>
 		</th:block>
 		<th:block th:unless="${optedOut}">
-			<h1 class="mb-4 text-3xl font-bold">안내 문자를 다시 받기로 했어요</h1>
-			<p class="mb-6 text-lg">다음 안내부터 다시 문자로 알려 드려요.</p>
+			<h1 class="page-title">안내 문자를 다시 받기로 했어요</h1>
+			<p class="mb-6">다음 안내부터 다시 문자로 알려 드려요.</p>
 		</th:block>
 		<a th:href="@{/t/{token}(token=${token})}" class="btn btn-secondary w-full">월세 안내로 돌아가기</a>
+		</div>
 	</main>
 </body>
 </html>

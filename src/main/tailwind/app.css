@@ -94,6 +94,16 @@
 		@apply mx-auto w-full max-w-2xl flex-1 px-4 py-10 lg:max-w-6xl lg:px-8;
 	}
 
+	/* 세입자 화면: 휴대폰 중심이라 모든 폭에서 한 단, PC에서는 가운데 좁게 */
+	.page-tenant {
+		@apply mx-auto w-full max-w-xl flex-1 px-4 py-10;
+	}
+
+	/* 세입자 화면에서 가장 크게 보일 값(보내실 금액·계좌번호): 40px */
+	.amount-hero {
+		@apply text-[2.2222rem] leading-tight font-semibold tracking-tight tabular-nums;
+	}
+
 	/* 화면 머리: 제목(28px) + 한 줄 설명(회색) */
 	.page-head {
 		@apply mb-10;
