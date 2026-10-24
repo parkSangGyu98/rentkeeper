@@ -6,22 +6,22 @@
 </head>
 <body>
 	<!-- 임대인 대시보드 (DASH-1~4, M4 결정 14). 처리할 일(세입자 신고)을 맨 위에 둔다.
-	     넓은 화면(lg)은 요약(이번 달 금액·공실) 한 줄 + 아래 목록(납부일 지남·곧 끝나는 계약) 두 칸. 스타일은 app.css의 dash-* (main.dash 안에서만) -->
-	<main id="main" class="page-wide dash">
-		<div class="dash-head">
-			<h1 class="dash-h1">한눈에 보기</h1>
-			<p class="dash-greeting"><span sec:authentication="principal.displayName">홍길동</span>님, 안녕하세요.</p>
+	     넓은 화면(lg)은 요약(이번 달 금액·공실) 한 줄 + 아래 목록(납부일 지남·곧 끝나는 계약) 두 칸. 스타일은 app.css의 공통 클래스(card·stat-*·row-* 등) -->
+	<main id="main" class="page-wide">
+		<div class="page-head">
+			<h1 class="page-title">한눈에 보기</h1>
+			<p class="page-lead"><span sec:authentication="principal.displayName">홍길동</span>님, 안녕하세요.</p>
 		</div>
 
 		<!-- 빈 상태 -->
-		<section th:if="${view.empty()}" class="panel panel-empty mb-6">
+		<section th:if="${view.empty()}" class="card card-empty mb-6">
 			<p class="mb-4">아직 등록한 건물이 없어요. 첫 건물을 등록해 보세요.</p>
 			<a th:href="@{/app/properties/new}" class="btn btn-primary">건물 등록하기</a>
 		</section>
 
 		<th:block th:unless="${view.empty()}">
 			<!-- 건물 고르기 (GET, 주소로 저장 가능) -->
-			<form th:action="@{/app/dashboard}" method="get" class="dash-filter">
+			<form th:action="@{/app/dashboard}" method="get" class="mb-6 flex flex-wrap items-end gap-4">
 				<div class="min-w-0 flex-1 lg:max-w-md">
 					<label for="propertyId" class="form-label">건물</label>
 					<select id="propertyId" name="propertyId" class="form-input">
@@ -34,12 +34,12 @@
 			</form>
 
 			<!-- ① 확인 기다리는 입금 신고 (M4 결정 7·14). 맨 위, 있을 때만 강조 -->
-			<div class="dash-group">
-				<section class="panel" aria-labelledby="reported-heading"
-					th:classappend="${view.charges().reported().count() > 0} ? 'panel-attention' : ''">
-					<h2 id="reported-heading" class="panel-title">확인 기다리는 입금 신고
+			<div class="section">
+				<section class="card" aria-labelledby="reported-heading"
+					th:classappend="${view.charges().reported().count() > 0} ? 'card-attention' : ''">
+					<h2 id="reported-heading" class="card-title">확인 기다리는 입금 신고
 						<span th:text="${view.charges().reported().count()} + '건'">1건</span></h2>
-					<p th:if="${view.charges().reported().count() == 0}" class="dash-empty">확인 기다리는 입금 신고가 없어요.</p>
+					<p th:if="${view.charges().reported().count() == 0}" class="empty-text">확인 기다리는 입금 신고가 없어요.</p>
 					<ul th:unless="${view.charges().reportedRows().isEmpty()}" class="row-list">
 						<li th:each="r : ${view.charges().reportedRows()}">
 							<a th:href="@{/app/charges/{id}(id=${r.chargeId()})}" class="row-title"
@@ -49,16 +49,16 @@
 								<span th:text="${r.reportedOnText()} + ' 알림'">10월 17일 알림</span></p>
 						</li>
 					</ul>
-					<p th:if="${view.charges().reported().count() > view.charges().reportedRows().size()}" class="dash-note">
+					<p th:if="${view.charges().reported().count() > view.charges().reportedRows().size()}" class="note mt-4">
 						나머지는 각 달 받을 월세 목록의 [확인 기다림]에서 볼 수 있어요.</p>
 				</section>
 			</div>
 
 			<!-- 요약 한 줄 -->
-			<div class="dash-group dash-group-summary">
+			<div class="section summary-grid">
 				<!-- ② 이번 달 받을 돈 (DASH-1, 취소 제외) -->
-				<section class="panel dash-span-3" aria-labelledby="month-heading">
-					<h2 id="month-heading" class="panel-title"><span th:text="${view.charges().monthText()}">2026년 10월</span> 받을 월세
+				<section class="card" aria-labelledby="month-heading">
+					<h2 id="month-heading" class="card-title"><span th:text="${view.charges().monthText()}">2026년 10월</span> 받을 월세
 						<span th:text="${view.charges().thisMonth().count()} + '건'">10건</span></h2>
 					<dl class="stat-list">
 						<div><dt class="stat-label">받을 돈</dt> <dd class="stat-value" th:text="${view.charges().thisMonth().totalText()}">5,500,000원</dd></div>
@@ -69,8 +69,8 @@
 				</section>
 
 				<!-- ⑤ 공실 (DASH-4) -->
-				<section class="panel" aria-labelledby="vacant-heading">
-					<h2 id="vacant-heading" class="panel-title">공실</h2>
+				<section class="card" aria-labelledby="vacant-heading">
+					<h2 id="vacant-heading" class="card-title">공실</h2>
 					<p class="stat-line">호실 <span th:text="${view.unitCount()} + '개'">10개</span> 중
 						<strong th:text="'공실 ' + ${view.vacantCount()} + '개'">공실 2개</strong></p>
 					<a th:href="${view.selectedId() != null} ? @{/app/properties/{id}(id=${view.selectedId()})} : @{/app/properties}"
@@ -79,12 +79,12 @@
 			</div>
 
 			<!-- 목록 두 칸 -->
-			<div class="dash-group dash-group-lists">
+			<div class="section list-grid">
 				<!-- ③ 납부일 지남 (DASH-2, 모든 달, 오래 지난 것부터) -->
-				<section class="panel" aria-labelledby="overdue-heading">
-					<h2 id="overdue-heading" class="panel-title">납부일 지남
+				<section class="card" aria-labelledby="overdue-heading">
+					<h2 id="overdue-heading" class="card-title">납부일 지남
 						<span th:text="${view.charges().overdue().count()} + '건'">2건</span></h2>
-					<p th:if="${view.charges().overdue().count() == 0}" class="dash-empty">납부일이 지난 받을 월세가 없어요.</p>
+					<p th:if="${view.charges().overdue().count() == 0}" class="empty-text">납부일이 지난 받을 월세가 없어요.</p>
 					<th:block th:unless="${view.charges().overdue().count() == 0}">
 						<p class="stat-line">남은 돈 합계 <strong th:text="${view.charges().overdue().balanceText()}">1,100,000원</strong></p>
 						<ul class="row-list">
@@ -96,16 +96,16 @@
 									남은 돈 <span th:text="${r.balanceText()}">550,000원</span></p>
 							</li>
 						</ul>
-						<p th:if="${view.charges().overdue().count() > view.charges().overdueRows().size()}" class="dash-note">
+						<p th:if="${view.charges().overdue().count() > view.charges().overdueRows().size()}" class="note mt-4">
 							나머지는 각 달 받을 월세 목록의 [납부일 지남]에서 볼 수 있어요.</p>
 					</th:block>
 				</section>
 
 				<!-- ④ 곧 끝나는 계약 (DASH-3, 나가는 날 90일 안. 나가는 날이 지났는데 종료하지 않은 계약 포함) -->
-				<section class="panel" aria-labelledby="ending-heading">
-					<h2 id="ending-heading" class="panel-title">90일 안에 끝나는 계약
+				<section class="card" aria-labelledby="ending-heading">
+					<h2 id="ending-heading" class="card-title">90일 안에 끝나는 계약
 						<span th:text="${view.ending().count()} + '건'">1건</span></h2>
-					<p th:if="${view.ending().count() == 0}" class="dash-empty">90일 안에 끝나는 계약이 없어요.</p>
+					<p th:if="${view.ending().count() == 0}" class="empty-text">90일 안에 끝나는 계약이 없어요.</p>
 					<ul th:unless="${view.ending().rows().isEmpty()}" class="row-list">
 						<li th:each="l : ${view.ending().rows()}">
 							<a th:href="@{/app/leases/{id}(id=${l.leaseId()})}" class="row-title"
@@ -114,7 +114,7 @@
 								<strong th:text="${l.daysLeftText()}" th:classappend="${l.overdue()} ? 'text-danger-700' : ''">76일 남음</strong></p>
 						</li>
 					</ul>
-					<p th:if="${view.ending().count() > view.ending().rows().size()}" class="dash-note">
+					<p th:if="${view.ending().count() > view.ending().rows().size()}" class="note mt-4">
 						나머지는 각 호실 화면에서 볼 수 있어요.</p>
 				</section>
 			</div>

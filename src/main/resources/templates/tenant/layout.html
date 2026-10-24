@@ -17,18 +17,18 @@
 <link rel="stylesheet" th:href="@{/css/fonts/pretendard/pretendardvariable-dynamic-subset.css}">
 <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
-<body class="flex min-h-screen flex-col bg-gray-50">
-	<header class="border-b-2 border-gray-200 bg-white">
+<body class="flex min-h-screen flex-col">
+	<header class="border-b border-line bg-white">
 		<div class="mx-auto w-full max-w-xl px-4 py-3">
-			<p class="text-xl font-bold text-gray-900">월세 안내</p>
+			<p class="text-title font-semibold text-gray-900">월세 안내</p>
 		</div>
 	</header>
 
 	<main id="main" class="mx-auto w-full max-w-xl flex-1 px-4 py-6" th:replace="${content}">
 	</main>
 
-	<footer class="border-t-2 border-gray-200 bg-white">
-		<div class="mx-auto w-full max-w-xl px-4 py-5 text-base text-gray-700">
+	<footer class="border-t border-line bg-white">
+		<div class="mx-auto w-full max-w-xl px-4 py-6 text-label text-gray-700">
 			<p>이 화면은 집주인이 보낸 링크로만 열려요. 다른 사람에게 보내지 마세요.</p>
 		</div>
 	</footer>

@@ -3,11 +3,14 @@
  * 임대인 UI 원칙 (PRD 6.3): 큰 글씨, 48px 이상 버튼, 높은 대비, 쉬운 단계.
  * 인라인 style 속성은 CSP(style-src 'self')에 막히므로 쓰지 않는다. 필요한 스타일은 여기 클래스로 만든다.
  *
- * 디자인 토큰은 이 파일 한 곳에만 둔다 (디자인 교체, progress "디자인 교체에서 확정한 결정"):
- *   - 색·글꼴: @theme. 흰 바탕에 짙은 남색 포인트(brand) 하나. 상태색(녹색·호박색·빨강·회색)은 의미 색이고 늘 글자·아이콘과 함께 쓴다
- *   - 공통 요소: @layer components. 템플릿은 이 클래스 이름(btn·badge·form-*·alert·card·page 등)만 쓴다
- * 가독성 기준(40~60대): 본문 18px(루트 112.5%), 16px 아래 글자 금지(Tailwind의 xs·sm 글자 크기를 쓰지 않는다, TextSizeFloorTest),
- * 버튼·입력칸 높이 54px(3rem), 테두리·아이콘 대비 3:1 이상(gray-500 이상), 회색 글자는 gray-700 이상.
+ * 디자인 토큰은 이 파일 한 곳에만 둔다 (디자인 교체, progress "디자인 교체에서 확정한 결정"·"공통 스타일 확정"):
+ *   - 값: @theme. 옅은 회청색 페이지 바탕에 흰 카드(1px 옅은 선 + 아주 옅은 그림자), 포인트 색은 짙은 남색(brand-700) 하나.
+ *     상태색(녹색·호박색·빨강·회색)은 의미 색이라 채도를 낮추고 늘 글자·아이콘과 함께 쓴다
+ *   - 공통 요소: @layer components. 템플릿은 이 클래스 이름(page·card·btn·badge·form-*·alert·stat-*·row-* 등)만 쓴다
+ * 읽기 기준: 본문 18px(루트 112.5%), 16px 아래 글자 금지(Tailwind의 xs·sm 글자 크기를 쓰지 않는다, TextSizeFloorTest),
+ * 본문·라벨·버튼 글자 대비 4.5:1 이상(회색 글자는 gray-700), 선·아이콘 대비 3:1 이상(입력칸 테두리 gray-500),
+ * 버튼·입력칸 높이 54px(3rem, 터치 48px 이상), 선 1px, 모서리 12px, 굵기 2단계(보통 400·굵게 600), 금액 36px(tabular-nums),
+ * 간격 4px 단위(--spacing)로 8·16·24·40px을 주로 쓴다.
  */
 @import "tailwindcss";
 
@@ -18,16 +21,44 @@
 	/* 한글 글꼴 Pretendard를 서버에 포함해 쓴다(static/css/fonts/pretendard, CSP font-src 'self'). 받기 전·실패하면 시스템 한글 글꼴 (디자인 교체 결정 2) */
 	--font-sans: "Pretendard Variable", system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
 
-	/* 포인트 색: 짙은 남색 하나. 700이 기본(흰 바탕 대비 약 11:1), 800·900은 누른 상태, 50·100은 옅은 바탕 */
-	--color-brand-50: #eef3fa;
-	--color-brand-100: #dbe5f3;
-	--color-brand-200: #b7cbe6;
+	/* 간격 단위 4px(루트 18px 기준 0.2222rem): mb-2 = 8px, mb-4 = 16px, mb-6 = 24px, mb-10 = 40px. rem이라 사용자가 키운 글자 크기를 따른다 */
+	--spacing: 0.2222rem;
+
+	/* 글자 크기 (루트 18px 기준): 라벨·보조 16px, 카드 제목 20px, 화면 제목 28px, 금액 36px */
+	--text-label: 0.8889rem;
+	--text-label--line-height: 1.5;
+	--text-title: 1.1111rem;
+	--text-title--line-height: 1.4;
+	--text-headline: 1.5556rem;
+	--text-headline--line-height: 1.3;
+	--text-amount: 2rem;
+	--text-amount--line-height: 1.25;
+
+	/* 굵기 2단계: 보통(400)과 굵게(600). font-bold도 600으로 맞춘다 */
+	--font-weight-bold: 600;
+
+	/* 포인트 색: 짙은 남색 #1f3a64 하나(흰 바탕 대비 11.6:1). 800·900은 누른 상태, 50·100·200은 옅은 바탕·선 */
+	--color-brand-50: #eef2f8;
+	--color-brand-100: #dce4f0;
+	--color-brand-200: #b8c7de;
 	--color-brand-600: #2c4f80;
 	--color-brand-700: #1f3a64;
-	--color-brand-800: #172c4d;
-	--color-brand-900: #0f1f38;
+	--color-brand-800: #182e50;
+	--color-brand-900: #10203a;
 
-	--color-danger-700: #b91c1c;
+	/* 바탕과 선: 페이지는 옅은 회청색, 카드는 흰색 */
+	--color-page: #f2f5f9;
+	--color-line: #e3e8ef;
+	--color-line-strong: #6a7282;
+
+	/* 위험 행동(삭제·취소)과 오류: 채도를 낮춘 빨강. 흰 글자 대비 7.5:1 */
+	--color-danger-50: #fbf0ef;
+	--color-danger-200: #edcac6;
+	--color-danger-700: #9b2c2c;
+	--color-danger-800: #7f2222;
+
+	--radius-card: 12px;
+	--shadow-card: 0 1px 2px rgb(16 40 80 / 0.04), 0 4px 16px rgb(16 40 80 / 0.05);
 }
 
 @layer base {
@@ -37,7 +68,13 @@
 	}
 
 	body {
-		@apply bg-white font-sans leading-relaxed text-gray-900 antialiased;
+		@apply bg-page font-sans leading-relaxed text-gray-900 antialiased;
+	}
+
+	/* 굵기 2단계 (보통 400·굵게 600) */
+	strong,
+	b {
+		font-weight: 600;
 	}
 
 	/* 키보드로 이동할 때 현재 위치가 분명히 보이게 한다 */
@@ -50,16 +87,71 @@
 @layer components {
 	/* 화면 폭 (디자인 결정 5): 폼·확인·세입자 화면은 모든 폭에서 좁게, 목록·대시보드·상세는 넓은 화면(lg)에서 넓힌다 */
 	.page {
-		@apply mx-auto w-full max-w-2xl flex-1 px-4 py-8;
+		@apply mx-auto w-full max-w-2xl flex-1 px-4 py-10;
 	}
 
 	.page-wide {
-		@apply mx-auto w-full max-w-2xl flex-1 px-4 py-8 lg:max-w-6xl lg:px-8;
+		@apply mx-auto w-full max-w-2xl flex-1 px-4 py-10 lg:max-w-6xl lg:px-8;
 	}
 
-	/* 내용 묶음 상자 */
+	/* 화면 머리: 제목(28px) + 한 줄 설명(회색) */
+	.page-head {
+		@apply mb-10;
+	}
+
+	.page-title {
+		@apply mb-2 text-headline font-semibold;
+	}
+
+	.page-lead {
+		@apply text-gray-700;
+	}
+
+	/* 내용 묶음 상자: 흰 카드, 1px 옅은 선, 아주 옅은 그림자, 모서리 12px */
 	.card {
-		@apply rounded-xl border-2 border-gray-200 bg-white p-5;
+		@apply rounded-card border border-line bg-white p-6 shadow-card;
+	}
+
+	/* 처리할 일이 있을 때(세입자 입금 신고 등). 색만이 아니라 제목 글자로도 알 수 있다 */
+	.card-attention {
+		@apply border-amber-600 bg-amber-50;
+	}
+
+	/* 비어 있을 때 첫 행동을 권하는 상자 */
+	.card-empty {
+		@apply border-dashed border-line-strong shadow-none;
+	}
+
+	/* 포인트 색 선으로 눈에 띄게 할 상자 (데모 세입자 링크 등) */
+	.card-accent {
+		@apply border-brand-700;
+	}
+
+	/* 위험 행동을 묶은 상자 (탈퇴·삭제) */
+	.card-danger {
+		@apply border-danger-200;
+	}
+
+	.card-title {
+		@apply mb-4 text-title font-semibold;
+	}
+
+	/* 카드 묶음 사이 간격 */
+	.stack {
+		@apply grid gap-4 lg:gap-6;
+	}
+
+	.section {
+		@apply mb-10;
+	}
+
+	/* 넓은 화면(lg) 배치: 요약 한 줄(큰 칸 + 작은 칸), 목록 두 칸 */
+	.summary-grid {
+		@apply grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,15rem)] lg:gap-6;
+	}
+
+	.list-grid {
+		@apply grid items-start gap-4 lg:grid-cols-2 lg:gap-6;
 	}
 
 	/* 이름표와 값 한 줄 (금액 등). 좁은 화면에서는 값이 다음 줄로 넘어간다 */
@@ -72,9 +164,75 @@
 		@apply flex flex-col gap-2 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-center lg:gap-6;
 	}
 
-	/* 주요 버튼: 높이 48px 이상(3rem = 54px), 넓은 터치 영역. 템플릿에서 "btn btn-primary"처럼 함께 쓴다 */
+	/* 금액 요약: 라벨(16px 회색) 위, 금액(36px) 아래. 넓은 화면(lg)은 세 칸을 한 줄에(1024~1279px은 금액 32px로 줄여 줄바꿈 없이), 그보다 좁으면 칸 폭에 맞춰 두세 칸 */
+	.stat-list {
+		@apply mb-2 grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-4 lg:grid-cols-3 xl:gap-6;
+	}
+
+	.stat-label {
+		@apply text-label text-gray-700;
+	}
+
+	.stat-value {
+		@apply text-amount font-semibold tracking-tight tabular-nums lg:text-[1.7778rem] xl:text-amount;
+		word-break: keep-all;
+	}
+
+	/* 강조할 금액(남은 돈 등): 포인트 색 */
+	.stat-key .stat-value,
+	.stat-value.stat-key {
+		@apply text-brand-700;
+	}
+
+	/* "호실 10개 중 공실 2개", "남은 돈 합계 850,000원": 강조 부분(strong)을 금액 크기로 한 줄 아래에 */
+	.stat-line {
+		@apply mb-2 text-label text-gray-700;
+	}
+
+	.stat-line strong {
+		@apply block text-amount text-gray-900 tracking-tight tabular-nums;
+		word-break: keep-all;
+	}
+
+	.stat-line + .row-list {
+		@apply mt-6;
+	}
+
+	/* 목록 한 줄씩 1px 선으로 나눈다 */
+	.row-list > li {
+		@apply border-b border-line py-4 first:pt-0 last:border-b-0 last:pb-0;
+	}
+
+	.row-title {
+		@apply font-semibold text-gray-900 underline decoration-line-strong underline-offset-4;
+	}
+
+	.row-meta {
+		@apply mt-1 text-label text-gray-700 tabular-nums;
+	}
+
+	.row-meta strong {
+		@apply text-gray-900;
+	}
+
+	/* 보조 안내 (16px 회색) */
+	.note {
+		@apply text-label text-gray-700;
+	}
+
+	.empty-text {
+		@apply text-gray-700;
+	}
+
+	/* 글자 링크: 포인트 색 밑줄 */
+	.link {
+		@apply font-semibold text-brand-700 underline underline-offset-4;
+	}
+
+	/* 버튼: 높이 54px(3rem), 모서리 12px, 굵게(600). 템플릿에서 "btn btn-primary"처럼 함께 쓴다.
+	   꽉 찬 버튼(btn-primary)은 화면당 주요 행동 하나, 나머지는 윤곽선(btn-secondary)·글자(btn-quiet) 버튼 */
 	.btn {
-		@apply inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-6 text-lg font-semibold no-underline transition-colors;
+		@apply inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-card px-6 text-lg font-semibold no-underline transition-colors;
 	}
 
 	.btn-primary {
@@ -91,43 +249,50 @@
 		background-color: #f5dc00;
 	}
 
+	/* 윤곽선 버튼: 선 1px */
 	.btn-secondary {
-		@apply border-2 border-brand-700 bg-white text-brand-700 hover:bg-brand-50 active:bg-brand-100;
+		@apply border border-brand-700 bg-white text-brand-700 hover:bg-brand-50 active:bg-brand-100;
 	}
 
-	/* 되돌릴 수 없는 작업(회원 탈퇴 등) */
+	/* 글자 버튼: 높이는 다른 버튼과 같게(48px 이상) 두고 테두리·바탕 없이 밑줄 */
+	.btn-quiet {
+		@apply px-0 text-brand-700 underline underline-offset-4 hover:decoration-2;
+	}
+
+	/* 되돌릴 수 없는 작업(회원 탈퇴·삭제 등): 채도를 낮춘 빨강 */
 	.btn-danger {
-		@apply bg-danger-700 text-white hover:bg-red-800;
+		@apply bg-danger-700 text-white hover:bg-danger-800;
 	}
 
-	/* 상태 표시. 색만으로 구분하지 않고 글자와 아이콘(fragments/icons.html)을 함께 쓴다 (PRD 6.3, 디자인 결정 7) */
+	/* 상태 표시. 옅은 바탕 + 진한 글자 + 작은 아이콘(fragments/icons.html). 색만으로 구분하지 않는다 (PRD 6.3, 디자인 결정 7).
+	   포인트 색과 겹치지 않게 의미 색을 채도 낮게 쓴다. 글자 대비는 모두 7:1 이상 */
 	.badge {
-		@apply inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-base font-semibold;
+		@apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-label font-semibold;
 	}
 
 	/* 공실·취소함 */
 	.badge-vacant {
-		@apply border-gray-500 bg-gray-100 text-gray-900;
+		@apply border-gray-300 bg-gray-100 text-gray-800;
 	}
 
 	/* 입주중·다 받음 */
 	.badge-occupied {
-		@apply border-green-700 bg-green-50 text-green-900;
+		@apply border-[#cde3d4] bg-[#edf6f0] text-[#1d4d33];
 	}
 
-	/* 입주 예정·받을 차례 */
+	/* 입주 예정·받을 차례: 차분한 청회색 (포인트 남색과 구분) */
 	.badge-upcoming {
-		@apply border-brand-700 bg-brand-50 text-brand-900;
+		@apply border-[#d3dbe6] bg-[#eef2f6] text-[#2b3a4f];
 	}
 
 	/* 기간 지남·납부일 지남 */
 	.badge-overdue {
-		@apply border-danger-700 bg-red-50 text-red-900;
+		@apply border-danger-200 bg-danger-50 text-danger-800;
 	}
 
 	/* 받을 월세: 일부 받음·세입자가 입금했다고 함 */
 	.badge-partial {
-		@apply border-amber-700 bg-amber-50 text-amber-900;
+		@apply border-[#ecd8ad] bg-[#fbf4e4] text-[#6b4510];
 	}
 
 	/* 좁은 화면의 [메뉴] (details/summary, JS 없음, 디자인 결정 4). Safari의 기본 삼각형 표시를 숨긴다 */
@@ -137,277 +302,46 @@
 
 	/* 상태 아이콘 (글자와 함께 쓰므로 aria-hidden, fragments/icons.html) */
 	.icon {
-		@apply inline-block size-5 shrink-0;
+		@apply inline-block size-4.5 shrink-0;
 	}
 
+	/* 입력칸 라벨: 16px 회색 */
 	.form-label {
-		@apply mb-2 block text-lg font-semibold;
+		@apply mb-2 block text-label text-gray-700;
 	}
 
-	/* 입력칸: 높이 54px, 테두리 2px(gray-500, 대비 3:1 이상) */
+	/* 입력칸: 높이 54px, 테두리 1px(gray-500 계열, 대비 3:1 이상), 모서리 12px */
 	.form-input {
-		@apply block min-h-12 w-full rounded-lg border-2 border-gray-500 bg-white px-4 text-lg focus:border-brand-700;
+		@apply block min-h-[3rem] w-full rounded-card border border-line-strong bg-white px-4 text-lg focus:border-brand-700;
+	}
+
+	.form-hint {
+		@apply mt-2 text-label text-gray-700;
 	}
 
 	.form-error {
-		@apply mt-2 text-base font-semibold text-danger-700;
+		@apply mt-2 text-label font-semibold text-danger-700;
 	}
 
 	/* 안내 상자: "alert alert-info"처럼 함께 쓴다 */
 	.alert {
-		@apply mb-6 rounded-lg border-2 p-4 text-base;
+		@apply mb-6 rounded-card border p-4 text-base;
 	}
 
 	.alert-info {
-		@apply border-brand-700 bg-brand-50;
+		@apply border-brand-100 bg-brand-50;
 	}
 
 	.alert-error {
-		@apply border-danger-700 bg-red-50;
+		@apply border-danger-200 bg-danger-50;
 	}
 
-	/*
-	 * 대시보드 스타일 시안 (dashboard/home만, main.dash 안에서만 적용 → 다른 화면은 그대로).
-	 * 두 안은 같은 마크업을 쓰고 아래 --dash-* 값만 다르다. 지금 값: B안 "부드러운 대시보드"(옅은 회청색 바탕에 흰 카드, 옅은 그림자, 밝은 파랑).
-	 * 공통 원칙: 선 1px, 모서리 12px, 굵기 2단계(보통 400·굵게 600), 라벨 16px, 금액 36px(tabular-nums),
-	 * 간격 8·16·24·40px. 크기는 rem(루트 18px 기준)으로 적어 사용자가 키운 글자 크기를 따른다.
-	 */
-	.dash {
-		--dash-page: #f2f5f9;
-		--dash-surface: #ffffff;
-		--dash-line: #e3e8ef;
-		--dash-line-strong: #6a7282;
-		--dash-shadow: 0 1px 2px rgb(16 40 80 / 0.04), 0 4px 16px rgb(16 40 80 / 0.05);
-		--dash-accent: #1d4ed8;
-		--dash-accent-soft: #eef4ff;
-		--dash-attention-surface: #fffbeb;
-		--dash-attention-line: #d97706;
-		--dash-label: var(--color-gray-700);
-		--dash-radius: 12px;
-		--dash-s1: 8px;
-		--dash-s2: 16px;
-		--dash-s3: 24px;
-		--dash-s4: 40px;
-		--dash-text-label: 0.8889rem;
-		--dash-text-title: 1.1111rem;
-		--dash-text-h1: 1.5556rem;
-		--dash-text-amount: 2rem;
+	/* 화면 맨 위 띠 (이메일 인증 안내, 데모 안내) */
+	.banner {
+		@apply border-b border-amber-300 bg-amber-50;
 	}
 
-	/* 페이지 바탕: 옅은 회청색(B안). 대시보드가 들어 있는 페이지에만 */
-	body:has(main.dash) {
-		background-color: #f2f5f9;
-	}
-
-	.dash strong {
-		font-weight: 600;
-	}
-
-	.dash-head {
-		margin-bottom: var(--dash-s4);
-	}
-
-	.dash-h1 {
-		font-size: var(--dash-text-h1);
-		font-weight: 600;
-		line-height: 1.3;
-		margin-bottom: var(--dash-s1);
-	}
-
-	.dash-greeting {
-		color: var(--dash-label);
-	}
-
-	/* 건물 고르기: 라벨 16px 옅은 회색, 입력칸 테두리 1px (대비 3:1 이상) */
-	.dash-filter {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-end;
-		gap: var(--dash-s2);
-		margin-bottom: var(--dash-s3);
-	}
-
-	.dash .form-label {
-		font-size: var(--dash-text-label);
-		font-weight: 400;
-		color: var(--dash-label);
-		margin-bottom: var(--dash-s1);
-	}
-
-	.dash .form-input {
-		border-width: 1px;
-		border-color: var(--dash-line-strong);
-		border-radius: var(--dash-radius);
-		background-color: var(--dash-surface);
-	}
-
-	.dash .btn {
-		border-radius: var(--dash-radius);
-		font-weight: 600;
-	}
-
-	/* 윤곽선 버튼: 선 1px */
-	.dash .btn-secondary {
-		border-width: 1px;
-		border-color: var(--dash-accent);
-		background-color: var(--dash-surface);
-		color: var(--dash-accent);
-	}
-
-	.dash .btn-secondary:hover {
-		background-color: var(--dash-accent-soft);
-	}
-
-	/* 글자 버튼: 높이는 다른 버튼과 같게(48px 이상) 두고 테두리·바탕 없이 */
-	.btn-quiet {
-		@apply px-0 underline underline-offset-4;
-		color: var(--dash-accent);
-	}
-
-	.btn-quiet:hover {
-		text-decoration-thickness: 2px;
-	}
-
-	/* 묶음: 휴대폰은 한 줄에 하나, 넓은 화면(lg)은 요약 한 줄 + 아래 목록 두 칸 */
-	.dash-group {
-		display: grid;
-		gap: var(--dash-s2);
-		margin-bottom: var(--dash-s4);
-	}
-
-	@media (width >= 64rem) {
-		.dash-group {
-			gap: var(--dash-s3);
-		}
-
-		.dash-group-summary {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
-		}
-
-		.dash-group-lists {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			align-items: start;
-		}
-
-		.dash-span-3 {
-			grid-column: span 3 / span 3;
-		}
-	}
-
-	.panel {
-		background-color: var(--dash-surface);
-		border: 1px solid var(--dash-line);
-		border-radius: var(--dash-radius);
-		box-shadow: var(--dash-shadow);
-		padding: var(--dash-s3);
-	}
-
-	/* 처리할 일이 있을 때 (세입자 입금 신고). 색만이 아니라 제목의 건수 글자로도 알 수 있다 */
-	.panel-attention {
-		background-color: var(--dash-attention-surface);
-		border-color: var(--dash-attention-line);
-	}
-
-	.panel-empty {
-		border-style: dashed;
-		border-color: var(--dash-line-strong);
-	}
-
-	.panel-title {
-		font-size: var(--dash-text-title);
-		font-weight: 600;
-		line-height: 1.4;
-		margin-bottom: var(--dash-s2);
-	}
-
-	/* 금액 요약: 라벨(16px 회색) 위, 금액(36px) 아래. 칸 폭이 금액 하나(14rem)보다 넓으면 한 줄에 두세 칸 */
-	.stat-list {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-		gap: var(--dash-s2);
-		margin-bottom: var(--dash-s1);
-	}
-
-	.stat-label,
-	.stat-line {
-		font-size: var(--dash-text-label);
-		color: var(--dash-label);
-	}
-
-	.stat-value {
-		font-size: var(--dash-text-amount);
-		font-weight: 600;
-		line-height: 1.25;
-		color: var(--color-gray-900);
-		font-variant-numeric: tabular-nums;
-		letter-spacing: -0.01em;
-		word-break: keep-all;
-	}
-
-	.stat-key .stat-value {
-		color: var(--dash-accent);
-	}
-
-	/* "호실 10개 중 공실 2개", "남은 돈 합계 850,000원": 강조 부분(strong)을 금액 크기로 한 줄 아래에 */
-	.stat-line {
-		margin-bottom: var(--dash-s1);
-	}
-
-	.stat-line strong {
-		display: block;
-		font-size: var(--dash-text-amount);
-		line-height: 1.25;
-		color: var(--color-gray-900);
-		font-variant-numeric: tabular-nums;
-		letter-spacing: -0.01em;
-		word-break: keep-all;
-	}
-
-	.stat-line + .row-list {
-		margin-top: var(--dash-s3);
-	}
-
-	/* 목록 한 줄 */
-	.row-list > li {
-		padding-block: var(--dash-s2);
-		border-bottom: 1px solid var(--dash-line);
-	}
-
-	.row-list > li:first-child {
-		padding-top: 0;
-	}
-
-	.row-list > li:last-child {
-		border-bottom: 0;
-		padding-bottom: 0;
-	}
-
-	.row-title {
-		font-weight: 600;
-		color: var(--color-gray-900);
-		text-decoration-line: underline;
-		text-underline-offset: 4px;
-		text-decoration-color: var(--dash-line-strong);
-	}
-
-	.row-meta {
-		font-size: var(--dash-text-label);
-		color: var(--dash-label);
-		font-variant-numeric: tabular-nums;
-		margin-top: 4px;
-	}
-
-	.row-meta strong {
-		color: var(--color-gray-900);
-	}
-
-	.dash-note {
-		font-size: var(--dash-text-label);
-		color: var(--dash-label);
-		margin-top: var(--dash-s2);
-	}
-
-	.dash-empty {
-		color: var(--dash-label);
+	.banner-inner {
+		@apply mx-auto flex w-full max-w-2xl flex-wrap items-center gap-3 px-4 py-3 lg:max-w-6xl lg:px-8;
 	}
 }
