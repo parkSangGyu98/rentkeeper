@@ -181,6 +181,22 @@ class ChargeEditTests {
 	}
 
 	@Test
+	void lastItemDeleteConfirmPageSendsBackToDetailWithGuide() throws Exception {
+		String confirmPath = "/app/charges/" + charge + "/items/" + feeItem + "/delete";
+		assertThat(mockMvc.perform(get(confirmPath).cookie(a.cookie())).andReturn().getResponse().getStatus())
+				.as("항목이 둘이면 확인 화면이 열린다").isEqualTo(200);
+
+		delete(rentItem, version());
+		MvcResult confirm = mockMvc.perform(get(confirmPath).cookie(a.cookie())).andReturn();
+
+		assertThat(confirm.getResponse().getRedirectedUrl()).isEqualTo("/app/charges/" + charge);
+		assertThat(confirm.getFlashMap().get("chargeAlert"))
+				.isEqualTo("마지막 항목은 지울 수 없어요. 이 달 월세를 받지 않으려면 [받을 월세 취소]를 써 주세요.");
+		assertThat(jdbc.queryForObject("select count(*) from charge_item where charge_id = ?", Long.class, charge))
+				.isEqualTo(1L);
+	}
+
+	@Test
 	void deletingTwoLastItemsAtTheSameMomentLeavesOne() throws Exception {
 		// 두 기기(서로 다른 로그인 세션)에서 남은 두 항목을 하나씩 동시에 지운다
 		jakarta.servlet.http.Cookie other = mockMvc.perform(

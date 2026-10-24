@@ -127,6 +127,10 @@ public class ChargeEditController {
 		if (detail.canceled()) {
 			return ChargeController.alertDetail(id, redirect, ChargeMessages.CANCELED);
 		}
+		// 마지막 항목은 지울 수 없으니(M3-b 결정 9) 확인 화면도 열지 않는다. 지우기 요청(POST)도 같은 안내로 막는다
+		if (detail.items().size() == 1) {
+			return ChargeController.alertDetail(id, redirect, ChargeMessages.LAST_ITEM);
+		}
 		model.addAttribute("charge", detail);
 		model.addAttribute("item", item);
 		return "billing/item-delete";
