@@ -11,3 +11,29 @@ server:
       internal-proxies: 172\.30\.0\.10
       remote-ip-header: x-forwarded-for
       protocol-header: x-forwarded-proto
+
+spring:
+  mail:
+    # 운영 메일 SMTP (M6 결정 5, Brevo 등). 값은 환경변수로만 넣는다
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
+app:
+  mail:
+    # 보내는 사람 (예: "RentKeeper <no-reply@도메인>"). 도메인은 메일 업체에서 SPF·DKIM 인증을 마친 것이어야 한다
+    from: ${MAIL_FROM}
+
+management:
+  health:
+    # 메일 업체가 잠깐 안 돼도 앱 헬스체크를 실패로 보지 않는다(컨테이너 재시작 방지). 발송 실패는 알림 재시도·운영 알림이 맡는다
+    mail:
+      enabled: false

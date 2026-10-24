@@ -44,6 +44,8 @@ dependencies {
 	// Boot 4부터 Flyway 자동 구성은 전용 스타터가 있어야 동작한다
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.flywaydb:flyway-database-postgresql")
+	// 운영 메일 SMTP 발송 (M6 결정 5, Brevo). spring.mail.host가 있을 때(prod)만 JavaMailSender가 생긴다
+	implementation("org.springframework.boot:spring-boot-starter-mail")
 	// 세션을 DB에 저장한다 (ADR-005). 서버 재시작·증설에도 로그인이 유지된다
 	implementation("org.springframework.boot:spring-boot-starter-session-jdbc")
 	// 배치 중복 실행 방지 잠금 (ADR-022). Boot BOM에 없어 버전을 직접 적는다. 7.10.1은 Boot 4.1.1·Spring 7.0.9로 빌드·테스트된 릴리스다
