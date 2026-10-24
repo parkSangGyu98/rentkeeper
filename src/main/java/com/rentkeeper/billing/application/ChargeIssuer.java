@@ -3,6 +3,7 @@ package com.rentkeeper.billing.application;
 import java.time.Instant;
 import java.time.LocalDate;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,11 +31,11 @@ public class ChargeIssuer {
 
 	static final String REASON_CREATED = "자동 생성";
 
-	static final String REASON_ISSUED = "자동 발행 — 알림 발송은 M5";
+	static final String REASON_ISSUED = "자동 발행";
 
 	static final String REASON_CREATED_MANUAL = "직접 만듦";
 
-	static final String REASON_ISSUED_MANUAL = "발행 — 알림 발송은 M5";
+	static final String REASON_ISSUED_MANUAL = "발행";
 
 	static final String REASON_OVERDUE = "납부일 지남";
 
@@ -46,12 +47,15 @@ public class ChargeIssuer {
 
 	private final ChargeItemHistoryRepository itemHistories;
 
+	private final ApplicationEventPublisher events;
+
 	ChargeIssuer(ChargeRepository charges, ChargeItemRepository items, ChargeStatusHistoryRepository statusHistories,
-			ChargeItemHistoryRepository itemHistories) {
+			ChargeItemHistoryRepository itemHistories, ApplicationEventPublisher events) {
 		this.charges = charges;
 		this.items = items;
 		this.statusHistories = statusHistories;
 		this.itemHistories = itemHistories;
+		this.events = events;
 	}
 
 	/**
@@ -69,6 +73,7 @@ public class ChargeIssuer {
 		addItem(charge, ChargeItemType.MAINTENANCE, planned.maintenanceFee(), actor, now);
 		record(charge, charge.issue(now), actor, auto ? REASON_ISSUED : REASON_ISSUED_MANUAL, now);
 		charge.refresh(today, now).ifPresent(change -> record(charge, change, actor, REASON_OVERDUE, now));
+		events.publishEvent(new ChargeIssuedEvent(landlordId, leaseId, charge.getId(), charge.getDueDate(), today));
 		return charge;
 	}
 

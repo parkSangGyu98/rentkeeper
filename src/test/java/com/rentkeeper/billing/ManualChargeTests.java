@@ -99,7 +99,7 @@ class ManualChargeTests {
 		assertThat(jdbc.queryForList(
 				"select to_status, actor_type, reason from charge_status_history where charge_id = ? " + "order by id",
 				charge)).extracting(r -> r.get("to_status"), r -> r.get("actor_type"), r -> r.get("reason"))
-				.containsExactly(tuple("SCHEDULED", "LANDLORD", "직접 만듦"), tuple("ISSUED", "LANDLORD", "발행 — 알림 발송은 M5"),
+				.containsExactly(tuple("SCHEDULED", "LANDLORD", "직접 만듦"), tuple("ISSUED", "LANDLORD", "발행"),
 						tuple("OVERDUE", "LANDLORD", "납부일 지남"));
 		assertThat(page("/app/leases/" + lease)).doesNotContain("이번 달 받을 월세가 아직 없어요");
 	}

@@ -110,7 +110,7 @@ class ChargeGenerationTests {
 				.extracting(r -> r.get("from_status"), r -> r.get("to_status"), r -> r.get("actor_type"),
 						r -> r.get("reason"))
 				.containsExactly(tuple(null, "SCHEDULED", "SYSTEM", "자동 생성"),
-						tuple("SCHEDULED", "ISSUED", "SYSTEM", "자동 발행 — 알림 발송은 M5"));
+						tuple("SCHEDULED", "ISSUED", "SYSTEM", "자동 발행"));
 		assertThat(jdbc.queryForList("select action, after_amount from charge_item_history order by id"))
 				.extracting(r -> r.get("action"), r -> r.get("after_amount"))
 				.containsExactly(tuple("ADD", 500_000L), tuple("ADD", 50_000L));
@@ -163,7 +163,7 @@ class ChargeGenerationTests {
 						tuple("2026-12-01", "OVERDUE"), tuple("2027-01-01", "ISSUED"));
 		assertThat(jdbc.queryForList("select reason from charge_status_history h join charge c on c.id = h.charge_id "
 				+ "where c.billing_month = '2026-10-01' order by h.id", String.class))
-				.containsExactly("자동 생성", "자동 발행 — 알림 발송은 M5", "납부일 지남");
+				.containsExactly("자동 생성", "자동 발행", "납부일 지남");
 	}
 
 	@Test

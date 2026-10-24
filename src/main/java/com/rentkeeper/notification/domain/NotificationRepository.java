@@ -1,5 +1,6 @@
 package com.rentkeeper.notification.domain;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,10 @@ import org.springframework.data.repository.Repository;
 public interface NotificationRepository extends Repository<Notification, Long> {
 
 	void flush();
+
+	/** 같은 계약에 같은 날 이 상태인 다른 알림 수 (세입자 하루 1통, M5 결정 12) */
+	long countByLandlordIdAndLeaseIdAndScheduledForAndStatusAndIdNot(long landlordId, long leaseId,
+			LocalDate scheduledFor, NotificationStatus status, long id);
 
 	/** 발송 워커 전용 */
 	Optional<Notification> findForWorkerById(long id);
