@@ -24,6 +24,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -267,6 +268,31 @@ class IdorTests {
 
 		assertThat(failures).isEmpty();
 		assertThat(snapshot()).as("피해자 데이터가 하나도 바뀌지 않음").isEqualTo(before);
+	}
+
+	@Test
+	void victimsIdAndMissingIdGiveTheSameStatusBodyAndHeaders() throws Exception {
+		Map<String, String> missingIds = new java.util.HashMap<>();
+		victimIds.forEach((key, value) -> missingIds.put(key, value.isEmpty() ? value : "999999999"));
+		List<String> failures = new ArrayList<>();
+
+		for (Map.Entry<String, Attack> entry : attacks().entrySet()) {
+			MockHttpServletResponse victims = mockMvc.perform(entry.getValue().build(victimIds, attacker)).andReturn()
+					.getResponse();
+			MockHttpServletResponse missing = mockMvc.perform(entry.getValue().build(missingIds, attacker)).andReturn()
+					.getResponse();
+			if (victims.getStatus() != missing.getStatus()) {
+				failures.add(entry.getKey() + " → 상태 코드 다름 " + victims.getStatus() + "/" + missing.getStatus());
+			}
+			if (!victims.getContentAsString().equals(missing.getContentAsString())) {
+				failures.add(entry.getKey() + " → 본문 다름");
+			}
+			if (!headers(victims).equals(headers(missing))) {
+				failures.add(entry.getKey() + " → 헤더 다름 " + headers(victims) + " / " + headers(missing));
+			}
+		}
+
+		assertThat(failures).as("남의 ID와 없는 ID의 응답은 완전히 같아야 한다 (존재 여부 노출 금지)").isEmpty();
 	}
 
 	@Test
@@ -518,6 +544,15 @@ class IdorTests {
 					"select coalesce(string_agg(t::text, '|' order by t.id), '') from " + table + " t", String.class));
 		}
 		return all.toString();
+	}
+
+	/** 헤더 이름 → 값 목록 (이름 순) */
+	private static Map<String, List<String>> headers(MockHttpServletResponse response) {
+		Map<String, List<String>> headers = new java.util.TreeMap<>();
+		for (String name : response.getHeaderNames()) {
+			headers.put(name, response.getHeaders(name));
+		}
+		return headers;
 	}
 
 	private String notFoundBody() throws Exception {

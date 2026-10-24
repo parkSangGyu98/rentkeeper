@@ -6,7 +6,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -154,6 +161,63 @@ class ChargeEditTests {
 	}
 
 	@Test
+	void lastItemDeleteRequestIsBlockedEvenWithoutConfirmPage() throws Exception {
+		delete(rentItem, version());
+		long seen = version();
+		long historyBefore = jdbc.queryForObject("select count(*) from charge_item_history where charge_id = ?",
+				Long.class, charge);
+
+		// 화면 링크 없이 요청만 보내도(올바른 version) 서버가 막는다
+		assertThat(delete(feeItem, seen).getFlashMap().get("chargeAlert"))
+				.isEqualTo("마지막 항목은 지울 수 없어요. 이 달 월세를 받지 않으려면 [받을 월세 취소]를 써 주세요.");
+
+		assertThat(jdbc.queryForObject("select count(*) from charge_item where charge_id = ?", Long.class, charge))
+				.isEqualTo(1L);
+		assertThat(
+				jdbc.queryForObject("select count(*) from charge_item_history where charge_id = ?", Long.class, charge))
+				.isEqualTo(historyBefore);
+		assertThat(total()).isEqualTo(50_000L);
+		assertThat(version()).isEqualTo(seen);
+	}
+
+	@Test
+	void deletingTwoLastItemsAtTheSameMomentLeavesOne() throws Exception {
+		// 두 기기(서로 다른 로그인 세션)에서 남은 두 항목을 하나씩 동시에 지운다
+		jakarta.servlet.http.Cookie other = mockMvc.perform(
+				post("/login").with(csrf()).param("email", "a@example.com").param("password", LandlordLogin.PASSWORD))
+				.andReturn().getResponse().getCookie("SESSION");
+		ExecutorService executor = Executors.newFixedThreadPool(2);
+		try {
+			for (int round = 0; round < 5; round++) {
+				long first = round == 0 ? rentItem : remainingItem();
+				long second = round == 0 ? feeItem : item("OTHER", "기타", 10_000);
+				long seen = version();
+				CountDownLatch start = new CountDownLatch(1);
+				List<Future<MvcResult>> results = new ArrayList<>();
+				for (long target : List.of(first, second)) {
+					jakarta.servlet.http.Cookie session = target == first ? a.cookie() : other;
+					results.add(executor.submit(() -> {
+						start.await();
+						return mockMvc.perform(post("/app/charges/" + charge + "/items/" + target + "/delete")
+								.with(csrf()).cookie(session).param("version", String.valueOf(seen))).andReturn();
+					}));
+				}
+				start.countDown();
+				for (Future<MvcResult> result : results) {
+					result.get(30, TimeUnit.SECONDS);
+				}
+
+				assertThat(
+						jdbc.queryForObject("select count(*) from charge_item where charge_id = ?", Long.class, charge))
+						.as("%d번째: 항목이 하나는 남는다", round + 1).isEqualTo(1L);
+				assertThat(total()).isPositive();
+			}
+		} finally {
+			executor.shutdownNow();
+		}
+	}
+
+	@Test
 	void itemInputGuides() throws Exception {
 		assertThat(body(add("ELECTRIC", "", "삼만", version()))).contains("금액을 숫자로 입력해 주세요 (예: 30,000)");
 		assertThat(body(add("ELECTRIC", "", "-1", version()))).contains("금액을 숫자로 입력해 주세요 (예: 30,000)");
@@ -292,6 +356,10 @@ class ChargeEditTests {
 
 	private long version() {
 		return jdbc.queryForObject("select version from charge where id = ?", Long.class, charge);
+	}
+
+	private long remainingItem() {
+		return jdbc.queryForObject("select id from charge_item where charge_id = ?", Long.class, charge);
 	}
 
 	private long total() {
