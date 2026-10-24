@@ -126,6 +126,8 @@ class ChargeListTests {
 
 		assertThat(page("/app/charges?month=2026-10&status=reported")).as("세입자 신고는 확인 기다림 칸 (M4 결정 13)")
 				.contains("이세입님").doesNotContain("김세입님");
+		assertThat(page("/app/charges?month=2026-10&status=reported")).as("상태 뱃지는 탭과 같은 이름")
+				.contains("<span>확인 기다림</span>");
 		assertThat(page("/app/charges?month=2026-10&status=issued")).as("받을 차례에서는 빠진다").contains("이 상태인 받을 월세가 없어요");
 		assertThat(page("/app/charges?month=2026-10&status=overdue")).contains("이 상태인 받을 월세가 없어요")
 				.doesNotContain("이 달에 받을 월세가 없어요");

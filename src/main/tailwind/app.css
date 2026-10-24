@@ -390,7 +390,7 @@
 		@apply border-danger-200 bg-danger-50 text-danger-800;
 	}
 
-	/* 받을 월세: 일부 받음·세입자가 입금했다고 함 */
+	/* 받을 월세: 일부 받음·확인 기다림 */
 	.badge-partial {
 		@apply border-[#ecd8ad] bg-[#fbf4e4] text-[#6b4510];
 	}

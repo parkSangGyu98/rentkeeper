@@ -29,7 +29,7 @@ public enum ChargeStatus {
 
 	ISSUED("받을 차례"),
 
-	TENANT_REPORTED("세입자가 입금했다고 함"),
+	TENANT_REPORTED("확인 기다림"),
 
 	PARTIALLY_PAID("일부 받음"),
 
