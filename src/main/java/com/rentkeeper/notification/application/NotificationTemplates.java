@@ -2,6 +2,7 @@ package com.rentkeeper.notification.application;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
 import com.rentkeeper.common.money.Won;
 
@@ -44,6 +45,44 @@ public final class NotificationTemplates {
 	public static String overdueSecond(String unitName, YearMonth month, long balance, String link) {
 		return tenant(unitName, "%d월 월세 %s의 입금 확인을 기다리고 있습니다. 사정이 있으시면 집주인에게 편하게 연락 주세요. 이미 보내셨다면 링크에서 알려 주세요. %s"
 				.formatted(month.getMonthValue(), Won.format(balance), link));
+	}
+
+	/** 임대인 메일 (제목, 본문) */
+	public record Mail(String subject, String body) {
+
+		@Override
+		public String toString() {
+			return "Mail[***]";
+		}
+
+	}
+
+	/** 입금 신고 접수 (임대인, 시간당 1통) */
+	public static Mail tenantReports(int count, String dashboardLink) {
+		return new Mail("세입자가 입금했다고 알린 받을 월세가 %d건 있어요".formatted(count),
+				"통장을 확인하신 뒤 [입금 확인하기] 또는 [입금이 없어요]를 눌러 주세요.\n바로 가기: " + dashboardLink);
+	}
+
+	/** 납부일 지남 요약 (임대인, 하루 1통) */
+	public static Mail overdueDigest(int count, String chargesLink) {
+		return new Mail("납부일이 지난 받을 월세 %d건".formatted(count),
+				"어제가 납부일이었던 받을 월세 중 아직 다 받지 않은 것이 %d건 있어요.\n바로 가기: %s".formatted(count, chargesLink));
+	}
+
+	/**
+	 * 곧 끝나는 계약 (임대인, 하루 1통). 세입자 이름·연락처는 넣지 않는다.
+	 *
+	 * @param lines
+	 *            "건물 호실 — 끝나는 날 (n일 뒤)" 줄들
+	 */
+	public static Mail leaseEndDigest(List<String> lines, String dashboardLink) {
+		return new Mail("곧 끝나는 계약이 %d건 있어요".formatted(lines.size()),
+				String.join("\n", lines) + "\n\n다시 계약할지, 새 세입자를 구할지 미리 정해 두세요.\n바로 가기: " + dashboardLink);
+	}
+
+	/** 곧 끝나는 계약 한 줄 */
+	public static String leaseEndLine(String unitName, LocalDate endDate, long daysLeft) {
+		return "%s — %s (%d일 뒤)".formatted(unitName, day(endDate), daysLeft);
 	}
 
 	private static String tenant(String unitName, String sentence) {

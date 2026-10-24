@@ -20,9 +20,12 @@ class TenantNotices {
 
 	private final NotificationOutbox outbox;
 
-	TenantNotices(TenantNoticeRecipients recipients, NotificationOutbox outbox) {
+	private final NotificationPreferences preferences;
+
+	TenantNotices(TenantNoticeRecipients recipients, NotificationOutbox outbox, NotificationPreferences preferences) {
 		this.recipients = recipients;
 		this.outbox = outbox;
+		this.preferences = preferences;
 	}
 
 	/** @return 새로 넣었으면 true (같은 알림이 있거나 계약이 없으면 false) */
@@ -33,17 +36,20 @@ class TenantNotices {
 		}
 		NotificationRequest request = NotificationRequest.tenant(type, landlordId, recipient.get().tenantId(), leaseId,
 				chargeId, dedupeKey);
-		Optional<SkipReason> skip = skipReason(recipient.get());
+		Optional<SkipReason> skip = skipReason(landlordId, type, recipient.get());
 		return skip.isPresent() ? outbox.enqueueSkipped(request, skip.get()) : outbox.enqueue(request);
 	}
 
-	/** 수신 거부·알림 멈춤 (만들 때와 보낼 때 같은 기준) */
-	static Optional<SkipReason> skipReason(NoticeRecipient recipient) {
+	/** 수신 거부·알림 멈춤·임대인 설정 (만들 때와 보낼 때 같은 기준) */
+	Optional<SkipReason> skipReason(long landlordId, NotificationType type, NoticeRecipient recipient) {
 		if (recipient.optedOut()) {
 			return Optional.of(SkipReason.OPTED_OUT);
 		}
 		if (recipient.paused()) {
 			return Optional.of(SkipReason.LINK_CLOSED_BY_LANDLORD);
+		}
+		if (!preferences.allows(landlordId, type)) {
+			return Optional.of(SkipReason.LANDLORD_OFF);
 		}
 		return Optional.empty();
 	}

@@ -21,9 +21,9 @@ import com.rentkeeper.notification.domain.NotificationType;
 import com.rentkeeper.notification.domain.SkipReason;
 
 /**
- * 세입자 알림 3종의 본문 (NOTI-1~3). 보낼 때 다시 확인한다: 수신 거부, 알림 멈춤, 받을 월세 상태, 계약당 하루 1통. 모두
- * 통과해야 마지막에 알림 링크를 만든다(보내지 않는 알림에는 링크를 만들지 않는다, M5 추가 승인). 번호·본문·링크 원문은 돌려줄 뿐
- * 저장하지 않는다.
+ * 세입자 알림 3종의 본문 (NOTI-1~3). 보낼 때 다시 확인한다: 수신 거부, 알림 멈춤, 임대인 설정, 받을 월세 상태, 계약당
+ * 하루 1통. 모두 통과해야 마지막에 알림 링크를 만든다(보내지 않는 알림에는 링크를 만들지 않는다, M5 추가 승인). 번호·본문·링크
+ * 원문은 돌려줄 뿐 저장하지 않는다.
  */
 @Component
 class TenantNotificationComposer implements NotificationComposer {
@@ -41,8 +41,12 @@ class TenantNotificationComposer implements NotificationComposer {
 
 	private final AppProperties appProperties;
 
+	private final TenantNotices tenantNotices;
+
 	TenantNotificationComposer(TenantNoticeRecipients recipients, TenantNoticeCharges charges,
-			TenantLinkService tenantLinks, NotificationRepository notifications, AppProperties appProperties) {
+			TenantLinkService tenantLinks, NotificationRepository notifications, AppProperties appProperties,
+			TenantNotices tenantNotices) {
+		this.tenantNotices = tenantNotices;
 		this.recipients = recipients;
 		this.charges = charges;
 		this.tenantLinks = tenantLinks;
@@ -63,7 +67,7 @@ class TenantNotificationComposer implements NotificationComposer {
 		if (recipient.isEmpty()) {
 			return new Composition.Skip(SkipReason.STALE);
 		}
-		Optional<SkipReason> skip = TenantNotices.skipReason(recipient.get());
+		Optional<SkipReason> skip = tenantNotices.skipReason(landlordId, n.getType(), recipient.get());
 		if (skip.isPresent()) {
 			return new Composition.Skip(skip.get());
 		}

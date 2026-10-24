@@ -64,6 +64,31 @@ public final class NotificationRules {
 		return Optional.empty();
 	}
 
+	/** 곧 끝나는 계약 알림: 나가는 날까지 남은 날 수 (NOTI-5) */
+	public static final List<Integer> LEASE_END_DAYS = List.of(90, 60, 30);
+
+	/** 오늘 곧 끝나는 계약 요약에 넣을 나가는 날들 */
+	public static List<LocalDate> leaseEndDates(LocalDate today) {
+		return LEASE_END_DAYS.stream().map(today::plusDays).toList();
+	}
+
+	/** 납부일 지남 요약이 다루는 납부일: 어제 (오늘 00:10에 납부일 지남이 된 것) */
+	public static LocalDate overdueDigestDueDate(LocalDate day) {
+		return day.minusDays(1);
+	}
+
+	public static String tenantReportKey(long landlordId, String hourSlot) {
+		return "TENANT_REPORT:" + landlordId + ":" + hourSlot;
+	}
+
+	public static String overdueDigestKey(long landlordId, LocalDate today) {
+		return "OVERDUE_DIGEST:" + landlordId + ":" + today;
+	}
+
+	public static String leaseEndDigestKey(long landlordId, LocalDate today) {
+		return "LEASE_END_DIGEST:" + landlordId + ":" + today;
+	}
+
 	/** 받을 월세 안내의 dedupe_key */
 	public static String chargeIssuedKey(long chargeId) {
 		return "CHARGE_ISSUED:" + chargeId;

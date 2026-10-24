@@ -11,10 +11,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.rentkeeper.billing.application.LandlordNoticeCharges;
 import com.rentkeeper.billing.application.TenantNoticeCharges;
 import com.rentkeeper.billing.application.TenantNoticeCharges.NoticeTarget;
 import com.rentkeeper.common.ops.OpsAlertNotifier;
+import com.rentkeeper.lease.application.LeaseEndNotices;
 import com.rentkeeper.notification.application.NotificationRules.Planned;
+import com.rentkeeper.notification.domain.NotificationType;
 
 /**
  * 날짜로 정해지는 세입자 알림 계획 (NOTI-2·3, M5 결정 4·5). 매일 08:00(서울)에 오늘 해당하는 것만
@@ -32,14 +35,23 @@ public class NotificationPlanner {
 
 	private final TenantNotices tenantNotices;
 
+	private final LandlordNotices landlordNotices;
+
+	private final LandlordNoticeCharges landlordCharges;
+
+	private final LeaseEndNotices leaseEnds;
+
 	private final OpsAlertNotifier opsAlerts;
 
 	private final Clock clock;
 
-	NotificationPlanner(TenantNoticeCharges charges, TenantNotices tenantNotices, OpsAlertNotifier opsAlerts,
-			Clock clock) {
+	NotificationPlanner(TenantNoticeCharges charges, TenantNotices tenantNotices, LandlordNotices landlordNotices,
+			LandlordNoticeCharges landlordCharges, LeaseEndNotices leaseEnds, OpsAlertNotifier opsAlerts, Clock clock) {
 		this.charges = charges;
 		this.tenantNotices = tenantNotices;
+		this.landlordNotices = landlordNotices;
+		this.landlordCharges = landlordCharges;
+		this.leaseEnds = leaseEnds;
 		this.opsAlerts = opsAlerts;
 		this.clock = clock;
 	}
@@ -86,6 +98,45 @@ public class NotificationPlanner {
 		log.info("notification plan done: today={}, {}", today, result);
 		if (failed > 0) {
 			opsAlerts.alert(NotificationWorker.ALERT_CODE, "job=plan failed=%d created=%d".formatted(failed, created));
+		}
+		return result;
+	}
+
+	/**
+	 * 임대인 요약 메일 계획 (NOTI-4·5): 어제가 납부일이었던 받을 월세가 납부일 지남이 된 임대인, 나가는 날이 90·60·30일 남은
+	 * 계약이 있는 임대인에게 하루 한 통씩. 건수가 300건이어도 임대인마다 한 통이다.
+	 */
+	public Result planLandlordDigests() {
+		LocalDate today = LocalDate.now(clock);
+		List<Long> overdue = landlordCharges.landlordsWithOverdueDueOn(NotificationRules.overdueDigestDueDate(today));
+		List<Long> ending = leaseEnds.landlordsEndingOn(NotificationRules.leaseEndDates(today));
+		int created = 0;
+		int failed = 0;
+		for (long landlordId : overdue) {
+			try {
+				created += landlordNotices.enqueue(NotificationType.OVERDUE_DIGEST, landlordId,
+						NotificationRules.overdueDigestKey(landlordId, today)) ? 1 : 0;
+			} catch (RuntimeException e) {
+				failed++;
+				log.error("notification digest plan failed: landlordId={}, error={}", landlordId,
+						e.getClass().getSimpleName());
+			}
+		}
+		for (long landlordId : ending) {
+			try {
+				created += landlordNotices.enqueue(NotificationType.LEASE_END_DIGEST, landlordId,
+						NotificationRules.leaseEndDigestKey(landlordId, today)) ? 1 : 0;
+			} catch (RuntimeException e) {
+				failed++;
+				log.error("notification digest plan failed: landlordId={}, error={}", landlordId,
+						e.getClass().getSimpleName());
+			}
+		}
+		Result result = new Result(overdue.size() + ending.size(), created, failed);
+		log.info("notification digest plan done: today={}, {}", today, result);
+		if (failed > 0) {
+			opsAlerts.alert(NotificationWorker.ALERT_CODE,
+					"job=digest failed=%d created=%d".formatted(failed, created));
 		}
 		return result;
 	}

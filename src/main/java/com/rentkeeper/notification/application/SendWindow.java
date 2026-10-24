@@ -47,6 +47,16 @@ public class SendWindow {
 		return now.isAfter(start) ? now : start;
 	}
 
+	/**
+	 * 지금 만든 알림이 나갈 한 시간 칸 (예: 2026-10-17T14). 발송 시간 밖이면 다음 시작 시각의 칸이다. 시간당 1통으로 묶는
+	 * dedupe_key에 쓴다: 밤사이 여러 번 생겨도 다음 날 아침 한 통이다.
+	 */
+	public String hourSlot(NotificationType type, Instant now) {
+		LocalDate day = scheduledFor(type, now);
+		ZonedDateTime first = firstAttempt(type, day, now).atZone(clock.getZone());
+		return "%sT%02d".formatted(first.toLocalDate(), first.getHour());
+	}
+
 	/** 보낼 날의 발송 시간이 끝났는지 (그 뒤로는 보내지 않고 버린다) */
 	public boolean expired(NotificationType type, LocalDate scheduledFor, Instant now) {
 		if (!type.windowed()) {

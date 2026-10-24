@@ -24,6 +24,7 @@ public class NotificationPlanJob {
 	@SchedulerLock(name = "notification-plan", lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
 	public void run() {
 		planner.planTenantNotices();
+		planner.planLandlordDigests();
 	}
 
 }
