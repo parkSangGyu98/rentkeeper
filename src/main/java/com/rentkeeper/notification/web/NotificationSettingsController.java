@@ -22,6 +22,8 @@ public class NotificationSettingsController {
 
 	static final String SAVED = "알림 설정을 저장했어요.";
 
+	static final String DEMO_NO_SMS = "알림 설정을 저장했어요. 데모 계정에서는 세입자 안내 문자를 켤 수 없어요.";
+
 	private final NotificationPreferences preferences;
 
 	private final LandlordService landlordService;
@@ -35,6 +37,7 @@ public class NotificationSettingsController {
 	public String form(@AuthenticationPrincipal LandlordPrincipal principal, Model model) {
 		long landlordId = principal.getLandlordId();
 		model.addAttribute("settings", preferences.settings(landlordId));
+		model.addAttribute("demo", isDemo(landlordId));
 		model.addAttribute("emailVerified",
 				landlordService.findAccount(landlordId).map(a -> a.emailVerified() && a.email() != null).orElse(false));
 		return "app/settings-notifications";
@@ -46,10 +49,16 @@ public class NotificationSettingsController {
 			@RequestParam(defaultValue = "false") boolean overdueDigest,
 			@RequestParam(defaultValue = "false") boolean leaseEndDigest,
 			@RequestParam(defaultValue = "false") boolean tenantSms, RedirectAttributes redirect) {
+		// 데모 계정은 세입자 안내 문자를 켤 수 없다 (M6 결정 3 보강): 보내도 꺼진 채로 저장한다
+		boolean demo = isDemo(principal.getLandlordId());
 		preferences.save(principal.getLandlordId(),
-				new Settings(tenantReport, overdueDigest, leaseEndDigest, tenantSms));
-		redirect.addFlashAttribute("notice", SAVED);
+				new Settings(tenantReport, overdueDigest, leaseEndDigest, tenantSms && !demo));
+		redirect.addFlashAttribute("notice", demo && tenantSms ? DEMO_NO_SMS : SAVED);
 		return "redirect:/app/settings/notifications";
+	}
+
+	private boolean isDemo(long landlordId) {
+		return landlordService.findAccount(landlordId).map(a -> a.demo()).orElse(false);
 	}
 
 }

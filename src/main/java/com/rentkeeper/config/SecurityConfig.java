@@ -68,6 +68,8 @@ public class SecurityConfig {
 			"/verify-email", "/password-reset", "/password-reset/confirm", "/verify-email-change",
 			// 카카오 로그인 시작과 카카오가 돌려보내는 주소 (Spring Security 필터가 처리)
 			"/oauth2/authorization/kakao", "/login/oauth2/code/kakao",
+			// 방문자용 임시 데모 시작 (M6 결정 3, 설정으로 끄면 404)
+			"/demo",
 			// 탈퇴 완료 안내 (탈퇴하면 로그아웃된 상태로 보여 준다)
 			"/withdrawn"};
 

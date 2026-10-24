@@ -1,6 +1,9 @@
 app:
   # 메일 링크의 기준 주소. 운영은 환경변수 APP_BASE_URL로 지정한다 (AppProperties)
   base-url: http://localhost:8080
+  demo:
+    # 개발 중에는 첫 화면의 [데모로 둘러보기]를 켠다 (운영은 APP_DEMO_ENABLED)
+    enabled: true
 
 spring:
   config:

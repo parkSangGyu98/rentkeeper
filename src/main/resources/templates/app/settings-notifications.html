@@ -33,9 +33,9 @@
 			<fieldset class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5">
 				<legend class="px-1 text-xl font-bold">세입자에게 가는 문자</legend>
 				<label class="flex items-start gap-3 text-lg">
-					<input type="checkbox" name="tenantSms" value="true" class="mt-1 h-6 w-6" th:checked="${settings.tenantSms()}">
+					<input type="checkbox" name="tenantSms" value="true" class="mt-1 h-6 w-6" th:checked="${settings.tenantSms()}" th:disabled="${demo}">
 					<span>세입자에게 월세 안내 문자 보내기<br><span class="text-base text-gray-700">받을 월세가 생겼을 때, 납부일 전날, 납부일이 지났을 때(다음 날·7일 뒤) 보내요.
-						세입자가 받지 않기로 하면 보내지 않아요. 안내 문자 기능은 아직 준비 중이라 지금은 실제로 보내지 않아요.</span></span>
+						세입자가 받지 않기로 하면 보내지 않아요. 안내 문자 기능은 아직 준비 중이라 지금은 실제로 보내지 않아요.<th:block th:if="${demo}"> 데모 계정에서는 켤 수 없어요.</th:block></span></span>
 				</label>
 			</fieldset>
 			<button type="submit" class="btn btn-primary w-full">저장하기</button>
