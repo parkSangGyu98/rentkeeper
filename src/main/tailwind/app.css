@@ -130,6 +130,11 @@
 		@apply border-amber-700 bg-amber-50 text-amber-900;
 	}
 
+	/* 좁은 화면의 [메뉴] (details/summary, JS 없음, 디자인 결정 4). Safari의 기본 삼각형 표시를 숨긴다 */
+	.menu-toggle::-webkit-details-marker {
+		display: none;
+	}
+
 	/* 상태 아이콘 (글자와 함께 쓰므로 aria-hidden, fragments/icons.html) */
 	.icon {
 		@apply inline-block size-5 shrink-0;

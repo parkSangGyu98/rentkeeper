@@ -4,7 +4,7 @@
 <title th:text="|건물 정보 - #{app.name}|">건물 정보</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<h1 class="mb-6 text-3xl font-bold" th:text="${editing} ? '건물 정보 바꾸기' : '건물 등록'">건물 등록</h1>
 
 		<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('${form.*}')}">입력한 내용을 확인해 주세요. 빨간 글씨로 안내한 칸을 고치면 돼요.</div>

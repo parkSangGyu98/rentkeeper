@@ -5,7 +5,7 @@
 <title th:text="|요청을 처리하지 못했어요 - #{app.name}|">요청을 처리하지 못했어요</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<h1 class="mb-4 text-3xl font-bold">요청을 처리하지 못했어요</h1>
 		<p class="mb-8 text-lg text-gray-700">
 			입력한 내용을 확인한 뒤 다시 시도해 주세요. <span class="text-gray-500" th:if="${status}" th:text="|(오류 코드 ${status})|">(오류 코드 400)</span>

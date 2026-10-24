@@ -4,7 +4,7 @@
 <title th:text="|건물 상세 - #{app.name}|">건물 상세</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page-wide">
 		<p class="mb-2 text-lg"><a th:href="@{/app/properties}" class="font-semibold text-brand-700 underline">내 건물</a></p>
 		<h1 class="mb-1 text-3xl font-bold" th:text="${property.name}">행복빌라</h1>
 		<p class="mb-2 text-lg text-gray-700" th:if="${property.address}" th:text="${property.address}">주소</p>

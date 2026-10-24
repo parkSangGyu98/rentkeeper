@@ -4,7 +4,7 @@
 <title th:text="|계약 고치기 - #{app.name}|">계약 고치기</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<p class="mb-2 text-lg"><a th:href="@{/app/leases/{id}(id=${view.leaseId()})}" class="font-semibold text-brand-700 underline">계약으로 돌아가기</a></p>
 		<h1 class="mb-1 text-3xl font-bold">계약 고치기</h1>
 		<p class="mb-6 text-lg text-gray-700">

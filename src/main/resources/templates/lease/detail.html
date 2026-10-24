@@ -4,7 +4,7 @@
 <title th:text="|계약 상세 - #{app.name}|">계약 상세</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page-wide">
 		<p class="mb-2 text-lg"><a th:href="@{/app/units/{id}(id=${lease.unit().id()})}" class="font-semibold text-brand-700 underline" th:text="${lease.unit().displayName()}">행복빌라 101호</a></p>
 		<h1 class="mb-1 text-3xl font-bold"><span th:text="${lease.tenantName()}">홍길동</span>님 계약</h1>
 		<p class="mb-4 text-lg font-semibold" th:text="${lease.active()} ? '진행 중' : '종료됨'">진행 중</p>

@@ -4,7 +4,7 @@
 <title th:text="|세입자 링크 닫기 - #{app.name}|">세입자 링크 닫기</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<h1 class="mb-4 text-3xl font-bold">세입자 링크를 닫을까요?</h1>
 		<p class="mb-2 text-xl font-semibold" th:text="${lease.unitName()} + ' · ' + ${lease.tenantName()} + '님'">행복빌라 101호 · 홍길동님</p>
 		<th:block th:if="${tenantLink.closable()}">

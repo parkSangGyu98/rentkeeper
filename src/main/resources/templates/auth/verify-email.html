@@ -4,7 +4,7 @@
 <title th:text="|이메일 인증 - #{app.name}|">이메일 인증</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<th:block th:switch="${state}">
 			<th:block th:case="'CONFIRM'">
 				<h1 class="mb-4 text-3xl font-bold">이메일 인증을 완료할까요?</h1>

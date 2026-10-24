@@ -4,7 +4,7 @@
 <title th:text="|계약 등록 - #{app.name}|">계약 등록</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<p class="mb-2 text-lg"><a th:href="@{/app/units/{id}(id=${unit.id})}" class="font-semibold text-brand-700 underline" th:text="${unit.displayName()}">행복빌라 101호</a></p>
 		<h1 class="mb-2 text-3xl font-bold">계약 등록</h1>
 		<p class="mb-6 text-lg text-gray-700">네 가지만 차례로 적어 주세요. 다음 화면에서 한 번 더 확인한 뒤 저장해요.</p>

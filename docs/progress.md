@@ -15,7 +15,7 @@
 | M4 세입자 링크·대시보드 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (main `7757eb2`, 실패 F1·F2는 수정·재확인 통과) | 아래 "M4에서 확정한 결정" |
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
 | M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
-| 디자인 교체 | 진행 중 (디자인: 커밋 3/4 완료, 4 뒤 캡처 확인) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
+| 디자인 교체 | 진행 중 (디자인: 커밋 4/4 완료, 캡처 확인 대기) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -986,6 +986,11 @@ SELECT id, notify_opt_out_at FROM tenant WHERE notify_opt_out_at IS NOT NULL;
 - **저장소 추가 용량**: 3,029,449바이트(약 2.9MB, 10MB 기준 아래). 조각 92개 합계 2,957,724바이트.
 - **라이선스(보고만, 판단은 개발자)**: SIL Open Font License 1.1, "Reserved Font Name Pretendard". 원문의 허용 범위: 사용·복사·포함(embed)·수정·재배포·판매(수정본 포함)를 허용한다. 조건 ① 글꼴만 따로 팔 수 없다 ② 재배포할 때 저작권 표시와 이 라이선스를 함께 둔다(따로 된 텍스트 파일도 됨) ③ 수정본은 예약 이름(Pretendard)을 쓸 수 없다 ④ 저작권자 이름을 수정본 홍보에 쓸 수 없다 ⑤ 글꼴은 이 라이선스로만 배포하고, 글꼴로 만든 문서에는 이 요구가 적용되지 않는다. 우리는 파일을 고치지 않고 LICENSE.txt를 옆에 두었다. 이 항목은 "실서비스 전환 시 볼 목록"에도 있다.
 - **화면별로 내려받는 조각 수와 합계**: 커밋 4 뒤 데모 데이터로 잰다(아래에 적는다).
+
+### 디자인 교체에서 바꾼 테스트
+- **커밋 4 `HeaderLayoutTest`**: 기존 검사 두 가지(머리글 링크·버튼이 모두 `whitespace-nowrap`, `<nav class="flex flex-wrap` 와 `flex-wrap items-center justify-between`)는 고치지 않고 그대로 통과한다. 검사를 **하나 더했다**(`wideAndNarrowMenusNeverShowTogetherAndHaveTheSameLinks`): 넓은 화면 메뉴는 `hidden lg:flex`, 좁은 화면 메뉴(`details`)는 `lg:hidden`이라 동시에 보이지 않고(display:none), 두 메뉴의 링크(한눈에 보기·받을 월세·내 건물·계정 설정·로그아웃)가 같다. 이유: 결정 4의 조건(보이지 않는 쪽이 읽히지 않게)을 고정하려고.
+- 커밋 1~3에서 기존 테스트는 바꾸지 않았다(새 테스트만: ServiceNameTests, AccountEmailsTextTest, FontAssetsTests, TextSizeFloorTest).
+- 머리글 메뉴 링크가 두 번 나오게 됐지만, 화면 글자를 찾는 기존 테스트(contains)는 그대로 통과했다(전체 빌드).
 
 ### 디자인 교체 커밋 계획
 0. `docs: 디자인 교체 결정 기록` (이 커밋)

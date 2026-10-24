@@ -4,7 +4,7 @@
 <title th:text="|호실 - #{app.name}|">호실</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page-wide">
 		<p class="mb-2 text-lg"><a th:href="@{/app/properties/{id}(id=${page.unit().propertyId()})}" class="font-semibold text-brand-700 underline" th:text="${page.unit().propertyName()}">행복빌라</a></p>
 		<div class="mb-2 flex flex-wrap items-center gap-3">
 			<h1 class="text-3xl font-bold" th:text="${page.unit().name()}">101호</h1>

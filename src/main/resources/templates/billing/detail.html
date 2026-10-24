@@ -4,7 +4,7 @@
 <title th:text="|받을 월세 - #{app.name}|">받을 월세</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page-wide">
 		<p class="mb-2 text-lg"><a th:href="@{/app/charges(month=${charge.month()})}" class="font-semibold text-brand-700 underline"
 			th:text="${charge.monthText()} + ' 받을 월세 목록'">2026년 10월 받을 월세 목록</a></p>
 		<h1 class="mb-1 text-3xl font-bold"><span th:text="${charge.monthText()}">2026년 10월</span> 받을 월세</h1>

@@ -5,7 +5,7 @@
 </head>
 <body>
 	<!-- 데모 시작 (M6 결정 3). 세입자 링크 원문은 이 화면에만 보인다(저장하지 않음, no-store) -->
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<h1 class="mb-4 text-3xl font-bold">데모 계정을 만들었어요</h1>
 		<p class="mb-3 text-lg">가짜 건물·호실·계약과 받을 월세가 들어 있어요. 입금 기록, 세입자 입금 신고 확인, 납부일 지남 같은 화면을 마음껏 눌러 보세요.</p>
 		<p class="mb-6 text-lg font-semibold">실제 이름·연락처·계좌는 넣지 마세요. <span th:text="${#temporals.format(demoExpiresAt, 'M월 d일 HH:mm')}">10월 25일 14:00</span>에 모두 지워져요.</p>

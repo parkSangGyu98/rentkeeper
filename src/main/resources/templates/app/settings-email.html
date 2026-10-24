@@ -4,7 +4,7 @@
 <title th:text="|이메일 바꾸기 - #{app.name}|">이메일 바꾸기</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<th:block th:if="${state == 'SENT'}">
 			<h1 class="mb-4 text-3xl font-bold">새 주소로 확인 메일을 보냈어요</h1>
 			<p class="mb-4 text-lg text-gray-700">메일의 링크를 열고 [이메일 바꾸기 완료] 버튼을 누르면 변경이 끝나요.</p>

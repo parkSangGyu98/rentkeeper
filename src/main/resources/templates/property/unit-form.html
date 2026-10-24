@@ -4,7 +4,7 @@
 <title th:text="|호실 정보 바꾸기 - #{app.name}|">호실 정보 바꾸기</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<p class="mb-2 text-lg"><a th:href="@{/app/properties/{id}(id=${unit.propertyId})}" class="font-semibold text-brand-700 underline" th:text="${unit.propertyName}">행복빌라</a></p>
 		<h1 class="mb-6 text-3xl font-bold">호실 정보 바꾸기</h1>
 

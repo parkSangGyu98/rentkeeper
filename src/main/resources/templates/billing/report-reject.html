@@ -5,7 +5,7 @@
 </head>
 <body>
 	<!-- 세입자 "입금했어요" 신고 반려 (M4 결정 10). 사유는 상태 이력에만 남고 세입자에게는 보이지 않는다 -->
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<h1 class="mb-2 text-3xl font-bold">세입자 신고를 반려할까요?</h1>
 		<p class="mb-6 text-xl"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
 			· <span th:text="${charge.monthText()}">2026년 10월</span> 받을 월세</p>
