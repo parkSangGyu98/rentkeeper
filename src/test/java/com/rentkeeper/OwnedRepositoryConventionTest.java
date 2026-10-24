@@ -27,16 +27,18 @@ import org.springframework.data.repository.query.QueryByExampleExecutor;
 class OwnedRepositoryConventionTest {
 
 	private static final String[] OWNED_MODULES = {"com.rentkeeper.property", "com.rentkeeper.lease",
-			"com.rentkeeper.billing"};
+			"com.rentkeeper.billing", "com.rentkeeper.notification"};
 
 	private static final Set<String> ENTITY_METHODS = Set.of("save", "saveAndFlush", "delete", "flush");
 
 	/**
 	 * landlordId 없이 찾아도 되는 메서드. 세입자 링크의 입구 하나뿐이다: 세입자는 로그인하지 않아 landlordId가 없고,
-	 * 256비트 토큰의 해시로만 찾는다. 찾은 행의 landlordId·leaseId로 이후 조회를 한정한다(ADR-026). 여기에 더할 때는
-	 * 이유가 분명해야 한다.
+	 * 256비트 토큰의 해시로만 찾는다. 찾은 행의 landlordId·leaseId로 이후 조회를 한정한다(ADR-026). 그리고 알림 발송
+	 * 워커(M5): 모든 임대인의 알림을 ID로 차례로 보내고 운영 알림에는 임대인이 없다. 화면에서는 쓰지 않는다. 여기에 더할 때는 이유가
+	 * 분명해야 한다.
 	 */
-	private static final Set<String> TOKEN_ENTRY_METHODS = Set.of("TenantAccessTokenRepository.findByTokenHash");
+	private static final Set<String> TOKEN_ENTRY_METHODS = Set.of("TenantAccessTokenRepository.findByTokenHash",
+			"NotificationRepository.findForWorkerById", "NotificationRepository.findForWorkerByIdIn");
 
 	@Test
 	void ownedRepositoriesCannotLoadWithoutLandlordId() throws Exception {

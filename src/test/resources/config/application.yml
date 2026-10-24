@@ -7,3 +7,6 @@ app:
     key-version: 1
     previous-keys: ""
     hmac-key: cmVudGtlZXBlci10ZXN0LW9ubHktaG1hYy1rZXktMDE=
+  notification:
+    # 테스트에서는 발송 워커를 스케줄로 돌리지 않는다. 테스트가 NotificationWorker.runOnce()를 직접 부른다
+    worker-cron: "-"
