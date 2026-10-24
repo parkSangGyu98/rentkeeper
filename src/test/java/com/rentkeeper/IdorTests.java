@@ -66,14 +66,15 @@ class IdorTests {
 
 	/** 소유 데이터 엔드포인트의 경로 앞부분 */
 	private static final List<String> OWNED_PREFIXES = List.of("/app/properties", "/app/units", "/app/leases",
-			"/app/charges", "/app/dashboard");
+			"/app/charges", "/app/dashboard", "/app/notifications");
 
 	/**
 	 * 남의 ID를 받지 않는 엔드포인트 (목록·새 화면·자기 건물 만들기). 여기에 넣을 때는 이유가 분명해야 한다. 받을 월세 목록은 달만
-	 * 받고 로그인한 임대인 것만 보인다(chargeListShowsOnlyOwnCharges).
+	 * 받고 로그인한 임대인 것만 보인다(chargeListShowsOnlyOwnCharges). 알림 이력도 로그인한 임대인 것만
+	 * 보인다(notificationHistoryShowsOnlyOwnRows).
 	 */
 	private static final Set<String> NO_FOREIGN_ID = Set.of("GET /app/properties", "GET /app/properties/new",
-			"POST /app/properties", "GET /app/charges");
+			"POST /app/properties", "GET /app/charges", "GET /app/notifications");
 
 	@Autowired
 	MockMvc mockMvc;
@@ -136,6 +137,7 @@ class IdorTests {
 		long firstLink = jdbc.queryForObject("select id from tenant_access_token where lease_id = ?", Long.class,
 				lease);
 		victimToken = tenantLinkService.issue(victim.landlordId(), lease, firstLink).rawToken();
+		jdbc.update("update lease set tenant_notify_paused_at = now() where id = ?", lease);
 		long history = jdbc.queryForObject(
 				"select id from lease_rent_history where lease_id = ? and effective_from = '2027-01-01'", Long.class,
 				lease);
@@ -199,6 +201,9 @@ class IdorTests {
 		attacks.put("GET /app/leases/{id}/tenant-link/close", Attack.get("/app/leases/{lease}/tenant-link/close"));
 		attacks.put("POST /app/leases/{id}/tenant-link/close",
 				Attack.post("/app/leases/{lease}/tenant-link/close", "openLinkId", ""));
+		// 세입자 알림 다시 켜기 (M5). 피해자 계약은 알림을 멈춘 상태라, 풀리면 snapshot이 달라진다
+		attacks.put("POST /app/leases/{id}/tenant-notifications/resume",
+				Attack.post("/app/leases/{lease}/tenant-notifications/resume"));
 		// 받을 월세 (billing 모듈)
 		attacks.put("GET /app/charges/{id}", Attack.get("/app/charges/{charge}"));
 		attacks.put("GET /app/charges/{id}/payments/new",
@@ -313,6 +318,23 @@ class IdorTests {
 	}
 
 	@Test
+	void notificationHistoryShowsOnlyOwnRows() throws Exception {
+		long victimId = jdbc.queryForObject("select landlord_id from lease where id = ?", Long.class,
+				Long.valueOf(victimIds.get("lease")));
+		jdbc.update("insert into notification (landlord_id, type, channel, recipient_type, tenant_id, lease_id, "
+				+ "charge_id, scheduled_for, dedupe_key, status, skip_reason, next_attempt_at, created_at, updated_at) "
+				+ "select l.landlord_id, 'CHARGE_ISSUED', 'TENANT_PHONE', 'TENANT', l.tenant_id, l.id, ?, current_date, "
+				+ "'CHARGE_ISSUED:victim', 'SKIPPED', 'CHANNEL_OFF', now(), now(), now() from lease l where l.id = ?",
+				Long.valueOf(victimIds.get("charge")), Long.valueOf(victimIds.get("lease")));
+		assertThat(victimId).isNotEqualTo(attacker.landlordId());
+
+		String body = mockMvc.perform(Attack.get("/app/notifications").build(victimIds, attacker)).andReturn()
+				.getResponse().getContentAsString();
+
+		assertThat(body).contains("아직 알림이 없어요").doesNotContain("101호").doesNotContain("받을 월세 안내");
+	}
+
+	@Test
 	void everyOwnedEndpointIsInTheIdorTable() {
 		Set<String> mapped = new TreeSet<>();
 		handlerMapping.getHandlerMethods().keySet().forEach(info -> info.getPatternValues().forEach(pattern -> {
@@ -344,6 +366,10 @@ class IdorTests {
 		attacks.put("GET /t/{token}/history", "/t/{token}/history");
 		attacks.put("GET /t/{token}/charges/{chargeId}/report-paid", "/t/{token}/charges/{charge}/report-paid");
 		attacks.put("POST /t/{token}/charges/{chargeId}/report-paid", "/t/{token}/charges/{charge}/report-paid");
+		// 안내 문자 그만 받기·다시 받기 (M5). 쓸 수 없는 링크로는 세입자의 선택이 바뀌지 않는다(snapshot에 tenant 포함)
+		attacks.put("GET /t/{token}/optout", "/t/{token}/optout");
+		attacks.put("POST /t/{token}/optout", "/t/{token}/optout");
+		attacks.put("POST /t/{token}/optin", "/t/{token}/optin");
 		attacks.put("ANY /t/**", "/t/{token}/unknown");
 		return attacks;
 	}

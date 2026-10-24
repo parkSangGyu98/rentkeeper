@@ -186,10 +186,11 @@ public class LeaseService {
 		List<RentRow> upcoming = rows.stream().filter(r -> r.effectiveMonth().isAfter(thisMonth))
 				.filter(r -> r != current).toList();
 		return new LeaseDetail(lease.getId(), unit, tenant.getName().value(), tenant.getPhone().formatted(),
-				tenant.getMemo() == null ? null : tenant.getMemo().value(), lease.getDeposit(), lease.getDueDay(),
-				lease.getStartDate(), lease.getEndDate(), lease.getStatus(), lease.getEndedOn(), lease.getBankName(),
-				lease.getAccountNumber().digits(), lease.getAccountHolder().value(), lease.getMemo(), current, rows,
-				upcoming, lease.getIssueDaysBefore(), missingCharges(landlordId, lease, thisMonth));
+				tenant.getMemo() == null ? null : tenant.getMemo().value(), tenant.notificationsOptedOut(),
+				lease.getDeposit(), lease.getDueDay(), lease.getStartDate(), lease.getEndDate(), lease.getStatus(),
+				lease.getEndedOn(), lease.getBankName(), lease.getAccountNumber().digits(),
+				lease.getAccountHolder().value(), lease.getMemo(), current, rows, upcoming, lease.getIssueDaysBefore(),
+				missingCharges(landlordId, lease, thisMonth));
 	}
 
 	/** 계약 상세 배너에서 지난 달을 몇 달까지 보는지 (M3-b 결정 11). 그보다 오래된 달은 수동 생성 화면에서 고른다 */

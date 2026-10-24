@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,8 +62,11 @@ public class TenantReportService {
 
 	private final Clock clock;
 
+	private final ApplicationEventPublisher events;
+
 	TenantReportService(ChargeRepository charges, ChargeStatusHistoryRepository statusHistories, ChargeChanges changes,
-			Clock clock) {
+			Clock clock, ApplicationEventPublisher events) {
+		this.events = events;
 		this.charges = charges;
 		this.statusHistories = statusHistories;
 		this.changes = changes;
@@ -94,6 +98,7 @@ public class TenantReportService {
 						.ifPresent(change -> statusHistories.save(ChargeStatusHistory.of(charge, change,
 								ChangeActor.tenant(tenantLinkId), REASON_REPORTED, now)));
 				charges.flush();
+				events.publishEvent(new TenantReportedEvent(landlordId, leaseId, chargeId));
 				return ReportOutcome.REPORTED;
 			}
 		}

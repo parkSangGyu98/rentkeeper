@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+<title>알림 설정 - RentKeeper</title>
+</head>
+<body>
+	<!-- 알림 설정 (M5 결정 13). 체크하지 않은 칸은 꺼짐. 계약별 설정은 없다(NOTI-6, P1) -->
+	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+		<h1 class="mb-2 text-3xl font-bold">알림 설정</h1>
+		<p class="mb-6 text-lg text-gray-700">어떤 알림을 받을지 고를 수 있어요. 메일은 아침 9시부터 저녁 8시 사이에만 보내요.</p>
+
+		<div id="email-unverified" class="alert alert-error mb-6 text-lg" role="alert" th:unless="${emailVerified}">
+			이메일을 인증해야 알림을 보내요. <a th:href="@{/app/settings}" class="underline">설정</a>에서 이메일을 확인해 주세요.
+			인증하기 전에 생긴 알림은 나중에 보내지 않아요.
+		</div>
+
+		<form th:action="@{/app/settings/notifications}" method="post">
+			<fieldset class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5">
+				<legend class="px-1 text-xl font-bold">나에게 오는 메일</legend>
+				<label class="mb-4 flex items-start gap-3 text-lg">
+					<input type="checkbox" name="tenantReport" value="true" class="mt-1 h-6 w-6" th:checked="${settings.tenantReport()}">
+					<span>세입자가 "입금했어요"를 누르면 알려 주기<br><span class="text-base text-gray-700">한 시간에 한 통으로 모아서 보내요.</span></span>
+				</label>
+				<label class="mb-4 flex items-start gap-3 text-lg">
+					<input type="checkbox" name="overdueDigest" value="true" class="mt-1 h-6 w-6" th:checked="${settings.overdueDigest()}">
+					<span>납부일이 지난 받을 월세 알려 주기<br><span class="text-base text-gray-700">납부일 다음 날 아침에 하루 한 통으로 모아서 보내요.</span></span>
+				</label>
+				<label class="flex items-start gap-3 text-lg">
+					<input type="checkbox" name="leaseEndDigest" value="true" class="mt-1 h-6 w-6" th:checked="${settings.leaseEndDigest()}">
+					<span>곧 끝나는 계약 알려 주기<br><span class="text-base text-gray-700">나가는 날 90일·60일·30일 전에 보내요.</span></span>
+				</label>
+			</fieldset>
+			<fieldset class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5">
+				<legend class="px-1 text-xl font-bold">세입자에게 가는 문자</legend>
+				<label class="flex items-start gap-3 text-lg">
+					<input type="checkbox" name="tenantSms" value="true" class="mt-1 h-6 w-6" th:checked="${settings.tenantSms()}">
+					<span>세입자에게 월세 안내 문자 보내기<br><span class="text-base text-gray-700">받을 월세가 생겼을 때, 납부일 전날, 납부일이 지났을 때(다음 날·7일 뒤) 보내요.
+						세입자가 받지 않기로 하면 보내지 않아요. 안내 문자 기능은 아직 준비 중이라 지금은 실제로 보내지 않아요.</span></span>
+				</label>
+			</fieldset>
+			<button type="submit" class="btn btn-primary w-full">저장하기</button>
+		</form>
+		<p class="mt-4"><a th:href="@{/app/notifications}" class="btn btn-secondary w-full">보낸 알림 보기</a></p>
+		<p class="mt-4"><a th:href="@{/app/settings}" class="btn btn-secondary w-full">설정으로 돌아가기</a></p>
+	</main>
+</body>
+</html>

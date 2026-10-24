@@ -17,6 +17,17 @@ app:
     # 요청할 동의항목. 이메일(account_email)은 카카오 콘솔에서 "권한 없음"(개인 개발자 앱, 비즈 앱 전환 필요)이라 빼고
     # 닉네임만 요청한다. 알림 이메일은 가입 단계에서 직접 입력받아 우리 인증 메일로 확인한다 (ADR-014)
     scopes: profile_nickname
+  notification:
+    # 알림 (M5, ADR-028). 발송 시간은 서울 9시~20시. 20시 뒤에 만든 알림은 다음 날 9시에 보내고, 그날 못 보내면 버린다
+    send-window-start-hour: 9
+    send-window-end-hour: 20
+    tenant-phone:
+      # 세입자 안내 문자. 실제 문자 발송기를 연결하기 전에는 켜지 않는다 (기본 false, M5 결정 6)
+      enabled: ${APP_NOTIFICATION_TENANT_PHONE_ENABLED:false}
+    # 운영 알림 메일 주소. 비면 운영 알림은 로그(rentkeeper.ops-alert)로만 남는다
+    ops-alert-email: ${OPS_ALERT_EMAIL:}
+    # 발송 워커 주기 (30초)
+    worker-cron: "*/30 * * * * *"
 
 spring:
   application:

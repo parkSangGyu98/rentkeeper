@@ -24,7 +24,8 @@ import com.rentkeeper.lease.application.TenantLinkService.IssuedLink;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * 세입자 링크 만들기·새로 만들기·닫기 (계약 상세의 "세입자 링크", M4 결정 1~3). 남의 계약이면 404.
+ * 세입자 링크 만들기·새로 만들기·닫기 (계약 상세의 "세입자 링크", M4 결정 1~3)와 세입자 알림 다시 켜기 (M5 결정 8). 남의
+ * 계약이면 404.
  * <p>
  * 새로 만든 링크는 리다이렉트하지 않고 POST 응답 화면에 바로 그린다. flash에 넣으면 원문이 세션(DB)에 잠깐이라도 남는다.
  */
@@ -40,7 +41,9 @@ public class TenantLinkController {
 
 	static final String EXPIRED = "계약이 끝나고 90일이 지나 세입자 링크를 만들 수 없어요.";
 
-	static final String CLOSED = "세입자 링크를 닫았어요. 세입자는 예전 링크로 더 이상 들어올 수 없어요.";
+	static final String CLOSED = "세입자 링크를 닫았어요. 세입자는 예전 링크로 더 이상 들어올 수 없어요. 세입자 안내 문자도 멈췄어요.";
+
+	static final String RESUMED = "세입자 안내 문자를 다시 켰어요. 다음 안내 문자부터 새 링크가 들어가요.";
 
 	private final TenantLinkService tenantLinkService;
 
@@ -106,6 +109,15 @@ public class TenantLinkController {
 		}
 		redirect.addFlashAttribute("notice", CLOSED);
 		return "redirect:/app/leases/" + id;
+	}
+
+	/** [알림 다시 켜기] (M5 결정 8). [링크 닫기]로 멈춘 세입자 알림을 다시 보낸다 */
+	@PostMapping("/app/leases/{id}/tenant-notifications/resume")
+	public String resumeNotifications(@AuthenticationPrincipal LandlordPrincipal principal, @PathVariable long id,
+			RedirectAttributes redirect) {
+		tenantLinkService.resumeNotifications(principal.getLandlordId(), id);
+		redirect.addFlashAttribute("notice", RESUMED);
+		return "redirect:/app/leases/" + id + "#tenant-link";
 	}
 
 	private String confirmPage(long landlordId, long leaseId, Model model, String view) {

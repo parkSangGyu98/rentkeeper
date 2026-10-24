@@ -18,6 +18,8 @@ public final class TestData {
 		jdbcTemplate.update("delete from landlord");
 		// landlord에 FK가 없는 대기 테이블 (V11)
 		jdbcTemplate.update("delete from kakao_unlink_pending");
+		// 운영 알림 행은 임대인이 없어 CASCADE로 지워지지 않는다 (V19)
+		jdbcTemplate.update("delete from notification");
 		unlockScheduledJobs(jdbcTemplate);
 	}
 

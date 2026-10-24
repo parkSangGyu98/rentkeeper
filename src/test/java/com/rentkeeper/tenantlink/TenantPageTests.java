@@ -188,7 +188,7 @@ class TenantPageTests {
 		MvcResult reference = mockMvc.perform(get("/t/" + SecureTokens.newToken())).andReturn();
 		assertThat(reference.getResponse().getStatus()).isEqualTo(404);
 		String notFound = reference.getResponse().getContentAsString();
-		assertThat(notFound).contains("링크가 맞지 않거나 기간이 지났어요").contains("집주인에게 새 링크를 요청해 주세요");
+		assertThat(notFound).contains("링크가 맞지 않거나 기간이 지났어요").contains("가장 최근에 받은 안내 문자의 링크를 열거나, 집주인에게 새 링크를 요청해 주세요");
 
 		String revoked = token;
 		long open = jdbc.queryForObject("select id from tenant_access_token where revoked_at is null", Long.class);

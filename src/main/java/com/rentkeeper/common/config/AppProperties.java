@@ -31,6 +31,11 @@ public record AppProperties(URI baseUrl, String rememberMeKey) {
 		return base() + path + "?token=" + token;
 	}
 
+	/** 기준 주소 + 경로 (알림 메일의 "바로 가기", 예: /app/dashboard) */
+	public String link(String path) {
+		return base() + path;
+	}
+
 	/** 세입자 링크: 기준 주소 + /t/{토큰} (M4, ADR-026). 토큰이 경로에 있으므로 이 주소는 로그에 남기지 않는다 */
 	public String tenantLink(String token) {
 		return base() + "/t/" + token;

@@ -225,9 +225,10 @@ public final class LeaseViews {
 	}
 
 	public record LeaseDetail(long id, UnitView unit, String tenantName, String tenantPhone, String tenantMemo,
-			long deposit, int dueDay, LocalDate startDate, LocalDate endDate, LeaseStatus status, LocalDate endedOn,
-			String bankName, String accountNumber, String accountHolder, String memo, RentRow currentRent,
-			List<RentRow> rentHistory, List<RentRow> upcomingRent, int issueDaysBefore, MissingCharges missing) {
+			boolean tenantNotifyOptedOut, long deposit, int dueDay, LocalDate startDate, LocalDate endDate,
+			LeaseStatus status, LocalDate endedOn, String bankName, String accountNumber, String accountHolder,
+			String memo, RentRow currentRent, List<RentRow> rentHistory, List<RentRow> upcomingRent,
+			int issueDaysBefore, MissingCharges missing) {
 
 		public String depositText() {
 			return Won.format(deposit);

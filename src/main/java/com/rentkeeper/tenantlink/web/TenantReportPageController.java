@@ -75,8 +75,7 @@ public class TenantReportPageController {
 	public String report(@PathVariable String token, @PathVariable String chargeId, Model model,
 			HttpServletRequest request, HttpServletResponse response) {
 		// 다른 사이트의 폼이 세입자 브라우저로 대신 보내는 것을 막는다 (M4 결정 8)
-		String origin = request.getHeader("Origin");
-		if (origin != null && !origin.equalsIgnoreCase(appProperties.origin())) {
+		if (!TenantOrigin.allowed(request, appProperties)) {
 			response.setStatus(HttpStatus.FORBIDDEN.value());
 			return "tenant/forbidden";
 		}

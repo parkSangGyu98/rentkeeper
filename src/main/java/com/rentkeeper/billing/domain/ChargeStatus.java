@@ -68,6 +68,19 @@ public enum ChargeStatus {
 	}
 
 	/** 더 받을 돈이 남아 납부일 지남 배치가 볼 상태. TENANT_REPORTED는 빠진다(M3 결정 7) */
+	/** 납부일 전날 안내 대상 (M5 결정 5): 아직 다 받지 않았고 세입자 신고도 없는 것 */
+	public static Set<ChargeStatus> dueReminderTargets() {
+		return EnumSet.of(ISSUED, PARTIALLY_PAID);
+	}
+
+	/**
+	 * 납부일 지남 안내 대상 (M5 결정 5): 납부일 지남만. 세입자가 입금했다고 알린 것(TENANT_REPORTED)은 빠진다(M3 결정
+	 * 7과 같은 기준)
+	 */
+	public static Set<ChargeStatus> overdueNoticeTargets() {
+		return EnumSet.of(OVERDUE);
+	}
+
 	public static Set<ChargeStatus> overdueCandidates() {
 		return EnumSet.of(ISSUED, PARTIALLY_PAID);
 	}

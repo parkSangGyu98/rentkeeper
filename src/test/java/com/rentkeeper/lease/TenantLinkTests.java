@@ -175,7 +175,8 @@ class TenantLinkTests {
 				.contains("닫은 링크는 다시 열 수 없어요");
 
 		MvcResult closed = close(String.valueOf(open));
-		assertThat(closed.getFlashMap().get("notice")).isEqualTo("세입자 링크를 닫았어요. 세입자는 예전 링크로 더 이상 들어올 수 없어요.");
+		assertThat(closed.getFlashMap().get("notice"))
+				.isEqualTo("세입자 링크를 닫았어요. 세입자는 예전 링크로 더 이상 들어올 수 없어요. 세입자 안내 문자도 멈췄어요.");
 		assertThat(
 				jdbc.queryForObject("select count(*) from tenant_access_token where revoked_at is null", Integer.class))
 				.isZero();

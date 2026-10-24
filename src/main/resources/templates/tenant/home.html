@@ -56,6 +56,16 @@
 		</section>
 
 		<p class="mb-4"><a th:href="@{/t/{token}/history(token=${token})}" class="btn btn-secondary w-full">지난 기록 보기 (최근 12개월)</a></p>
+		<!-- 안내 문자 그만 받기·다시 받기 (TEN-6, M5 결정 9). 링크가 아니라 세입자에 저장한다 -->
+		<section class="mb-4 border-t-2 border-gray-200 pt-4" aria-label="안내 문자">
+			<a th:unless="${optedOut}" th:href="@{/t/{token}/optout(token=${token})}" class="btn btn-secondary w-full">안내 문자 그만 받기</a>
+			<th:block th:if="${optedOut}">
+				<p class="mb-3 text-lg">안내 문자를 받지 않기로 하셨어요.</p>
+				<form th:action="@{/t/{token}/optin(token=${token})}" method="post">
+					<button type="submit" class="btn btn-secondary w-full">안내 문자 다시 받기</button>
+				</form>
+			</th:block>
+		</section>
 		<script th:src="@{/js/copy.js}" src="/js/copy.js" defer></script>
 	</main>
 </body>
