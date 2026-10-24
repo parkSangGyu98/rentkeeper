@@ -20,7 +20,7 @@
 - [x] 시각은 timestamptz(UTC), `scheduled_for`는 서울 날짜라고 COMMENT에 적었다
 - [x] 임대인 파기·계약 삭제·청구 삭제 때 함께 지워진다 (CASCADE). 운영 알림 행(임대인 없음)은 CASCADE 대상이 아니다 → 보관 정리 배치는 M6
 - [x] 기존 테이블·기존 마이그레이션을 고치지 않는다 (새 테이블만)
-- 검토:
+- 검토: 개발자(채팅) 검토 이상 없음, V22 불필요 (2026-10-24)
 
 ```sql
 -- 알림 Outbox (M5 결정 2·3·6, PRD 4.5 NOTI-1~5·7, ADR-028).
@@ -136,8 +136,8 @@ COMMENT ON INDEX ix_notification_tenant IS '세입자 삭제(CASCADE) 때 알림
 - [x] 부분 UNIQUE `ux_tenant_access_token_open`은 V17을 고치지 않고 여기서 `DROP INDEX` 뒤 `(lease_id, purpose) WHERE revoked_at IS NULL`로 다시 만든다 (개발자 변경 3)
 - [x] 계약의 알림 멈춤 플래그 `lease.tenant_notify_paused_at`을 이 파일에 넣었다 (개발자 변경 1, NULL=보냄)
 - [x] 새 컬럼·제약·다시 만든 인덱스에 한글 COMMENT, `revoked_at` 설명은 닫은 이유 컬럼을 가리키게 갱신
-- [ ] V20 적용 전 닫힌 행이 `UNKNOWN`이 되는지는 실제 기존 DB(로컬 DB, v19 → v20)에서 다음 bootRun 때 확인한다: `SELECT revoke_reason, count(*) FROM tenant_access_token WHERE revoked_at IS NOT NULL GROUP BY 1;` (자동 테스트는 빈 DB에서 시작해 기존 행이 없다)
-- 검토:
+- [x] V20 적용 전 닫힌 행이 `UNKNOWN`이 되는지 확인 완료 (2026-10-24, 개발자가 14:30쯤 bootRun으로 적용): 로컬 DB(v17 → v21), 닫힌 링크 6개 전부 UNKNOWN, 열린 링크 NULL(열린 링크 0개), 실패 마이그레이션 없음. 확인 쿼리(건수만): `SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 5;`, `SELECT purpose, revoke_reason, count(*) FROM tenant_access_token GROUP BY 1,2 ORDER BY 1,2;` → `LANDLORD | UNKNOWN | 6`
+- 검토: 개발자(채팅) 검토 이상 없음, V22 불필요 (2026-10-24)
 
 ```sql
 -- 알림용 세입자 링크 유형, 링크를 닫은 이유, 계약의 세입자 알림 멈춤 (M5 결정 7·8, ADR-029).
@@ -180,7 +180,7 @@ COMMENT ON INDEX ux_tenant_access_token_open IS '계약·유형마다 열린 링
 - [x] 세입자 문자 설정(`tenant_sms`)은 서비스 전체 설정(기본 꺼짐)과 함께 켜져야 실제로 나간다고 COMMENT에 적었다
 - [x] 모든 컬럼·테이블·PK·FK에 한글 COMMENT (`SchemaCommentsTests` 통과)
 - [x] 기존 테이블·기존 마이그레이션을 고치지 않는다 (새 테이블만)
-- 검토:
+- 검토: 개발자(채팅) 검토 이상 없음, V22 불필요 (2026-10-24)
 
 ```sql
 -- 임대인 알림 설정 (M5 결정 13, PRD 4.5). 임대인 한 명에 한 행. 행이 없으면 모두 켬(기본값)으로 본다.

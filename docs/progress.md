@@ -13,7 +13,7 @@
 | M2 건물·호실·계약 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (병합 커밋 `8acdcac`, 아래 "배포 직전 사람 확인 목록") | 아래 "M2에서 확정한 결정" |
 | M3 청구·입금 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (병합 커밋 `4b1fb30`) | 아래 "M3-b 구현 결과 메모" |
 | M4 세입자 링크·대시보드 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (main `7757eb2`, 실패 F1·F2는 수정·재확인 통과) | 아래 "M4에서 확정한 결정" |
-| M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 전 (`docs/m5-migration-review.md`) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
+| M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -824,7 +824,7 @@ SELECT id, lease_id, billing_month, status FROM charge ORDER BY lease_id, billin
 
 ### M5 구현 결과 메모 (2026-10-24)
 - **커밋**: 0 `6c1fe25`, 1 `8a87789`, 2 `7a3a387`, 3 `558efda`, 4 `993a9c6`, 5 `5943cb4`, 6 `970abf7`, 7 `1c99641`, 8(이 문서). 테스트 584개(처리량 측정 제외), `gradlew build` 통과. M5 커밋 중 빌드가 두 번 실패한 일은 없다(커밋 5에서 문구 파일 줄바꿈 오타 한 번, 고친 뒤 통과).
-- **마이그레이션**: V18 `tenant.notify_opt_out_at`(개발자가 커밋 전에 확인), V19 `notification`, V20 링크 유형·닫은 이유·`lease.tenant_notify_paused_at`, V21 `notification_preference`. V19~V21은 개발자 지시대로 확인을 기다리지 않고 커밋했고, SQL 전문과 조건 체크리스트를 `docs/m5-migration-review.md`에 모았다(검토 전). 로컬 DB에는 다음 bootRun 때 v17 → v21로 적용된다.
+- **마이그레이션**: V18 `tenant.notify_opt_out_at`(개발자가 커밋 전에 확인), V19 `notification`, V20 링크 유형·닫은 이유·`lease.tenant_notify_paused_at`, V21 `notification_preference`. V19~V21은 개발자 지시대로 확인을 기다리지 않고 커밋했고, SQL 전문과 조건 체크리스트를 `docs/m5-migration-review.md`에 모았다. 개발자 검토 이상 없음(V22 불필요). 로컬 DB는 개발자가 bootRun으로 v17 → v21 적용(2026-10-24, 실패 없음).
 - **ADR**: 028 알림 Outbox·발송 시간·안내 횟수(PRD와 다른 이유)·폭주 방지·측정값, 029 알림용 세입자 링크(ADR-026 보완). ADR-012 표에 수신 거부 한도 한 줄.
 - **계획 대비 달라진 점·정한 세부 사항**
   - 발송 시간 설정은 `app.notification.send-window-start-hour`·`-end-hour`(시 단위, 기본 9·20)로 두었다(계획의 `app.notification.send-window` 한 값 대신). 워커 주기는 `app.notification.worker-cron`(기본 30초, 테스트는 "-"로 끄고 직접 부른다).
@@ -839,7 +839,7 @@ SELECT id, lease_id, billing_month, status FROM charge ORDER BY lease_id, billin
 - **위험·남은 일**
   - 최소 1회 발송: 보낸 직후 SENT 기록 전에 죽으면 다시 보낸다(대행사 멱등 키, M6).
   - 실제 메일 발송기가 없어 prod는 여전히 기동하지 않는다(의도, ADR-010). 세입자 안내 문자는 기본 꺼짐이라 지금은 모두 "보내지 않음(CHANNEL_OFF)"으로만 쌓인다.
-  - V20의 UNKNOWN 채우기는 빈 DB 테스트로는 확인되지 않는다. 로컬 DB에서 아래 63번으로 확인한다.
+  - V20의 UNKNOWN 채우기는 로컬 DB에서 확인했다: 닫힌 링크 6개 전부 UNKNOWN, 열린 링크 0개(2026-10-24).
 
 ### M5 브라우저 확인 (개발자, 또는 다음 세션의 브라우저 자동 확인)
 준비: `.\gradlew.bat bootRun`(첫 실행에서 V18~V21 적용, 로그 `Successfully applied 4 migrations`, v17 → v21). 계정 A로 로그인. 세입자 화면은 시크릿 창. 실제 세입자 링크에는 브라우저 자동화를 쓰지 않는다(테스트 링크만).
@@ -872,6 +872,7 @@ SELECT id, notify_opt_out_at FROM tenant WHERE notify_opt_out_at IS NOT NULL;
 - **M5에서 넘김 (알림)**
   - 실제 메일 발송기(SMTP/SES 등)와 임대인·운영 메일 채널 연결, 도메인 SPF·DKIM·DMARC. 연결 전에는 prod가 기동하지 않는다(ADR-010, M5 결정 11).
   - 문자·알림톡 대행사 구현체와 세입자 안내 문자 켜기(`APP_NOTIFICATION_TENANT_PHONE_ENABLED`, 사업자등록·심사 뒤). 알림 ID를 대행사 멱등 키로 넘기기(최소 1회 발송 대비), 처리 위탁 고지. 켜기 전에 "출시 전 전문가 검토"의 `[M5 · 배포 전]` 항목을 끝낸다.
+  - `notification_preference.tenant_sms` 기본값 true(행이 없으면 켬)는 문자 채널을 켤 때 false(임대인이 직접 켜기)로 바꾸는 것을 검토한다. 바꾸려면 새 마이그레이션과 `NotificationPreference.defaults`를 함께 고친다.
   - 워커 처리량: 30초에 50건(시간당 6,000건) 상한을 대행사 처리량에 맞춰 다시 정한다(ADR-028 측정).
   - 알림 행 보관 정리 배치(1년 안, 보관 기간은 전문가 검토). 운영 알림 행(임대인 없음)은 임대인 파기로 지워지지 않으므로 이 배치가 지운다.
   - `OPS_ALERT_EMAIL`을 운영 필수로 할지, 알림 FAILED·`NOTIFICATION_ALERT` 로그 감시 연결.
