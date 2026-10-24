@@ -5,9 +5,9 @@
 </head>
 <body>
 	<main id="main" class="page">
-		<h1 class="mb-4 text-3xl font-bold">호실을 지울까요?</h1>
-		<p class="mb-2 text-xl font-semibold" th:text="${unit.displayName()}">행복빌라 101호</p>
-		<p class="mb-8 text-lg text-gray-700">지우면 되돌릴 수 없어요. 계약 기록이 있는 호실은 지울 수 없어요.</p>
+		<h1 class="page-title">호실을 지울까요?</h1>
+		<p class="mb-2 text-title font-semibold" th:text="${unit.displayName()}">행복빌라 101호</p>
+		<p class="mb-8 text-gray-700">지우면 되돌릴 수 없어요. 계약 기록이 있는 호실은 지울 수 없어요.</p>
 		<form th:action="@{/app/units/{id}/delete(id=${unit.id})}" method="post" class="mb-4">
 			<button type="submit" class="btn btn-danger w-full">네, 지울게요</button>
 		</form>

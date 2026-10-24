@@ -5,25 +5,25 @@
 </head>
 <body>
 	<main id="main" class="page">
-		<h1 class="mb-4 text-3xl font-bold">이 받을 월세를 취소할까요?</h1>
-		<p class="mb-4 text-xl"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
+		<h1 class="page-title">이 받을 월세를 취소할까요?</h1>
+		<p class="mb-4 text-title"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
 			· <span th:text="${charge.monthText()}">2026년 10월</span> · <span th:text="${charge.totalText()}">550,000원</span></p>
 
 		<!-- 입금 기록이 있으면 취소할 수 없다 (M3 결정 7) -->
-		<div th:unless="${charge.canCancel()}" class="alert alert-error mb-6 text-lg" role="alert">
+		<div th:unless="${charge.canCancel()}" class="alert alert-error mb-6" role="alert">
 			입금 기록이 있어 취소할 수 없어요. 입금 기록을 먼저 지워 주세요.
 		</div>
 
 		<th:block th:if="${charge.canCancel()}">
-			<div class="alert alert-info mb-6 text-lg" role="status">
+			<div class="alert alert-info mb-6" role="status">
 				<p class="font-bold">이 달은 새로 만들 수 없어요. 금액이 틀렸다면 취소 대신 항목을 고치세요.</p>
 			</div>
-			<div class="alert alert-error mb-6 text-lg" role="alert" th:if="${error}" th:text="${error}">안내</div>
-			<form th:action="@{/app/charges/{id}/cancel(id=${charge.id()})}" method="post" class="space-y-6" novalidate>
+			<div class="alert alert-error mb-6" role="alert" th:if="${error}" th:text="${error}">안내</div>
+			<form th:action="@{/app/charges/{id}/cancel(id=${charge.id()})}" method="post" class="card space-y-6" novalidate>
 				<input type="hidden" name="version" th:value="${charge.version()}">
 				<div>
 					<label for="reason" class="form-label">취소 사유</label>
-					<p id="reason-hint" class="mb-2 text-base text-gray-700">예: 잘못 만듦, 이 달은 받지 않기로 함</p>
+					<p id="reason-hint" class="mb-2 note">예: 잘못 만듦, 이 달은 받지 않기로 함</p>
 					<input id="reason" type="text" name="reason" th:value="${reason}" class="form-input" aria-describedby="reason-hint">
 				</div>
 				<button type="submit" class="btn btn-danger w-full">네, 취소할게요</button>

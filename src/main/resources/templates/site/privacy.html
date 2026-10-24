@@ -5,8 +5,8 @@
 </head>
 <body>
 	<main id="main" class="page">
-		<h1 class="mb-2 text-3xl font-bold" th:text="${document.title}">개인정보처리방침</h1>
-		<p class="mb-6 text-base text-gray-700">
+		<h1 class="page-title" th:text="${document.title}">개인정보처리방침</h1>
+		<p class="mb-6 note">
 			버전 <span th:text="${document.version}">v0.1</span> · 시행일 미정
 		</p>
 
@@ -14,7 +14,7 @@
 			<strong>초안: 출시 전 전문가 검토 필요.</strong> 아래는 목차만 있는 초안이며, 정식 내용은 서비스 출시 전에 채워집니다.
 		</div>
 
-		<ol class="list-decimal space-y-3 pl-6 text-lg">
+		<ol class="list-decimal space-y-3 pl-8">
 			<li>개인정보의 처리 목적</li>
 			<li>처리하는 개인정보 항목</li>
 			<li>개인정보의 보유 및 이용 기간</li>

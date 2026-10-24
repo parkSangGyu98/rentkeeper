@@ -5,10 +5,10 @@
 </head>
 <body>
 	<main id="main" class="page">
-		<h1 class="mb-4 text-3xl font-bold">세입자 링크를 닫을까요?</h1>
-		<p class="mb-2 text-xl font-semibold" th:text="${lease.unitName()} + ' · ' + ${lease.tenantName()} + '님'">행복빌라 101호 · 홍길동님</p>
+		<h1 class="page-title">세입자 링크를 닫을까요?</h1>
+		<p class="mb-2 text-title font-semibold" th:text="${lease.unitName()} + ' · ' + ${lease.tenantName()} + '님'">행복빌라 101호 · 홍길동님</p>
 		<th:block th:if="${tenantLink.closable()}">
-			<ul class="mb-8 list-disc space-y-1 pl-6 text-lg text-gray-700">
+			<ul class="mb-8 list-disc space-y-1 pl-6 text-gray-700">
 				<li>닫으면 세입자는 지금 링크로 더 이상 들어올 수 없어요. 직접 보낸 링크와 안내 문자에 들어간 링크가 모두 닫혀요. 닫은 링크는 다시 열 수 없어요.</li>
 				<li id="close-pauses-notifications"><strong>세입자 안내 문자도 멈춰요.</strong> 링크가 들어 있는 월세 안내 문자를 이 세입자에게 더 보내지 않아요. 다시 보내려면 계약 화면에서 [알림 다시 켜기]를 눌러 주세요.</li>
 				<li>링크를 잘못 보냈거나 다른 사람이 알게 됐을 때 닫아 주세요. 필요하면 새 링크를 만들 수 있어요(새 링크를 만들어도 안내 문자는 멈춘 채로 있어요).</li>
@@ -18,7 +18,7 @@
 				<button type="submit" class="btn btn-danger w-full">네, 링크를 닫을게요</button>
 			</form>
 		</th:block>
-		<p th:unless="${tenantLink.closable()}" class="mb-6 text-lg">지금 열린 세입자 링크가 없어요.</p>
+		<p th:unless="${tenantLink.closable()}" class="mb-6">지금 열린 세입자 링크가 없어요.</p>
 		<a th:href="@{/app/leases/{id}(id=${lease.leaseId()})}" class="btn btn-secondary w-full">돌아가기</a>
 	</main>
 </body>
