@@ -80,6 +80,12 @@ public final class NotificationTemplates {
 				String.join("\n", lines) + "\n\n다시 계약할지, 새 세입자를 구할지 미리 정해 두세요.\n바로 가기: " + dashboardLink);
 	}
 
+	/** 운영 알림 (코드별 하루 1통). 건수·종류는 서버 로그에서 본다 */
+	public static Mail opsAlert(String code) {
+		return new Mail("[운영] " + code + " 발생",
+				"오늘 처음 발생했어요. 건수와 종류는 서버 로그(rentkeeper.ops-alert)를 확인하세요. 같은 코드는 오늘 다시 보내지 않아요.");
+	}
+
 	/** 곧 끝나는 계약 한 줄 */
 	public static String leaseEndLine(String unitName, LocalDate endDate, long daysLeft) {
 		return "%s — %s (%d일 뒤)".formatted(unitName, day(endDate), daysLeft);

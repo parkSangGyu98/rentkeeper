@@ -10,3 +10,5 @@ app:
   notification:
     # 테스트에서는 발송 워커를 스케줄로 돌리지 않는다. 테스트가 NotificationWorker.runOnce()를 직접 부른다
     worker-cron: "-"
+    # 운영 알림 메일 행이 "보낼 차례"로 만들어지는지 보려고 테스트에서는 주소를 둔다 (가짜 주소)
+    ops-alert-email: ops@example.com

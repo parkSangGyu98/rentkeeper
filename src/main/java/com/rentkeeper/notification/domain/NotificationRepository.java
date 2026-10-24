@@ -1,10 +1,13 @@
 package com.rentkeeper.notification.domain;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.repository.Repository;
 
 /**
@@ -21,6 +24,10 @@ public interface NotificationRepository extends Repository<Notification, Long> {
 	/** 같은 계약에 같은 날 이 상태인 다른 알림 수 (세입자 하루 1통, M5 결정 12) */
 	long countByLandlordIdAndLeaseIdAndScheduledForAndStatusAndIdNot(long landlordId, long leaseId,
 			LocalDate scheduledFor, NotificationStatus status, long id);
+
+	/** 알림 이력 화면: 그 임대인의 알림 중 after 뒤에 만든 것, 최근 순 */
+	Slice<Notification> findByLandlordIdAndCreatedAtAfterOrderByCreatedAtDescIdDesc(long landlordId, Instant after,
+			Pageable pageable);
 
 	/** 발송 워커 전용 */
 	Optional<Notification> findForWorkerById(long id);

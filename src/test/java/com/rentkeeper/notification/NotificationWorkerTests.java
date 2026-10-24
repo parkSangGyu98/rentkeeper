@@ -203,9 +203,14 @@ class NotificationWorkerTests {
 		clock.advance(Duration.ofMinutes(5));
 		assertThat(worker.runOnce().failed()).isEqualTo(1);
 
-		assertThat(statuses()).containsOnlyKeys("FAILED");
-		assertThat(jdbc.queryForObject("select attempts from notification", Integer.class)).isEqualTo(3);
-		assertThat(jdbc.queryForObject("select last_error from notification", String.class))
+		assertThat(count("type = 'OVERDUE_DIGEST' and status = 'FAILED'")).isEqualTo(1);
+		assertThat(count("dedupe_key = 'OPS_ALERT:NOTIFICATION_ALERT:2026-10-17' and status = 'PENDING'"))
+				.as("운영 알림 메일 행").isEqualTo(1);
+		assertThat(
+				jdbc.queryForObject("select attempts from notification where type = 'OVERDUE_DIGEST'", Integer.class))
+				.isEqualTo(3);
+		assertThat(
+				jdbc.queryForObject("select last_error from notification where type = 'OVERDUE_DIGEST'", String.class))
 				.isEqualTo("java.lang.IllegalStateException");
 		assertThat(output).contains(NotificationWorker.ALERT_CODE);
 		assertThat(output).as("예외 메시지(번호·본문)는 남기지 않는다").doesNotContain("01099990000").doesNotContain("비밀본문");

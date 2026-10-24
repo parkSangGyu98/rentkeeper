@@ -66,14 +66,15 @@ class IdorTests {
 
 	/** 소유 데이터 엔드포인트의 경로 앞부분 */
 	private static final List<String> OWNED_PREFIXES = List.of("/app/properties", "/app/units", "/app/leases",
-			"/app/charges", "/app/dashboard");
+			"/app/charges", "/app/dashboard", "/app/notifications");
 
 	/**
 	 * 남의 ID를 받지 않는 엔드포인트 (목록·새 화면·자기 건물 만들기). 여기에 넣을 때는 이유가 분명해야 한다. 받을 월세 목록은 달만
-	 * 받고 로그인한 임대인 것만 보인다(chargeListShowsOnlyOwnCharges).
+	 * 받고 로그인한 임대인 것만 보인다(chargeListShowsOnlyOwnCharges). 알림 이력도 로그인한 임대인 것만
+	 * 보인다(notificationHistoryShowsOnlyOwnRows).
 	 */
 	private static final Set<String> NO_FOREIGN_ID = Set.of("GET /app/properties", "GET /app/properties/new",
-			"POST /app/properties", "GET /app/charges");
+			"POST /app/properties", "GET /app/charges", "GET /app/notifications");
 
 	@Autowired
 	MockMvc mockMvc;
@@ -314,6 +315,23 @@ class IdorTests {
 		String body = mockMvc.perform(Attack.get("/app/dashboard").build(victimIds, attacker)).andReturn().getResponse()
 				.getContentAsString();
 		assertThat(body).contains("아직 등록한 건물이 없어요").doesNotContain("피해자");
+	}
+
+	@Test
+	void notificationHistoryShowsOnlyOwnRows() throws Exception {
+		long victimId = jdbc.queryForObject("select landlord_id from lease where id = ?", Long.class,
+				Long.valueOf(victimIds.get("lease")));
+		jdbc.update("insert into notification (landlord_id, type, channel, recipient_type, tenant_id, lease_id, "
+				+ "charge_id, scheduled_for, dedupe_key, status, skip_reason, next_attempt_at, created_at, updated_at) "
+				+ "select l.landlord_id, 'CHARGE_ISSUED', 'TENANT_PHONE', 'TENANT', l.tenant_id, l.id, ?, current_date, "
+				+ "'CHARGE_ISSUED:victim', 'SKIPPED', 'CHANNEL_OFF', now(), now(), now() from lease l where l.id = ?",
+				Long.valueOf(victimIds.get("charge")), Long.valueOf(victimIds.get("lease")));
+		assertThat(victimId).isNotEqualTo(attacker.landlordId());
+
+		String body = mockMvc.perform(Attack.get("/app/notifications").build(victimIds, attacker)).andReturn()
+				.getResponse().getContentAsString();
+
+		assertThat(body).contains("아직 알림이 없어요").doesNotContain("101호").doesNotContain("받을 월세 안내");
 	}
 
 	@Test
