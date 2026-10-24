@@ -15,7 +15,7 @@
 | M4 세입자 링크·대시보드 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (main `7757eb2`, 실패 F1·F2는 수정·재확인 통과) | 아래 "M4에서 확정한 결정" |
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
 | M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
-| 디자인 교체 | 진행 중 (디자인: 커밋 1/4 완료, 4 뒤 캡처 확인) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
+| 디자인 교체 | 진행 중 (디자인: 커밋 2/4 완료, 4 뒤 캡처 확인) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -38,6 +38,7 @@
 - [ ] **문자·알림톡 대행사**와 세입자 안내 문자 켜기, `tenant_sms` 기본값 검토, 워커 처리량(아래 "M6로 이월 → M5에서 넘김"의 해당 줄).
 - [ ] **가입 제한 풀기**: M6은 초대 코드가 있어야 가입하고, 방문자는 임시 데모 계정만 쓴다(M6 결정 3). 실제 사용자를 받으려면 가입 공개, 데모 분리(다른 도메인 등), 약관·처리방침 확정이 함께 필요하다.
 - [ ] 이용약관·개인정보처리방침 전문가 검토(아래 "출시 전 할 일"), 사업자등록·결제(아래 "보류").
+- [ ] **글꼴 라이선스 확인**: Pretendard(SIL OFL 1.1, 예약 이름 Pretendard)를 서버에 포함해 배포한다. 허용 범위 요약과 출처는 아래 "글꼴 출처와 용량". 실서비스 전 개발자가 원문을 다시 확인한다.
 
 ## 출시 전 할 일
 - [ ] 이용약관·개인정보처리방침 **출시 전 전문가 검토** (현재 화면은 목차만 있는 초안 v0.1, 시행일 미정). 아래 "출시 전 전문가 검토" 항목과 함께, 배포 후 본인 테스트를 마친 뒤 진행한다 (아래 "보류").
@@ -974,6 +975,17 @@ SELECT id, notify_opt_out_at FROM tenant WHERE notify_opt_out_at IS NOT NULL;
 - **토큰 위치**: 색·글꼴·글자 단계는 `app.css`의 `@theme`, 공통 요소는 `@layer components`에만 둔다. 지금 클래스 이름(`btn-primary`, `badge-*` 등)은 유지하고 내용만 바꾼다. 새로 `.card`, `.page`·`.page-wide`, `.dl-row`, `.list-row`를 더한다.
 - **테스트 방침(개발자)**: 문구·동작을 확인하는 테스트는 바꾸지 않는다. 화면 구조나 클래스 문자열에 걸린 테스트(HeaderLayoutTest의 nav 클래스, 금액 줄의 `<dd class>` 등)만 같은 의도와 같은 강도로 새 구조에 맞춘다. 바꾼 테스트와 이유를 커밋 메시지와 이 문서에 적는다. 테스트를 지우거나 약하게 만들어야 하면 멈추고 알린다. 화면 문구는 고치지 않는다(필요하면 보고만).
 - **멈추는 경우**: 계획과 다르게 구현해야 할 때, build 두 번 실패, 동작·문구·마이그레이션 변경이 필요해질 때, 글꼴 다운로드 실패나 라이선스 재배포 문제, 글꼴 추가 용량 10MB 초과, 테스트를 약하게 만들어야 할 때.
+
+### 글꼴 출처와 용량 (디자인 교체 커밋 2)
+- **글꼴**: Pretendard **1.3.9** (가변 글꼴 `Pretendard Variable`, 굵기 45~920 한 벌로 400·600·700을 낸다), dynamic-subset 92조각.
+- **받은 곳**
+  - 글꼴 CSS·조각: npm 패키지 `pretendard@1.3.9`의 `dist/web/variable/` — `https://registry.npmjs.org/pretendard/-/pretendard-1.3.9.tgz`. 묶음 SHA-256 `0ffc240cee83be02520fb4ac1b2a0a51052b9d13506ade0ba90c591dbbb3bd53`, 레지스트리가 알려 준 SHA-1(`b1f86d5a7a729f518974098fcf85f34fff3526b7`)과 받은 파일이 일치했다.
+  - 라이선스 원문: 공식 GitHub 릴리스 v1.3.9 — `https://github.com/orioncactus/pretendard/releases/download/v1.3.9/Pretendard-1.3.9.zip`의 `LICENSE.txt`. 묶음 SHA-256 `04be351a74d6bf7d60c480a3087e51d185485d35a52023142af1df19eb8c428a`, LICENSE.txt SHA-256 `b04538c9abec39a3db75108cf0af0fd9c77032fe8aa2cf38345b4d250e98e38e`.
+  - 릴리스 zip에는 dynamic-subset 파일이 없어(가변 글꼴 통파일 2.06MB와 굵기별 subset만 있음) 같은 버전의 npm 패키지에서 받았다.
+- **저장 위치**: `src/main/resources/static/css/fonts/pretendard/` (CSS·조각·LICENSE.txt를 고치지 않고 그대로). 파일마다의 SHA-256은 같은 폴더의 `SHA256SUMS`(`FontAssetsTests`가 확인). 글꼴 CSS SHA-256 `2973bcae80262dcb630cfb793fbf6af29bd986c769ee54953fb3e5b3e32323ca`.
+- **저장소 추가 용량**: 3,029,449바이트(약 2.9MB, 10MB 기준 아래). 조각 92개 합계 2,957,724바이트.
+- **라이선스(보고만, 판단은 개발자)**: SIL Open Font License 1.1, "Reserved Font Name Pretendard". 원문의 허용 범위: 사용·복사·포함(embed)·수정·재배포·판매(수정본 포함)를 허용한다. 조건 ① 글꼴만 따로 팔 수 없다 ② 재배포할 때 저작권 표시와 이 라이선스를 함께 둔다(따로 된 텍스트 파일도 됨) ③ 수정본은 예약 이름(Pretendard)을 쓸 수 없다 ④ 저작권자 이름을 수정본 홍보에 쓸 수 없다 ⑤ 글꼴은 이 라이선스로만 배포하고, 글꼴로 만든 문서에는 이 요구가 적용되지 않는다. 우리는 파일을 고치지 않고 LICENSE.txt를 옆에 두었다. 이 항목은 "실서비스 전환 시 볼 목록"에도 있다.
+- **화면별로 내려받는 조각 수와 합계**: 커밋 4 뒤 데모 데이터로 잰다(아래에 적는다).
 
 ### 디자인 교체 커밋 계획
 0. `docs: 디자인 교체 결정 기록` (이 커밋)

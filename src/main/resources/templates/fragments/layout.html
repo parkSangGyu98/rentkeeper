@@ -11,6 +11,8 @@
 <!-- 확대를 막지 않는다 (maximum-scale 없음, PRD 8.5) -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title th:replace="${title}">제목</title>
+<!-- 한글 글꼴 Pretendard (서버에 포함, 외부 주소 없음). 화면에 나온 글자의 조각만 받는다 (디자인 교체 결정 2) -->
+<link rel="stylesheet" th:href="@{/css/fonts/pretendard/pretendardvariable-dynamic-subset.css}">
 <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body class="flex min-h-screen flex-col">

@@ -9,8 +9,8 @@
 @source "../resources/templates";
 
 @theme {
-	/* 외부 웹폰트 없이 시스템 한글 글꼴을 쓴다 (CSP font-src 'self' 유지, 로딩 지연 없음) */
-	--font-sans: system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+	/* 한글 글꼴 Pretendard를 서버에 포함해 쓴다(static/css/fonts/pretendard, CSP font-src 'self'). 받기 전·실패하면 시스템 한글 글꼴 (디자인 교체 결정 2) */
+	--font-sans: "Pretendard Variable", system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
 
 	--color-brand-700: #1d4ed8;
 	--color-brand-800: #1e40af;
