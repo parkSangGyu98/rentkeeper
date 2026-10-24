@@ -15,7 +15,7 @@
 | M4 세입자 링크·대시보드 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (main `7757eb2`, 실패 F1·F2는 수정·재확인 통과) | 아래 "M4에서 확정한 결정" |
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
 | M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
-| 디자인 교체 | 진행 중 (디자인: 커밋 0/4 완료, 4 뒤 캡처 확인) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
+| 디자인 교체 | 진행 중 (디자인: 커밋 1/4 완료, 4 뒤 캡처 확인) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -901,7 +901,7 @@ SELECT id, notify_opt_out_at FROM tenant WHERE notify_opt_out_at IS NOT NULL;
 - 범위 밖: 법률·세무·사업자등록·결제·문자 대행사(위 "실서비스 전환 시 볼 목록"), 디자인 교체와 README·캡처(배포와 사람 확인 뒤 다음 단계)
 
 ### M6에서 확정한 결정 (2026-10-24 승인)
-1. **서비스명**: 지금은 RentKeeper. 쓰이는 곳이 10곳을 크게 넘어(아래 목록) 한 곳으로 모으지 않았다. 이름을 바꿀 때 이 목록을 고친다.
+1. **서비스명**: 지금은 RentKeeper. 쓰이는 곳이 10곳을 크게 넘어(아래 목록) 한 곳으로 모으지 않았다. 이름을 바꿀 때 이 목록을 고친다. → **디자인 교체 커밋 1에서 `messages.properties`의 `app.name` 한 곳으로 모았다**(템플릿 제목 54곳·머리글·탈퇴 화면 문구·계정 메일 6곳). 앱 밖 목록(카카오 앱 이름·도메인·`MAIL_FROM`·`spring.application.name`)은 그대로 따로 고친다.
    - 템플릿 53개의 `<title>`(`… - RentKeeper`), 머리글 로고 글자(`fragments/layout.html`), 탈퇴 화면 "카카오 계정과 RentKeeper의 연결도 끊어요"(`app/settings-withdraw.html`)
    - 계정 메일 제목 머리말 `[RentKeeper]`와 본문 5곳(`auth/mail/AccountEmails.java`)
    - 첫 화면·약관·처리방침 제목(`site/landing.html`, `site/terms.html`, `site/privacy.html`)

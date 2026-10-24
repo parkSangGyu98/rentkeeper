@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>데모 시작 - RentKeeper</title>
+<title th:text="|데모 시작 - #{app.name}|">데모 시작</title>
 </head>
 <body>
 	<!-- 데모 시작 (M6 결정 3). 세입자 링크 원문은 이 화면에만 보인다(저장하지 않음, no-store) -->

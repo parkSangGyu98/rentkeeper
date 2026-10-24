@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>데모가 꽉 찼어요 - RentKeeper</title>
+<title th:text="|데모가 꽉 찼어요 - #{app.name}|">데모가 꽉 찼어요</title>
 </head>
 <body>
 	<!-- 동시에 있을 수 있는 데모 계정 수가 상한일 때 (M6 결정 3) -->

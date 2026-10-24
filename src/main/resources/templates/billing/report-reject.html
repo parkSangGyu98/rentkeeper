@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>세입자 신고 반려 - RentKeeper</title>
+<title th:text="|세입자 신고 반려 - #{app.name}|">세입자 신고 반려</title>
 </head>
 <body>
 	<!-- 세입자 "입금했어요" 신고 반려 (M4 결정 10). 사유는 상태 이력에만 남고 세입자에게는 보이지 않는다 -->

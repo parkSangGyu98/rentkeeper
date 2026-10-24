@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>보낸 알림 - RentKeeper</title>
+<title th:text="|보낸 알림 - #{app.name}|">보낸 알림</title>
 </head>
 <body>
 	<!-- 알림 이력 (NOTI-7). 본문은 저장하지 않아 보이지 않는다: 종류·받는 사람·상태·시각만 -->

@@ -2,7 +2,7 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
 	th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>한눈에 보기 - RentKeeper</title>
+<title th:text="|한눈에 보기 - #{app.name}|">한눈에 보기</title>
 </head>
 <body>
 	<!-- 임대인 대시보드 (DASH-1~4, M4 결정 14). 처리할 일(세입자 신고)을 맨 위에 둔다 -->

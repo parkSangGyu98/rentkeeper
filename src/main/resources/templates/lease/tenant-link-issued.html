@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>세입자 링크 - RentKeeper</title>
+<title th:text="|세입자 링크 - #{app.name}|">세입자 링크</title>
 </head>
 <body>
 	<!-- 새로 만든 세입자 링크 (M4 결정 2). 원문은 이 화면에만 있다. 리다이렉트하지 않고 POST 응답으로 그린다 -->

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>알림 설정 - RentKeeper</title>
+<title th:text="|알림 설정 - #{app.name}|">알림 설정</title>
 </head>
 <body>
 	<!-- 알림 설정 (M5 결정 13). 체크하지 않은 칸은 꺼짐. 계약별 설정은 없다(NOTI-6, P1) -->

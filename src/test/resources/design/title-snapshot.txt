@@ -1,0 +1,55 @@
+# 디자인 교체 전(커밋 1) 템플릿 제목 그대로. 경로|렌더될 제목. 서비스명을 app.name으로 모아도 같아야 한다 (ServiceNameTests)
+app/notifications.html|보낸 알림 - RentKeeper
+app/settings-email.html|이메일 바꾸기 - RentKeeper
+app/settings-notification-email.html|알림 받을 이메일 - RentKeeper
+app/settings-notifications.html|알림 설정 - RentKeeper
+app/settings-password.html|비밀번호 바꾸기 - RentKeeper
+app/settings-withdraw.html|회원 탈퇴 - RentKeeper
+app/settings.html|계정 설정 - RentKeeper
+auth/login.html|로그인 - RentKeeper
+auth/password-reset-confirm.html|새 비밀번호 정하기 - RentKeeper
+auth/password-reset.html|비밀번호 재설정 - RentKeeper
+auth/signup-kakao.html|카카오로 가입하기 - RentKeeper
+auth/signup.html|가입하기 - RentKeeper
+auth/verify-email-change.html|이메일 바꾸기 확인 - RentKeeper
+auth/verify-email.html|이메일 인증 - RentKeeper
+auth/withdrawn.html|탈퇴 완료 - RentKeeper
+billing/cancel.html|받을 월세 취소 - RentKeeper
+billing/detail.html|받을 월세 - RentKeeper
+billing/item-delete.html|항목 지우기 - RentKeeper
+billing/item-form.html|항목 - RentKeeper
+billing/list.html|받을 월세 - RentKeeper
+billing/new-charge.html|받을 월세 만들기 - RentKeeper
+billing/payment-correct.html|입금 기록 고치기 - RentKeeper
+billing/payment-delete.html|입금 기록 지우기 - RentKeeper
+billing/payment-form.html|입금 기록 - RentKeeper
+billing/report-reject.html|세입자 신고 반려 - RentKeeper
+dashboard/home.html|한눈에 보기 - RentKeeper
+demo/full.html|데모가 꽉 찼어요 - RentKeeper
+demo/welcome.html|데모 시작 - RentKeeper
+error.html|요청을 처리하지 못했어요 - RentKeeper
+error/403.html|요청을 처리할 수 없어요 - RentKeeper
+error/404.html|페이지를 찾을 수 없어요 - RentKeeper
+error/429.html|요청이 너무 많아요 - RentKeeper
+error/500.html|잠시 문제가 생겼어요 - RentKeeper
+lease/confirm.html|계약 확인 - RentKeeper
+lease/delete.html|계약 지우기 - RentKeeper
+lease/detail.html|계약 상세 - RentKeeper
+lease/edit.html|계약 고치기 - RentKeeper
+lease/end.html|계약 종료 - RentKeeper
+lease/form.html|계약 등록 - RentKeeper
+lease/rent-cancel.html|월세 변경 취소 - RentKeeper
+lease/rent-change.html|월세 바꾸기 - RentKeeper
+lease/tenant-link-close.html|세입자 링크 닫기 - RentKeeper
+lease/tenant-link-issued.html|세입자 링크 - RentKeeper
+lease/tenant-link-reissue.html|새 세입자 링크 - RentKeeper
+lease/unit.html|호실 - RentKeeper
+property/delete.html|건물 지우기 - RentKeeper
+property/detail.html|건물 상세 - RentKeeper
+property/form.html|건물 정보 - RentKeeper
+property/list.html|내 건물 - RentKeeper
+property/unit-delete.html|호실 지우기 - RentKeeper
+property/unit-form.html|호실 정보 바꾸기 - RentKeeper
+site/landing.html|RentKeeper - 월세 관리를 쉽게
+site/privacy.html|개인정보처리방침 - RentKeeper
+site/terms.html|이용약관 - RentKeeper

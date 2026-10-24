@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>이메일 바꾸기 확인 - RentKeeper</title>
+<title th:text="|이메일 바꾸기 확인 - #{app.name}|">이메일 바꾸기 확인</title>
 </head>
 <body>
 	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">

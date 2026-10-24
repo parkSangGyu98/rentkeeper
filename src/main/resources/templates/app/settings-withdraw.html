@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>회원 탈퇴 - RentKeeper</title>
+<title th:text="|회원 탈퇴 - #{app.name}|">회원 탈퇴</title>
 </head>
 <body>
 	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
@@ -13,7 +13,7 @@
 				<li>탈퇴하면 바로 모든 기기에서 로그아웃되고, 다시 로그인할 수 없어요.</li>
 				<li>계정 정보는 30일 뒤에 완전히 지워요. 탈퇴를 되돌리는 기능은 없어요.</li>
 				<li>다시 이용하시려면 언제든 새로 가입하실 수 있어요 (예전 정보는 이어지지 않아요).</li>
-				<li th:if="${account.kakao}">카카오 계정과 RentKeeper의 연결도 끊어요.</li>
+				<li th:if="${account.kakao}">카카오 계정과 <th:block th:text="#{app.name}">서비스</th:block>의 연결도 끊어요.</li>
 			</ul>
 		</section>
 

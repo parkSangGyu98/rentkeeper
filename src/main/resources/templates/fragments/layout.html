@@ -10,7 +10,7 @@
 <meta charset="UTF-8">
 <!-- 확대를 막지 않는다 (maximum-scale 없음, PRD 8.5) -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title th:replace="${title}">RentKeeper</title>
+<title th:replace="${title}">제목</title>
 <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body class="flex min-h-screen flex-col">
@@ -19,7 +19,7 @@
 	<header class="border-b-2 border-gray-200 bg-white">
 		<!-- 좁은 화면: 메뉴는 단어 중간에서 꺾지 않고(whitespace-nowrap) 항목째 다음 줄로 넘긴다(flex-wrap). 브라우저 확인 F2 -->
 		<div class="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
-			<a th:href="@{/}" class="whitespace-nowrap text-xl font-bold text-gray-900 no-underline">RentKeeper</a>
+			<a th:href="@{/}" class="whitespace-nowrap text-xl font-bold text-gray-900 no-underline" th:text="#{app.name}">서비스 이름</a>
 			<nav class="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="계정">
 				<th:block sec:authorize="!isAuthenticated()">
 					<a th:href="@{/login}" class="btn btn-secondary whitespace-nowrap">로그인</a>
