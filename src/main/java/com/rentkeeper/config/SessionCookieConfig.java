@@ -2,11 +2,12 @@ package com.rentkeeper.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.session.jdbc.PostgreSqlJdbcIndexedSessionRepositoryCustomizer;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
 /**
- * 세션 쿠키(SESSION) 속성을 코드 한 곳에서 정한다 (PRD 8.1, ADR-005).
+ * 세션 쿠키(SESSION) 속성과 세션 속성 저장 방식을 코드 한 곳에서 정한다 (PRD 8.1, ADR-005).
  * <p>
  * server.servlet.session.cookie.* 프로퍼티를 쓰지 않는 이유: Spring Boot는 내장 Tomcat으로 실행할
  * 때만 그 프로퍼티를 세션 쿠키에 반영하고, MockMvc 테스트(내장 서버 없음)에서는 서블릿 컨텍스트의 기본 쿠키 설정을 쓴다. 이 빈을
@@ -26,6 +27,16 @@ public class SessionCookieConfig {
 		// 다른 사이트에서 시작된 POST 요청에는 쿠키를 보내지 않는다 (CSRF 방어를 한 겹 더)
 		serializer.setSameSite("Lax");
 		return serializer;
+	}
+
+	/**
+	 * 같은 세션에 같은 이름의 속성을 동시에 처음 넣으면(버튼 두 번 누르기: 두 응답이 모두 안내 메시지를 플래시로 저장) 한쪽이 기본 키
+	 * 중복으로 500이 됐다. PostgreSQL에서는 넣기를 "있으면 덮어쓰기"(ON CONFLICT DO UPDATE)로 바꾼다.
+	 * Spring Session이 제공하는 설정이고, 세션 속성 값 저장 방식만 바뀐다(로그인·권한 동작은 그대로).
+	 */
+	@Bean
+	PostgreSqlJdbcIndexedSessionRepositoryCustomizer sessionAttributeUpsert() {
+		return new PostgreSqlJdbcIndexedSessionRepositoryCustomizer();
 	}
 
 }
