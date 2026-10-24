@@ -17,30 +17,31 @@
 	<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:bg-white focus:p-3">본문 바로가기</a>
 
 	<header class="border-b-2 border-gray-200 bg-white">
-		<div class="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-3">
-			<a th:href="@{/}" class="text-xl font-bold text-gray-900 no-underline">RentKeeper</a>
-			<nav class="flex items-center gap-3" aria-label="계정">
+		<!-- 좁은 화면: 메뉴는 단어 중간에서 꺾지 않고(whitespace-nowrap) 항목째 다음 줄로 넘긴다(flex-wrap). 브라우저 확인 F2 -->
+		<div class="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
+			<a th:href="@{/}" class="whitespace-nowrap text-xl font-bold text-gray-900 no-underline">RentKeeper</a>
+			<nav class="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="계정">
 				<th:block sec:authorize="!isAuthenticated()">
-					<a th:href="@{/login}" class="btn btn-secondary">로그인</a>
-					<a th:href="@{/signup}" class="btn btn-primary">가입하기</a>
+					<a th:href="@{/login}" class="btn btn-secondary whitespace-nowrap">로그인</a>
+					<a th:href="@{/signup}" class="btn btn-primary whitespace-nowrap">가입하기</a>
 				</th:block>
 				<th:block sec:authorize="hasRole('LANDLORD')">
-					<a th:href="@{/app}" class="hidden text-lg font-semibold text-gray-900 no-underline sm:inline">
+					<a th:href="@{/app}" class="hidden whitespace-nowrap text-lg font-semibold text-gray-900 no-underline sm:inline">
 						<span sec:authentication="principal.displayName">홍길동</span>님
 					</a>
-					<a th:href="@{/app/dashboard}" class="text-lg font-semibold text-brand-700 underline">한눈에 보기</a>
-					<a th:href="@{/app/charges}" class="text-lg font-semibold text-brand-700 underline">받을 월세</a>
-					<a th:href="@{/app/properties}" class="text-lg font-semibold text-brand-700 underline">내 건물</a>
-					<a th:href="@{/app/settings}" class="text-lg font-semibold text-brand-700 underline">계정 설정</a>
+					<a th:href="@{/app/dashboard}" class="whitespace-nowrap text-lg font-semibold text-brand-700 underline">한눈에 보기</a>
+					<a th:href="@{/app/charges}" class="whitespace-nowrap text-lg font-semibold text-brand-700 underline">받을 월세</a>
+					<a th:href="@{/app/properties}" class="whitespace-nowrap text-lg font-semibold text-brand-700 underline">내 건물</a>
+					<a th:href="@{/app/settings}" class="whitespace-nowrap text-lg font-semibold text-brand-700 underline">계정 설정</a>
 					<!-- 로그아웃은 POST만 받는다. th:action이 CSRF 토큰을 넣는다 -->
 					<form th:action="@{/logout}" method="post">
-						<button type="submit" class="btn btn-secondary">로그아웃</button>
+						<button type="submit" class="btn btn-secondary whitespace-nowrap">로그아웃</button>
 					</form>
 				</th:block>
 				<!-- 카카오 가입 단계(아직 계정 없음)에서는 그만두기만 보여 준다 -->
 				<th:block sec:authorize="hasAuthority('ROLE_KAKAO_SIGNUP')">
 					<form th:action="@{/logout}" method="post">
-						<button type="submit" class="btn btn-secondary">가입 그만두기</button>
+						<button type="submit" class="btn btn-secondary whitespace-nowrap">가입 그만두기</button>
 					</form>
 				</th:block>
 			</nav>
