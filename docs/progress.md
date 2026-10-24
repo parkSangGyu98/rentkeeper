@@ -14,7 +14,7 @@
 | M3 청구·입금 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (병합 커밋 `4b1fb30`) | 아래 "M3-b 구현 결과 메모" |
 | M4 세입자 링크·대시보드 | 구현 완료, 브라우저 자동 확인 통과, 사람 확인은 배포 직전에 진행 (main `7757eb2`, 실패 F1·F2는 수정·재확인 통과) | 아래 "M4에서 확정한 결정" |
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
-| M6 배포 | 진행 중 (M6: 커밋 0/8 완료) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정" |
+| M6 배포 | 진행 중 (M6: 커밋 1/8 완료) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정" |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -24,7 +24,7 @@
 - [ ] `main` 브랜치 보호 규칙 설정 (CI 통과 필수)
 
 ## 출시 전 필수 (차단 항목: 해결 전에는 운영 배포 금지)
-- [ ] **클라이언트 IP 판정**: 지금 `ClientIp`는 `request.getRemoteAddr()`를 그대로 쓴다. 운영에서 Caddy 뒤에 두면 모든 요청이 프록시 IP로 보여 **전체 사용자가 같은 레이트 리미트에 묶인다**(로그인 10분 30회를 모든 사용자가 나눠 씀). M6에서 신뢰할 프록시를 정하고 `server.forward-headers-strategy`를 설정한 뒤, 프록시 뒤에서 IP별로 따로 세어지는지 확인한다. X-Forwarded-For를 아무 요청에서나 믿으면 IP 위조가 가능하므로 신뢰 범위를 함께 정한다 (ADR-012).
+- [ ] **클라이언트 IP 판정**: **[M6 커밋 1에서 설정·테스트 완료, 배포 뒤 실제 확인 남음]** `application-prod.yml`의 `forward-headers-strategy: native` + Caddy 고정 주소만 신뢰(`ForwardedHeadersRealServerTests`). 지금 `ClientIp`는 `request.getRemoteAddr()`를 그대로 쓴다. 운영에서 Caddy 뒤에 두면 모든 요청이 프록시 IP로 보여 **전체 사용자가 같은 레이트 리미트에 묶인다**(로그인 10분 30회를 모든 사용자가 나눠 씀). M6에서 신뢰할 프록시를 정하고 `server.forward-headers-strategy`를 설정한 뒤, 프록시 뒤에서 IP별로 따로 세어지는지 확인한다. X-Forwarded-For를 아무 요청에서나 믿으면 IP 위조가 가능하므로 신뢰 범위를 함께 정한다 (ADR-012).
 - [ ] **운영용 메일 발송 구현(M6 커밋 2, Brevo SMTP)**: 없으면 prod 프로필로 앱이 기동하지 않는다 (ADR-010). M5는 알림을 Outbox에 쌓고 로그 기록용 발송기만 만든다. 실제 메일 연결은 M6로 미뤘다(M5 결정 11).
 - [ ] **카카오 앱 설정**: 서비스명 확정 후 앱 이름 변경, 운영 도메인 리다이렉트 URI 등록, 어드민 키 허용 IP 등록 (ADR-014).
 - [ ] **카카오 연결 해제 웹훅** (→ 아래 "실서비스 전환 시 볼 목록"으로 옮김, M6 결정 4. 포트폴리오 배포에서는 만들지 않는다): 사용자가 카카오 쪽에서 연결을 끊었을 때 알림을 받는 웹훅 (M1-c 결정 4로 M6로 미룸).
@@ -70,7 +70,7 @@
 - 서비스명
 - 배포 후 본인 테스트 기간에는 주소를 공유하지 않는다. 다른 사람이 가입하지 못하게 막는 방법이 필요한지 **M6 계획 단계에서** 알린다.
 - [ ] M6: 운영 서버에서 BCrypt cost 12 해시 시간 측정 → 너무 느리면(대략 1초 이상) cost 재검토 (ADR-009)
-- [ ] M6: 리버스 프록시(Caddy) 뒤에서 HTTPS 판정(`server.forward-headers-strategy`) 설정 → HSTS·Secure 쿠키 정상 동작 확인
+- [ ] M6: 리버스 프록시(Caddy) 뒤에서 HTTPS 판정 **[M6 커밋 1에서 설정·테스트 완료(X-Forwarded-Proto → HSTS), 배포 뒤 실제 확인 남음]**(`server.forward-headers-strategy`) 설정 → HSTS·Secure 쿠키 정상 동작 확인
 
 ## M1 분할 (2026-10-17 확정)
 | 단계 | 범위 |

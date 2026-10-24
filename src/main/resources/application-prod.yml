@@ -1,0 +1,13 @@
+# 운영(prod) 설정 (M6). 비밀값은 여기에 두지 않고 환경변수(.env.prod)로 넣는다. 이름 목록은 .env.prod.example.
+server:
+  # Caddy(리버스 프록시) 뒤에서 실제 접속 IP와 HTTPS 여부를 판정한다 (M6 커밋 1, ADR-030).
+  # 이 설정이 없으면 모든 요청이 Caddy의 IP로 보여 전체 사용자가 같은 레이트 리미트 통에 묶이고(ADR-012),
+  # HTTPS로 들어와도 http로 보여 HSTS가 나가지 않는다.
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      # X-Forwarded-*를 믿는 곳은 Caddy 하나뿐이다. compose(docker/compose.prod.yml)가 Caddy에 고정 주소를 준다.
+      # 기본값(사설망 전체)보다 좁혀, 같은 네트워크의 다른 컨테이너가 IP를 꾸며 보내도 믿지 않는다.
+      internal-proxies: 172\.30\.0\.10
+      remote-ip-header: x-forwarded-for
+      protocol-header: x-forwarded-proto
