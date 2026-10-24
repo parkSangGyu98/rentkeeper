@@ -26,8 +26,8 @@
 			<a th:href="@{/}" class="whitespace-nowrap text-2xl font-semibold tracking-tight text-brand-700 no-underline" th:text="#{app.name}">서비스 이름</a>
 			<!-- 로그인 전: 로그인·가입 -->
 			<nav class="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="계정" sec:authorize="!isAuthenticated()">
-				<a th:href="@{/login}" class="btn btn-secondary whitespace-nowrap">로그인</a>
-				<a th:href="@{/signup}" class="btn btn-primary whitespace-nowrap">가입하기</a>
+				<a th:href="@{/login}" class="btn btn-quiet whitespace-nowrap">로그인</a>
+				<a th:href="@{/signup}" class="btn btn-secondary whitespace-nowrap">가입하기</a>
 			</nav>
 			<!-- 카카오 가입 단계(아직 계정 없음)에서는 그만두기만 보여 준다 -->
 			<nav class="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="계정" sec:authorize="hasAuthority('ROLE_KAKAO_SIGNUP')">

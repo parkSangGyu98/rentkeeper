@@ -67,8 +67,11 @@
 		font-size: 112.5%;
 	}
 
+	/* 한글은 낱말 중간에서 줄을 바꾸지 않는다(keep-all). 아주 긴 낱말(주소·링크)만 넘칠 때 끊는다 */
 	body {
 		@apply bg-page font-sans leading-relaxed text-gray-900 antialiased;
+		word-break: keep-all;
+		overflow-wrap: break-word;
 	}
 
 	/* 굵기 2단계 (보통 400·굵게 600) */
@@ -102,6 +105,32 @@
 	/* 세입자 화면에서 가장 크게 보일 값(보내실 금액·계좌번호): 40px */
 	.amount-hero {
 		@apply text-[2.2222rem] leading-tight font-semibold tracking-tight tabular-nums;
+	}
+
+	/* 첫 화면 (site/landing): 한 줄 소개를 크게(휴대폰 32px → 640px부터 40px → lg 48px), 그 아래 주요 행동 */
+	.hero {
+		@apply max-w-3xl pt-6 pb-16 lg:pt-12 lg:pb-20;
+	}
+
+	.hero-title {
+		@apply mb-6 text-[1.7778rem] leading-tight font-semibold tracking-tight sm:text-[2.2222rem] lg:text-[2.6667rem];
+	}
+
+	.hero-lead {
+		@apply mb-10 text-title leading-relaxed text-gray-700;
+	}
+
+	/* 기능 소개 카드: 휴대폰 한 줄에 하나, 넓은 화면(lg) 세 칸. 위쪽 짧은 포인트 색 막대는 꾸밈(aria-hidden) */
+	.feature-grid {
+		@apply grid gap-4 lg:grid-cols-3 lg:gap-6;
+	}
+
+	.feature-card {
+		@apply text-title leading-snug font-semibold;
+	}
+
+	.feature-mark {
+		@apply mb-6 block h-1 w-10 rounded-full bg-brand-700;
 	}
 
 	/* 화면 머리: 제목(28px) + 한 줄 설명(회색) */
@@ -284,6 +313,11 @@
 	   꽉 찬 버튼(btn-primary)은 화면당 주요 행동 하나, 나머지는 윤곽선(btn-secondary)·글자(btn-quiet) 버튼 */
 	.btn {
 		@apply inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-card px-6 text-lg font-semibold no-underline transition-colors;
+	}
+
+	/* 첫 화면의 가장 큰 행동 (데모로 둘러보기) */
+	.btn-lg {
+		@apply min-h-[3.5rem] px-8 text-title;
 	}
 
 	.btn-primary {

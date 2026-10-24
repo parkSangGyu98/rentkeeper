@@ -5,7 +5,7 @@
 </head>
 <body>
 	<main id="main" class="page">
-		<h1 class="mb-6 text-3xl font-bold">로그인</h1>
+		<h1 class="page-title mb-6">로그인</h1>
 
 		<div class="alert alert-error" role="alert" th:if="${param.error}">이메일 또는 비밀번호가 맞지 않아요. 다시 확인해 주세요.</div>
 		<div class="alert alert-error" role="alert" th:if="${param.kakaoError}">카카오 로그인을 끝내지 못했어요. 다시 시도해 주세요.</div>
@@ -14,14 +14,14 @@
 		<!-- 카카오 로그인은 폼 POST가 아니라 링크(GET)로 시작한다: 폼 제출 뒤 다른 사이트로 리다이렉트하면 CSP form-action에 막힌다 (ADR-014) -->
 		<th:block th:if="${kakaoLoginEnabled}">
 			<a th:href="@{/oauth2/authorization/kakao}" class="btn btn-kakao w-full">카카오로 시작하기</a>
-			<p class="my-6 text-center text-base text-gray-700">또는 이메일로 로그인</p>
+			<p class="my-6 text-center note">또는 이메일로 로그인</p>
 		</th:block>
 		<div class="alert alert-info" role="status" th:if="${param.logout}">로그아웃되었어요.</div>
 		<div class="alert alert-info" role="status" th:if="${param.reset}">비밀번호를 바꿨어요. 새 비밀번호로 로그인해 주세요.</div>
 		<div class="alert alert-error" role="alert" th:if="${rememberMeReset}">보안을 위해 이 기기의 로그인 유지를 해제했어요. 다시 로그인해 주세요.</div>
 
 		<!-- th:action이 CSRF 토큰을 숨은 칸으로 자동으로 넣는다 -->
-		<form th:action="@{/login}" method="post" class="space-y-6" novalidate>
+		<form th:action="@{/login}" method="post" class="card space-y-6" novalidate>
 			<div>
 				<label for="email" class="form-label">이메일</label>
 				<input id="email" name="email" type="email" class="form-input" autocomplete="username" inputmode="email"
@@ -34,23 +34,23 @@
 			</div>
 			<!-- 기본은 해제. 체크해야 30일 로그인 유지 쿠키를 발급한다 (ADR-013) -->
 			<div class="flex items-start gap-3">
-				<input id="remember-me" name="remember-me" type="checkbox" class="mt-1 h-6 w-6 shrink-0"
+				<input id="remember-me" name="remember-me" type="checkbox" class="mt-1 h-6 w-6 shrink-0 accent-brand-700"
 					aria-describedby="remember-me-hint">
-				<label for="remember-me" class="text-lg">이 기기에서 로그인 유지 (30일)
-					<span id="remember-me-hint" class="block text-base text-gray-700">여러 사람이 쓰는 PC에서는 체크하지 마세요.</span>
+				<label for="remember-me">이 기기에서 로그인 유지 (30일)
+					<span id="remember-me-hint" class="block note">여러 사람이 쓰는 PC에서는 체크하지 마세요.</span>
 				</label>
 			</div>
 			<button type="submit" class="btn btn-primary w-full">로그인</button>
 		</form>
 
 		<!-- 계정 상태(잠김 여부)가 아니라 정책만 항상 안내한다 (ADR-012) -->
-		<p class="mt-6 text-base text-gray-700">비밀번호를 5번 틀리면 15분 동안 로그인이 제한돼요.</p>
-		<p class="mt-4 text-lg">
-			<a th:href="@{/password-reset}" class="font-semibold text-brand-700 underline">비밀번호가 기억나지 않나요?</a>
+		<p class="mt-6 note">비밀번호를 5번 틀리면 15분 동안 로그인이 제한돼요.</p>
+		<p class="mt-4">
+			<a th:href="@{/password-reset}" class="link">비밀번호가 기억나지 않나요?</a>
 		</p>
 
-		<p class="mt-8 text-lg">
-			아직 가입하지 않으셨나요? <a th:href="@{/signup}" class="font-semibold text-brand-700 underline">가입하기</a>
+		<p class="mt-8">
+			아직 가입하지 않으셨나요? <a th:href="@{/signup}" class="link">가입하기</a>
 		</p>
 	</main>
 </body>
