@@ -104,8 +104,10 @@ public class SecurityConfig {
 	 * <li>세션·로그인 유지·요청 저장을 쓰지 않는다: 세입자마다 세션이 생기지 않고, 임대인 쿠키가 있어도 무시한다</li>
 	 * <li>CSRF 토큰을 쓰지 않는다: 브라우저가 자동으로 붙이는 인증 정보(쿠키)가 없고, 비밀은 URL의 토큰이다. 세입자 POST는
 	 * Origin 헤더로 같은 출처만 받는다(M4 커밋 3)</li>
-	 * <li>Referrer-Policy: no-referrer (링크 주소가 다른 사이트로 새지 않게), X-Robots-Tag, 캐시
-	 * 금지(Spring Security 기본 Cache-Control: no-store)</li>
+	 * <li>Referrer-Policy: same-origin. 다른 사이트로는 링크 주소(토큰)를 보내지 않는다. no-referrer는
+	 * 쓰지 않는다: 브라우저가 폼 제출의 Origin 헤더를 null로 보내 "입금했어요"가 Origin 검사에 막혔다(브라우저 확인 F1,
+	 * ADR-026). 같은 사이트 요청에는 Referer가 붙으므로 운영 접근 로그에서 가린다(progress "출시 전 필수")</li>
+	 * <li>X-Robots-Tag, 캐시 금지(Spring Security 기본 Cache-Control: no-store)</li>
 	 * </ul>
 	 */
 	@Bean
@@ -116,7 +118,7 @@ public class SecurityConfig {
 				.securityContext(context -> context.securityContextRepository(new NullSecurityContextRepository()))
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 		http.headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY))
-				.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER))
+				.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.SAME_ORIGIN))
 				.frameOptions(frame -> frame.deny()).addHeaderWriter(new StaticHeadersWriter("X-Robots-Tag", ROBOTS)));
 		return http.build();
 	}

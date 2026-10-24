@@ -36,7 +36,13 @@
   - 형식이 틀린·없는·닫힌·기간이 지난 링크, `/t/` 아래의 없는 주소는 모두 같은 404 화면이다.
 - **보안 체인** (`/t/**`, `SecurityConfig.tenantLinkFilterChain`)
   - 세션·로그인 유지·요청 저장·CSRF 토큰을 쓰지 않는다. 세입자 POST는 Origin 헤더로 같은 출처만 받는다(커밋 3).
-  - `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow, noarchive`, `Cache-Control: no-store`, 기존 CSP를 붙인다. 화면에는 외부 주소가 없다(테스트).
+  - `Referrer-Policy: same-origin`(레이아웃의 `<meta name="referrer">`도 같게), `X-Robots-Tag: noindex, nofollow, noarchive`, `Cache-Control: no-store`, 기존 CSP를 붙인다. 화면에는 외부 주소가 없다(테스트).
+  - **처음에는 `no-referrer`였다가 바꿨다** (브라우저 확인 F1, 2026-10-24)
+    - `no-referrer`면 브라우저가 폼 제출(페이지 이동)의 `Origin` 헤더를 `null`로 보낸다. 실제 Chrome에서 [네, 보냈어요]가 Origin 검사에 걸려 403이 됐다. `fetch`는 실제 출처를 보내 통과했고, MockMvc 테스트는 이 동작을 재현하지 못해 놓쳤다.
+    - `same-origin`은 같은 사이트 요청에만 Referer를 보낸다. 그래서 다른 사이트로 링크 주소(토큰)가 나가지 않는다는 목적은 그대로다.
+    - Origin 검사는 엄격하게 둔다(`null` 허용·예외 없음).
+    - 같은 사이트 요청에는 `Referer: …/t/{토큰}`이 붙으므로 운영 접근 로그(Caddy)에서 가린다. 앱은 Referer를 로그에 남기지 않는다.
+    - 템플릿에 이 정책을 덮어쓰는 설정(`no-referrer`, `referrerpolicy`, `rel=noreferrer`)이 없음을 `TenantTemplateReferrerTest`가 고정한다. 최종 근거는 실제 Chrome에서 폼 제출로 다시 확인한 결과다(progress 47번 재확인).
   - 세입자 화면은 로그인 정보(auth)를 전혀 쓰지 않는다(ArchUnit `tenantLinkUsesNoLoginInfo`).
 - **요청 수**: `/t/**`의 모든 요청을 IP당 1분에 30회로 센다(`TenantLinkRateLimitInterceptor`, ADR-012 표). 토큰을 확인하기 전에 센다.
 - **로그**: 세입자 화면의 오류는 토큰을 가린 주소(`TenantPaths.mask`)와 예외 종류만 남긴다. 예외 메시지·스택에 경로 값이 섞일 수 있어 그대로 넘기지 않는다. Caddy 접근 로그는 M6에서 가린다.

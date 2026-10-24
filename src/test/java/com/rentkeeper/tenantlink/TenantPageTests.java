@@ -48,8 +48,8 @@ import com.rentkeeper.support.TestData;
  * <ul>
  * <li>보이는 것: 이번 달·덜 확인된 지난 달·다음 달 받을 월세, 계좌번호 전체, 가린 이름·예금주. 안 보이는 것: 전화번호,
  * 보증금, 메모, 다 확인된 지난 달, 취소한 달</li>
- * <li>보안: no-referrer, 색인 금지, 캐시 금지, 세션 쿠키 없음, 외부 주소 없음, 틀린 링크는 모두 같은 404, IP당
- * 1분 30회, 로그에 토큰 없음</li>
+ * <li>보안: Referrer-Policy same-origin, 색인 금지, 캐시 금지, 세션 쿠키 없음, 외부 주소 없음, 틀린 링크는
+ * 모두 같은 404, IP당 1분 30회, 로그에 토큰 없음</li>
  * </ul>
  */
 @SpringBootTest
@@ -156,7 +156,8 @@ class TenantPageTests {
 		MvcResult result = mockMvc.perform(get("/t/" + token).cookie(a.cookie())).andReturn();
 
 		assertThat(result.getResponse().getStatus()).isEqualTo(200);
-		assertThat(result.getResponse().getHeader("Referrer-Policy")).isEqualTo("no-referrer");
+		assertThat(result.getResponse().getHeader("Referrer-Policy")).as("no-referrer면 폼 제출 Origin이 null (F1)")
+				.isEqualTo("same-origin");
 		assertThat(result.getResponse().getHeader("X-Robots-Tag")).isEqualTo("noindex, nofollow, noarchive");
 		assertThat(result.getResponse().getHeader("Cache-Control")).contains("no-store");
 		assertThat(result.getResponse().getHeader("Content-Security-Policy")).contains("default-src 'self'");

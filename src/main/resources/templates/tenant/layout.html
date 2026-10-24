@@ -8,9 +8,10 @@
 <meta charset="UTF-8">
 <!-- 확대를 막지 않는다 (PRD 8.5) -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- 검색엔진 색인 금지, 링크 주소가 다른 사이트로 새지 않게 (헤더로도 보낸다) -->
+<!-- 검색엔진 색인 금지, 링크 주소가 다른 사이트로 새지 않게 (헤더로도 보낸다).
+     referrer는 same-origin: referrer를 아예 끄면 브라우저가 폼 제출의 Origin을 null로 보내 "입금했어요"가 막힌다 (ADR-026) -->
 <meta name="robots" content="noindex, nofollow, noarchive">
-<meta name="referrer" content="no-referrer">
+<meta name="referrer" content="same-origin">
 <title th:replace="${title}">월세 안내</title>
 <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
