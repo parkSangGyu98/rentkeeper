@@ -136,6 +136,15 @@
 		@apply mb-4 text-title font-semibold;
 	}
 
+	/* 폼 묶음(fieldset)을 카드로 쓸 때: 제목(legend)을 테두리 위가 아니라 카드 안 첫 줄에 */
+	fieldset.card > legend {
+		@apply float-left w-full p-0;
+	}
+
+	fieldset.card > legend + * {
+		clear: both;
+	}
+
 	/* 카드 묶음 사이 간격 */
 	.stack {
 		@apply grid gap-4 lg:gap-6;
@@ -225,6 +234,19 @@
 		@apply grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4;
 	}
 
+	/* 이름표·값 목록 (계약 정보 등): 한 줄씩 1px 선으로 나누고, 이름표는 16px 회색, 값은 오른쪽. 값이 길면 다음 줄로 */
+	.kv-list > div {
+		@apply flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-line py-3 first:pt-0 last:border-b-0 last:pb-0;
+	}
+
+	.kv-list dt {
+		@apply text-label text-gray-700;
+	}
+
+	.kv-list dd {
+		@apply tabular-nums;
+	}
+
 	.row-value {
 		@apply font-semibold tabular-nums;
 	}
@@ -286,6 +308,11 @@
 	/* 위험 행동으로 가는 글자 링크 (취소·지우기 확인 화면으로) */
 	.link-danger {
 		@apply font-semibold text-danger-700 underline underline-offset-4;
+	}
+
+	/* 위험 행동으로 가는 윤곽선 버튼 (계약 종료·지우기 확인 화면으로) */
+	.btn-danger-secondary {
+		@apply border border-danger-700 bg-white text-danger-700 hover:bg-danger-50;
 	}
 
 	/* 되돌릴 수 없는 작업(회원 탈퇴·삭제 등): 채도를 낮춘 빨강 */

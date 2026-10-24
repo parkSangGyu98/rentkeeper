@@ -5,48 +5,48 @@
 </head>
 <body>
 	<main id="main" class="page-wide">
-		<p class="mb-2 text-lg"><a th:href="@{/app/properties}" class="font-semibold text-brand-700 underline">내 건물</a></p>
-		<h1 class="mb-1 text-3xl font-bold" th:text="${property.name}">행복빌라</h1>
-		<p class="mb-2 text-lg text-gray-700" th:if="${property.address}" th:text="${property.address}">주소</p>
-		<p class="mb-4 whitespace-pre-line text-base text-gray-700" th:if="${property.memo}" th:text="${property.memo}">메모</p>
-		<div class="mb-8 flex flex-wrap gap-3">
+		<p class="mb-4"><a th:href="@{/app/properties}" class="link">내 건물</a></p>
+		<h1 class="page-title" th:text="${property.name}">행복빌라</h1>
+		<p class="mb-2 page-lead" th:if="${property.address}" th:text="${property.address}">주소</p>
+		<p class="mb-4 whitespace-pre-line note" th:if="${property.memo}" th:text="${property.memo}">메모</p>
+		<div class="mb-10 flex flex-wrap gap-3">
 			<a th:href="@{/app/properties/{id}/edit(id=${property.id})}" class="btn btn-secondary">건물 정보 바꾸기</a>
-			<a th:href="@{/app/properties/{id}/delete(id=${property.id})}" class="btn btn-secondary">건물 지우기</a>
+			<a th:href="@{/app/properties/{id}/delete(id=${property.id})}" class="btn btn-danger-secondary">건물 지우기</a>
 		</div>
 
-		<h2 class="mb-4 text-2xl font-bold">호실</h2>
+		<h2 class="mb-4 text-title font-semibold">호실</h2>
 
 		<!-- 빈 상태 -->
-		<p th:unless="${property.hasUnits()}" class="mb-6 rounded-lg border-2 border-dashed border-gray-400 bg-white p-5 text-lg">
+		<p th:unless="${property.hasUnits()}" class="card card-empty mb-6">
 			아직 호실이 없어요. 아래에서 첫 호실을 추가해 보세요.
 		</p>
 
-		<ul th:if="${property.hasUnits()}" class="mb-8 space-y-3">
-			<li th:each="u : ${property.units}" class="rounded-lg border-2 border-gray-200 bg-white p-4">
+		<ul th:if="${property.hasUnits()}" class="list-grid mb-10">
+			<li th:each="u : ${property.units}" class="card">
 				<div class="flex flex-wrap items-center justify-between gap-3">
 					<div>
-						<p class="text-xl font-bold">
-							<a th:href="@{/app/units/{id}(id=${u.id})}" class="text-gray-900 underline" th:text="${u.name}">101호</a>
+						<p class="text-title font-semibold">
+							<a th:href="@{/app/units/{id}(id=${u.id})}" class="row-title" th:text="${u.name}">101호</a>
 						</p>
-						<p class="text-base text-gray-700" th:text="${u.type.label()}">원룸</p>
+						<p class="note" th:text="${u.type.label()}">원룸</p>
 					</div>
 					<span th:with="badge=${u.status.name() == 'OCCUPIED'} ? 'badge-occupied' : (${u.status.name() == 'UPCOMING'} ? 'badge-upcoming' : (${u.status.name() == 'OVERDUE'} ? 'badge-overdue' : 'badge-vacant'))"
 						th:class="|badge ${badge}|"><th:block th:replace="~{fragments/icons :: status(${badge}, null)}"></th:block><span th:text="${u.status.label()}">공실</span></span>
 				</div>
-				<div class="mt-3 flex flex-wrap gap-4 text-lg">
-					<a th:href="@{/app/units/{id}/edit(id=${u.id})}" class="font-semibold text-brand-700 underline">바꾸기</a>
-					<a th:href="@{/app/units/{id}/delete(id=${u.id})}" class="font-semibold text-brand-700 underline">지우기</a>
+				<div class="mt-4 flex flex-wrap gap-6">
+					<a th:href="@{/app/units/{id}/edit(id=${u.id})}" class="link">바꾸기</a>
+					<a th:href="@{/app/units/{id}/delete(id=${u.id})}" class="link-danger">지우기</a>
 				</div>
 			</li>
 		</ul>
 
-		<section class="rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="add-unit-heading">
-			<h2 id="add-unit-heading" class="mb-4 text-xl font-bold">호실 추가</h2>
+		<section class="card lg:max-w-2xl" aria-labelledby="add-unit-heading">
+			<h2 id="add-unit-heading" class="card-title">호실 추가</h2>
 			<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('${unitForm.*}')}">입력한 내용을 확인해 주세요.</div>
-			<form th:action="@{/app/properties/{id}/units(id=${property.id})}" th:object="${unitForm}" method="post" class="space-y-5" novalidate>
+			<form th:action="@{/app/properties/{id}/units(id=${property.id})}" th:object="${unitForm}" method="post" class="space-y-6" novalidate>
 				<div>
 					<label for="unit-name" class="form-label">호실 이름</label>
-					<p id="unit-name-hint" class="mb-2 text-base text-gray-700">예: 101호, 1층 상가</p>
+					<p id="unit-name-hint" class="mb-2 note">예: 101호, 1층 상가</p>
 					<input id="unit-name" type="text" th:field="*{name}" class="form-input" required
 						th:attr="aria-invalid=${#fields.hasErrors('name')},aria-describedby=${#fields.hasErrors('name')} ? 'unit-name-hint unit-name-error' : 'unit-name-hint'">
 					<p id="unit-name-error" class="form-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">이름 오류</p>
@@ -60,7 +60,7 @@
 				</div>
 				<div>
 					<label for="unit-memo" class="form-label">메모 (선택)</label>
-					<p id="unit-memo-hint" class="mb-2 text-base text-gray-700">주민번호·계좌번호는 적지 마세요.</p>
+					<p id="unit-memo-hint" class="mb-2 note">주민번호·계좌번호는 적지 마세요.</p>
 					<textarea id="unit-memo" th:field="*{memo}" rows="2" class="form-input py-3" aria-describedby="unit-memo-hint"></textarea>
 					<p class="form-error" th:if="${#fields.hasErrors('memo')}" th:errors="*{memo}">메모 오류</p>
 				</div>
