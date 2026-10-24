@@ -126,3 +126,48 @@ COMMENT ON INDEX ix_notification_lease_day IS '세입자 알림의 계약당 하
 COMMENT ON INDEX ix_notification_charge IS '받을 월세 삭제(CASCADE) 때 알림 찾기.';
 COMMENT ON INDEX ix_notification_tenant IS '세입자 삭제(CASCADE) 때 알림 찾기.';
 ```
+
+## V20 세입자 링크 유형·닫은 이유·계약의 알림 멈춤 (커밋 3)
+
+- [x] 토큰 원문 컬럼을 만들지 않는다 (알림 링크도 `token_hash`만, 원문은 보낼 본문에만)
+- [x] 기존 행 `purpose`는 모두 `LANDLORD` (M4까지 링크는 임대인만 만들었다)
+- [x] 이미 닫힌 기존 행의 `revoke_reason`은 추정하지 않고 `UNKNOWN`으로 채운다 (개발자 변경 3). 앱은 `UNKNOWN`을 쓰지 않는다(`TenantAccessToken.revoke`가 거부)
+- [x] 열린 링크는 `revoke_reason` NULL, 닫힌 링크는 값이 있다 (CHECK `ck_tenant_access_token_revoke_reason`)
+- [x] 부분 UNIQUE `ux_tenant_access_token_open`은 V17을 고치지 않고 여기서 `DROP INDEX` 뒤 `(lease_id, purpose) WHERE revoked_at IS NULL`로 다시 만든다 (개발자 변경 3)
+- [x] 계약의 알림 멈춤 플래그 `lease.tenant_notify_paused_at`을 이 파일에 넣었다 (개발자 변경 1, NULL=보냄)
+- [x] 새 컬럼·제약·다시 만든 인덱스에 한글 COMMENT, `revoked_at` 설명은 닫은 이유 컬럼을 가리키게 갱신
+- [ ] V20 적용 전 닫힌 행이 `UNKNOWN`이 되는지는 실제 기존 DB(로컬 DB, v19 → v20)에서 다음 bootRun 때 확인한다: `SELECT revoke_reason, count(*) FROM tenant_access_token WHERE revoked_at IS NOT NULL GROUP BY 1;` (자동 테스트는 빈 DB에서 시작해 기존 행이 없다)
+- 검토:
+
+```sql
+-- 알림용 세입자 링크 유형, 링크를 닫은 이유, 계약의 세입자 알림 멈춤 (M5 결정 7·8, ADR-029).
+-- 알림을 보낼 때마다 알림 전용 링크(NOTIFICATION)를 새로 만들고 예전 알림 링크는 닫는다. 임대인이 직접 만든 링크(LANDLORD)는 그대로 둔다.
+-- 그래서 "계약당 열린 링크 1개"(M4 결정 3)를 "계약·유형마다 열린 링크 1개"로 바꾼다. V17은 고치지 않고 여기서 인덱스를 지우고 다시 만든다.
+
+-- 기존 링크는 모두 임대인이 만든 것이다
+ALTER TABLE tenant_access_token ADD COLUMN purpose varchar(20) NOT NULL DEFAULT 'LANDLORD';
+ALTER TABLE tenant_access_token ADD COLUMN revoke_reason varchar(30);
+-- 이미 닫힌 기존 행은 이유를 추정하지 않는다 (개발자 변경 3)
+UPDATE tenant_access_token SET revoke_reason = 'UNKNOWN' WHERE revoked_at IS NOT NULL;
+
+ALTER TABLE tenant_access_token ADD CONSTRAINT ck_tenant_access_token_purpose
+    CHECK (purpose IN ('LANDLORD', 'NOTIFICATION'));
+ALTER TABLE tenant_access_token ADD CONSTRAINT ck_tenant_access_token_revoke_reason CHECK (
+    (revoked_at IS NULL) = (revoke_reason IS NULL)
+    AND (revoke_reason IS NULL
+        OR revoke_reason IN ('LANDLORD_CLOSED', 'LANDLORD_REISSUED', 'NOTIFICATION_ROTATED', 'UNKNOWN')));
+
+DROP INDEX ux_tenant_access_token_open;
+CREATE UNIQUE INDEX ux_tenant_access_token_open ON tenant_access_token (lease_id, purpose) WHERE revoked_at IS NULL;
+
+-- 임대인이 [링크 닫기]를 누르면 그 계약의 알림 링크 발급을 멈춘다. [알림 다시 켜기]로만 다시 시작한다 (개발자 변경 1)
+ALTER TABLE lease ADD COLUMN tenant_notify_paused_at timestamptz;
+
+COMMENT ON COLUMN tenant_access_token.purpose IS '링크 유형. LANDLORD=임대인이 계약 상세에서 직접 만들어 보낸 링크, NOTIFICATION=알림(안내 문자)에 넣으려고 보낼 때 만든 링크. 계약·유형마다 열린 링크는 하나다. 세입자 화면에서는 두 유형이 똑같이 동작한다.';
+COMMENT ON COLUMN tenant_access_token.revoke_reason IS '링크를 닫은 이유 (닫힌 링크만, 열린 링크는 NULL). LANDLORD_CLOSED=임대인이 [링크 닫기]를 누름, LANDLORD_REISSUED=임대인이 [새 링크 만들기]로 바꿈, NOTIFICATION_ROTATED=새 알림을 보내며 예전 알림 링크를 닫음, UNKNOWN=V20 전에 닫혀 이유가 기록되지 않음. 세입자 화면은 이유와 관계없이 같은 "링크를 열 수 없어요"다.';
+COMMENT ON COLUMN tenant_access_token.revoked_at IS '링크를 닫은 시각 (UTC). NULL=열려 있음(계약의 실제 끝 + 90일까지 쓸 수 있다). 닫은 이유는 revoke_reason. 닫힌 링크는 다시 열지 않는다.';
+COMMENT ON COLUMN lease.tenant_notify_paused_at IS '임대인이 [링크 닫기]로 이 계약의 세입자 알림을 멈춘 시각 (UTC). NULL=알림을 보냄. 값이 있으면 알림 링크를 만들지 않고 세입자 알림을 보내지 않는다(SKIPPED LINK_CLOSED_BY_LANDLORD). 임대인이 [알림 다시 켜기]를 눌러야 NULL로 돌아간다([새 링크 만들기]로는 돌아가지 않는다).';
+COMMENT ON CONSTRAINT ck_tenant_access_token_purpose ON tenant_access_token IS '링크 유형은 LANDLORD 또는 NOTIFICATION.';
+COMMENT ON CONSTRAINT ck_tenant_access_token_revoke_reason ON tenant_access_token IS '닫힌 링크에만 닫은 이유가 있고, 이유는 정해진 값만.';
+COMMENT ON INDEX ux_tenant_access_token_open IS '계약·유형마다 열린 링크는 하나 (M5 결정 7, M4 결정 3을 바꿈). 동시에 새 링크를 두 번 만들어도 하나만 남는다.';
+```

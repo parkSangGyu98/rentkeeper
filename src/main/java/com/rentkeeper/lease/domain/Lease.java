@@ -1,7 +1,9 @@
 package com.rentkeeper.lease.domain;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Objects;
 
 import com.rentkeeper.common.jpa.BaseTimeEntity;
 
@@ -62,6 +64,10 @@ public class Lease extends BaseTimeEntity {
 
 	@Column(name = "ended_on")
 	private LocalDate endedOn;
+
+	// NULL=세입자 알림을 보냄. 임대인이 [링크 닫기]로 멈추면 시각이 들어간다 (V20, M5 결정 8)
+	@Column(name = "tenant_notify_paused_at")
+	private Instant tenantNotifyPausedAt;
 
 	@Column(name = "bank_name", nullable = false, length = LeaseTerms.BANK_NAME_MAX_LENGTH)
 	private String bankName;
@@ -239,6 +245,25 @@ public class Lease extends BaseTimeEntity {
 
 	public LeaseStatus getStatus() {
 		return status;
+	}
+
+	/**
+	 * 세입자 알림을 멈춘다 ([링크 닫기], M5 결정 8). 이미 멈췄으면 처음 시각을 둔다. 알림 링크를 만들지 않고 세입자 알림을 보내지
+	 * 않는다.
+	 */
+	public void pauseTenantNotifications(Instant now) {
+		if (tenantNotifyPausedAt == null) {
+			tenantNotifyPausedAt = Objects.requireNonNull(now);
+		}
+	}
+
+	/** [알림 다시 켜기]. 이것으로만 다시 시작한다 */
+	public void resumeTenantNotifications() {
+		tenantNotifyPausedAt = null;
+	}
+
+	public boolean tenantNotificationsPaused() {
+		return tenantNotifyPausedAt != null;
 	}
 
 	public LocalDate getEndedOn() {

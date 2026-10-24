@@ -11,8 +11,9 @@ public interface TenantAccessTokenRepository extends Repository<TenantAccessToke
 
 	void flush();
 
-	/** 계약의 열린 링크 (계약당 하나, V17 ux_tenant_access_token_open) */
-	Optional<TenantAccessToken> findByLeaseIdAndLandlordIdAndRevokedAtIsNull(long leaseId, long landlordId);
+	/** 계약의 그 유형 열린 링크 (계약·유형마다 하나, V20 ux_tenant_access_token_open) */
+	Optional<TenantAccessToken> findByLeaseIdAndLandlordIdAndPurposeAndRevokedAtIsNull(long leaseId, long landlordId,
+			TenantLinkPurpose purpose);
 
 	/**
 	 * 세입자가 들고 온 토큰의 해시로 찾는다 (세입자 화면의 입구, ADR-026). 세입자는 로그인하지 않아 landlordId가 없다. 이

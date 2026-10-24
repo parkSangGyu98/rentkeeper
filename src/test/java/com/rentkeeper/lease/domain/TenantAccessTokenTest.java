@@ -31,31 +31,32 @@ class TenantAccessTokenTest {
 	@Test
 	void withoutAnyEndDateTheLinkIsNotUsable() {
 		assertThat(TenantAccessToken.usableUntil(null, null)).isEmpty();
-		TenantAccessToken token = TenantAccessToken.open(1, 2, "a".repeat(64));
+		TenantAccessToken token = TenantAccessToken.open(1, 2, "a".repeat(64), TenantLinkPurpose.LANDLORD);
 		assertThat(token.usableOn(LocalDate.of(2026, 10, 17), null, null)).as("닫힌 쪽으로 실패").isFalse();
 	}
 
 	@Test
 	void usableThroughTheLastDayOnly() {
-		TenantAccessToken token = TenantAccessToken.open(1, 2, "a".repeat(64));
+		TenantAccessToken token = TenantAccessToken.open(1, 2, "a".repeat(64), TenantLinkPurpose.LANDLORD);
 		assertThat(token.usableOn(LocalDate.of(2027, 4, 1), END, null)).isTrue();
 		assertThat(token.usableOn(LocalDate.of(2027, 4, 2), END, null)).isFalse();
 	}
 
 	@Test
 	void revokedLinkIsNotUsableAndCannotBeRevokedTwice() {
-		TenantAccessToken token = TenantAccessToken.open(1, 2, "a".repeat(64));
-		token.revoke(Instant.parse("2026-10-17T00:00:00Z"));
+		TenantAccessToken token = TenantAccessToken.open(1, 2, "a".repeat(64), TenantLinkPurpose.LANDLORD);
+		token.revoke(Instant.parse("2026-10-17T00:00:00Z"), TenantLinkRevokeReason.LANDLORD_CLOSED);
 
 		assertThat(token.isOpen()).isFalse();
 		assertThat(token.usableOn(LocalDate.of(2026, 10, 17), END, null)).isFalse();
-		assertThatThrownBy(() -> token.revoke(Instant.parse("2026-10-18T00:00:00Z")))
+		assertThatThrownBy(
+				() -> token.revoke(Instant.parse("2026-10-18T00:00:00Z"), TenantLinkRevokeReason.LANDLORD_CLOSED))
 				.isInstanceOf(IllegalStateException.class);
 	}
 
 	@Test
 	void lastUsedIsRecordedOncePerSeoulDay() {
-		TenantAccessToken token = TenantAccessToken.open(1, 2, "a".repeat(64));
+		TenantAccessToken token = TenantAccessToken.open(1, 2, "a".repeat(64), TenantLinkPurpose.LANDLORD);
 
 		assertThat(token.markUsed(Instant.parse("2026-10-17T00:00:00Z"), SEOUL)).isTrue();
 		assertThat(token.markUsed(Instant.parse("2026-10-17T14:59:59Z"), SEOUL)).as("서울 10/17 23:59").isFalse();
@@ -65,7 +66,8 @@ class TenantAccessTokenTest {
 
 	@Test
 	void toStringHasNoHash() {
-		assertThat(TenantAccessToken.open(1, 2, "b".repeat(64)).toString()).doesNotContain("bbbb");
+		assertThat(TenantAccessToken.open(1, 2, "b".repeat(64), TenantLinkPurpose.LANDLORD).toString())
+				.doesNotContain("bbbb");
 	}
 
 }

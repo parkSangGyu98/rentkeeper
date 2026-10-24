@@ -136,6 +136,7 @@ class IdorTests {
 		long firstLink = jdbc.queryForObject("select id from tenant_access_token where lease_id = ?", Long.class,
 				lease);
 		victimToken = tenantLinkService.issue(victim.landlordId(), lease, firstLink).rawToken();
+		jdbc.update("update lease set tenant_notify_paused_at = now() where id = ?", lease);
 		long history = jdbc.queryForObject(
 				"select id from lease_rent_history where lease_id = ? and effective_from = '2027-01-01'", Long.class,
 				lease);
@@ -199,6 +200,9 @@ class IdorTests {
 		attacks.put("GET /app/leases/{id}/tenant-link/close", Attack.get("/app/leases/{lease}/tenant-link/close"));
 		attacks.put("POST /app/leases/{id}/tenant-link/close",
 				Attack.post("/app/leases/{lease}/tenant-link/close", "openLinkId", ""));
+		// 세입자 알림 다시 켜기 (M5). 피해자 계약은 알림을 멈춘 상태라, 풀리면 snapshot이 달라진다
+		attacks.put("POST /app/leases/{id}/tenant-notifications/resume",
+				Attack.post("/app/leases/{lease}/tenant-notifications/resume"));
 		// 받을 월세 (billing 모듈)
 		attacks.put("GET /app/charges/{id}", Attack.get("/app/charges/{charge}"));
 		attacks.put("GET /app/charges/{id}/payments/new",

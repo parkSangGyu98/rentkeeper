@@ -65,6 +65,17 @@
 				</form>
 				<p th:unless="${tenantLink.withinPeriod()}" class="text-lg font-semibold">계약이 끝나고 90일이 지나 세입자 링크를 만들 수 없어요.</p>
 			</th:block>
+			<!-- 알림(안내 문자)에 넣은 링크와 알림 멈춤 (M5 결정 7·8). 알림 링크 주소는 임대인에게도 보이지 않는다 -->
+			<p th:if="${!tenantLink.open() and tenantLink.notificationLinkOpen()}" class="mt-4 text-lg">
+				안내 문자에 넣은 링크가 열려 있어요. <a th:href="@{/app/leases/{id}/tenant-link/close(id=${lease.id()})}" class="underline">링크 닫기</a>
+			</p>
+			<div th:if="${tenantLink.notificationsPaused()}" id="tenant-notify-paused" class="mt-4 rounded-lg border-2 border-amber-500 bg-amber-50 p-4">
+				<p class="mb-2 text-lg font-semibold">세입자 안내 문자를 멈췄어요.</p>
+				<p class="mb-3 text-lg">[링크 닫기]를 눌러 세입자에게 월세 안내 문자를 보내지 않고 있어요. 다시 보내려면 아래 버튼을 눌러 주세요. 다음 안내 문자에는 새 링크가 들어가요.</p>
+				<form th:action="@{/app/leases/{id}/tenant-notifications/resume(id=${lease.id()})}" method="post">
+					<button type="submit" class="btn btn-secondary">알림 다시 켜기</button>
+				</form>
+			</div>
 		</section>
 
 		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="tenant-heading">

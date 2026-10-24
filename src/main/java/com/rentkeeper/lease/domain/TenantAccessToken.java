@@ -13,6 +13,8 @@ import com.rentkeeper.common.jpa.BaseTimeEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -45,8 +47,16 @@ public class TenantAccessToken extends BaseTimeEntity {
 	@Column(name = "token_hash", nullable = false, updatable = false, length = 64)
 	private String tokenHash;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "purpose", nullable = false, updatable = false)
+	private TenantLinkPurpose purpose;
+
 	@Column(name = "revoked_at")
 	private Instant revokedAt;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "revoke_reason")
+	private TenantLinkRevokeReason revokeReason;
 
 	@Column(name = "last_used_at")
 	private Instant lastUsedAt;
@@ -58,8 +68,9 @@ public class TenantAccessToken extends BaseTimeEntity {
 	 * @param tokenHash
 	 *            원문의 SHA-256 hex. 원문은 여기에 넘기지 않는다
 	 */
-	public static TenantAccessToken open(long landlordId, long leaseId, String tokenHash) {
+	public static TenantAccessToken open(long landlordId, long leaseId, String tokenHash, TenantLinkPurpose purpose) {
 		TenantAccessToken token = new TenantAccessToken();
+		token.purpose = Objects.requireNonNull(purpose);
 		token.landlordId = landlordId;
 		token.leaseId = leaseId;
 		token.tokenHash = Objects.requireNonNull(tokenHash);
@@ -84,12 +95,16 @@ public class TenantAccessToken extends BaseTimeEntity {
 		return revokedAt == null;
 	}
 
-	/** 링크를 닫는다. 닫힌 링크는 다시 열지 않는다 */
-	public void revoke(Instant now) {
+	/** 링크를 닫는다. 닫힌 링크는 다시 열지 않는다 (V20: 닫은 이유를 함께 남긴다) */
+	public void revoke(Instant now, TenantLinkRevokeReason reason) {
 		if (revokedAt != null) {
 			throw new IllegalStateException("already revoked");
 		}
+		if (reason == null || reason == TenantLinkRevokeReason.UNKNOWN) {
+			throw new IllegalArgumentException("reason");
+		}
 		this.revokedAt = Objects.requireNonNull(now);
+		this.revokeReason = reason;
 	}
 
 	/**
@@ -117,6 +132,14 @@ public class TenantAccessToken extends BaseTimeEntity {
 		return leaseId;
 	}
 
+	public TenantLinkPurpose getPurpose() {
+		return purpose;
+	}
+
+	public TenantLinkRevokeReason getRevokeReason() {
+		return revokeReason;
+	}
+
 	public Instant getRevokedAt() {
 		return revokedAt;
 	}
@@ -128,7 +151,8 @@ public class TenantAccessToken extends BaseTimeEntity {
 	// 해시도 로그에 남기지 않는다
 	@Override
 	public String toString() {
-		return "TenantAccessToken[id=" + id + ", leaseId=" + leaseId + ", open=" + isOpen() + "]";
+		return "TenantAccessToken[id=" + id + ", leaseId=" + leaseId + ", purpose=" + purpose + ", open=" + isOpen()
+				+ "]";
 	}
 
 }
