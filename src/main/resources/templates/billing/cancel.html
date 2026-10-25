@@ -9,7 +9,7 @@
 		<p class="mb-4 text-title"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
 			· <span th:text="${charge.monthText()}">2026년 10월</span> · <span th:text="${charge.totalText()}">550,000원</span></p>
 
-		<!-- 입금 기록이 있으면 취소할 수 없다 (M3 결정 7) -->
+		<!--/* 입금 기록이 있으면 취소할 수 없다 (M3 결정 7) */-->
 		<div th:unless="${charge.canCancel()}" class="alert alert-error mb-6" role="alert">
 			입금 기록이 있어 취소할 수 없어요. 입금 기록을 먼저 지워 주세요.
 		</div>

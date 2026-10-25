@@ -70,14 +70,39 @@ C="docker compose --env-file .env.prod -f docker/compose.prod.yml"
 - 확인: `tail backup.log`에 `backup: rentkeeper-…dump.gpg (…) 완료`. R2 콘솔에 파일이 생겼는지 가끔 본다.
 
 ## 7. 복구 리허설 (배포 직후 1회, 그 뒤 월 1회) — 운영 DB는 건드리지 않는다
-로컬 PC에서 한다. 운영 키가 필요하므로 끝나면 로컬에 남은 키·덤프를 지운다.
+로컬 PC의 bash(Linux·macOS 터미널, Windows는 Git Bash)에서 한다. 운영 키가 필요하므로 끝나면 로컬에 남은 키·덤프를 지운다.
+아래 절차는 로컬 배포 리허설(2026-10-25, 13번)에서 그대로 해 본 것이다: 표 24개의 행 수가 원본과 같았고, 같은 키로 띄운 앱의 계약 화면이 원본과 같았다.
 1. R2에서 최신 백업 파일을 내려받는다(콘솔 또는 aws-cli).
-2. 복호화: `gpg --batch --pinentry-mode loopback --decrypt --output restore.dump rentkeeper-<날짜>.dump.gpg` (암호를 물으면 `BACKUP_PASSPHRASE`)
-3. 빈 Postgres를 띄운다: `docker run -d --name rk-restore -e POSTGRES_PASSWORD=<임시> -p 127.0.0.1:55432:5432 postgres:16-alpine`
-4. 복원: `docker cp restore.dump rk-restore:/tmp/ && docker exec rk-restore pg_restore -U postgres -d postgres --no-owner /tmp/restore.dump`
-5. 건수 확인(개인정보 없이): `docker exec rk-restore psql -U postgres -c "select (select count(*) from landlord) l, (select count(*) from lease) le, (select count(*) from charge) c, (select max(version) from flyway_schema_history) v;"`
-6. 복호화 확인: 로컬 앱을 운영 키(`APP_ENCRYPTION_KEY`·`APP_HMAC_KEY`·키 버전)와 이 DB(`DB_URL=jdbc:postgresql://localhost:55432/postgres`)로 띄워, 계약 상세에서 세입자 이름이 정상 글자로 보이는지 본다.
-7. 걸린 시간과 결과를 `docs/progress.md`에 한 줄 적는다. `docker rm -f rk-restore`, `restore.dump`·백업 파일·임시 .env를 지운다.
+2. 복호화: 암호는 화면에 보이지 않게 입력해 파일 디스크립터로만 넘긴다. `--batch`를 쓰면 gpg가 암호를 묻지 못해 "can't get input"으로 실패하므로 암호를 이렇게 넘긴다.
+   ```bash
+   read -rs BP   # BACKUP_PASSPHRASE를 붙여 넣고 Enter
+   gpg --batch --pinentry-mode loopback --passphrase-fd 3 --decrypt --output restore.dump rentkeeper-<날짜>.dump.gpg 3<<<"$BP"; unset BP
+   ```
+3. 빈 Postgres를 앱과 같은 전용 네트워크에 띄운다(6번에서 앱 컨테이너가 이 이름으로 붙는다):
+   ```bash
+   docker network create rk-restore
+   docker run -d --name rk-restore --network rk-restore -e POSTGRES_PASSWORD=<임시> postgres:16-alpine
+   ```
+4. 복원(오류 없이 끝나야 한다). **Windows Git Bash에서는 앞에 `export MSYS_NO_PATHCONV=1`**을 먼저 한다. 없으면 `/tmp/…`가 Windows 경로로 바뀌어 `could not open input file`로 실패한다.
+   ```bash
+   docker cp restore.dump rk-restore:/tmp/ && docker exec rk-restore pg_restore -U postgres -d postgres --no-owner /tmp/restore.dump
+   ```
+5. 건수 확인(개인정보 없이, 모든 표): 아래 SQL을 `counts.sql`로 저장해 넣고 돌린다. 원본과 비교하려면 백업 직후 같은 SQL을 `$C exec -T postgres psql -U <DB_USER> -d <DB_NAME> -At < counts.sql`로 서버에서 돌려 둔다(읽기만 한다).
+   ```sql
+   select table_name || '=' || (xpath('/row/c/text()', query_to_xml(format('select count(*) c from %I', table_name), false, true, '')))[1]::text
+   from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' order by table_name;
+   ```
+   `docker cp counts.sql rk-restore:/tmp/ && docker exec rk-restore psql -U postgres -d postgres -Atf /tmp/counts.sql`. `flyway_schema_history` 줄이 지금 마이그레이션 수와 같아야 한다.
+6. 복호화 확인: 운영 이미지(`APP_IMAGE`와 같은 태그)를 이 DB에 붙여 띄운다.
+   - 설정 파일은 `.env.prod`를 복사한 임시 파일(예: `restore.env`)을 쓰되, **메일(`MAIL_HOST` 등)·카카오 값은 가짜로 바꾼다.** 복구한 DB에 남은 대기 알림·운영 알림·카카오 연결 끊기 배치가 실제로 나가지 않게 하려는 것이다. 키(`APP_ENCRYPTION_KEY`·키 버전·`APP_HMAC_KEY`)는 운영 값 그대로 둔다.
+   ```bash
+   docker run -d --name rk-restore-app --network rk-restore --env-file restore.env \
+     -e DB_URL=jdbc:postgresql://rk-restore:5432/postgres -e DB_USER=postgres -e DB_PASSWORD=<3번의 임시> \
+     -p 127.0.0.1:18080:8080 <APP_IMAGE>
+   ```
+   - `docker logs rk-restore-app`에 `Schema "public" is up to date`와 `Started RentKeeperApplication`이 있고, `docker ps`에서 `healthy`가 되는지 본다.
+   - 브라우저로 `http://localhost:18080/login`에 내 계정(이메일)으로 로그인해 계약 상세에서 세입자 이름이 정상 글자로 보이는지 본다. 키가 맞지 않으면 암호화한 칸을 읽지 못한다.
+7. 걸린 시간과 결과를 `docs/progress.md`에 한 줄 적는다. 정리: `docker rm -f rk-restore-app rk-restore && docker network rm rk-restore`, `restore.dump`·백업 파일·`restore.env`를 지운다.
 
 ## 8. 키 교체 (필요할 때만)
 - 개인정보 암호화 키: 새 키를 `APP_ENCRYPTION_KEY`에, 버전을 하나 올려 `APP_ENCRYPTION_KEY_VERSION`에, 예전 키를 `APP_ENCRYPTION_PREVIOUS_KEYS`에 `버전:키`로 넣고 재시작한다(ADR-017). 예전 데이터는 읽을 때 예전 키로 풀린다. 예전 키는 모든 행을 다시 저장하기 전까지 지우지 않는다.
@@ -110,3 +135,19 @@ C="docker compose --env-file .env.prod -f docker/compose.prod.yml"
 - 데모 계정은 만든 지 24시간이 지나면 매시 20분에 지워진다(`DemoAccountPurgeJob`).
 - 한꺼번에 지우려면(예: 이상한 데이터가 보일 때): `$C exec postgres psql -U <DB_USER> -d <DB_NAME> -c "update landlord set demo_expires_at = now() where demo_expires_at is not null;"` → 다음 정각 20분에 지워진다.
 - 데모 수 상한(`APP_DEMO_MAX_ACCOUNTS`)이나 시간(`APP_DEMO_LIFETIME`)을 바꾸면 `$C up -d app`.
+
+## 13. 로컬 배포 리허설 (운영 구성 그대로, 내 PC)
+서버에 올리기 전에 `compose.prod.yml`·Caddyfile·이미지를 내 PC Docker에서 그대로 띄워 본다. 운영 파일은 고치지 않고 `docker/compose.rehearsal.yml`로 포트와 설정 파일만 바꾼다(127.0.0.1의 8081·8443).
+1. 이미지를 로컬에서 빌드한다: `docker build -t rentkeeper:rehearsal .`
+2. `.env.prod.example`과 같은 이름으로 `.env.rehearsal`을 만든다(`.gitignore`의 `.env.*`라 커밋되지 않는다). 키·비밀번호는 그 자리에서 무작위로 만들고(`openssl rand -base64 32`, `openssl rand -hex 24`) 화면에 찍지 않는다. `DOMAIN=localhost`(Caddy 내부 인증서), `APP_BASE_URL=https://localhost:8443`, `APP_IMAGE=rentkeeper:rehearsal`, 카카오·메일·R2는 가짜 값.
+3. 띄우기와 내리기. 개발 DB(`docker-compose.yml`)와 운영 compose는 같은 프로젝트 이름 `rentkeeper`를 써서 볼륨도 같은 `rentkeeper_pgdata`가 된다. `compose.rehearsal.yml`의 `name: rentkeeper-rehearsal`(그리고 `-p`)이 프로젝트 이름을 바꿔 볼륨이 `rentkeeper-rehearsal_pgdata`로 따로 생긴다. **띄우기 전에 `$R config | grep "_pgdata"`가 `rentkeeper-rehearsal_pgdata`인지 본다.**
+   ```bash
+   R="docker compose -p rentkeeper-rehearsal --env-file .env.rehearsal -f docker/compose.prod.yml -f docker/compose.rehearsal.yml"
+   $R up -d
+   $R down -v
+   ```
+4. 확인은 `curl.exe -k https://localhost:8443/…`로 한다. 리허설에서만 생기는 차이:
+   - 앱이 보내는 리다이렉트 주소와 80→443 이동이 `https://localhost/…`(포트 없음)다. 운영은 443이라 문제없다.
+   - 앱에 기록되는 접속 IP는 Docker Desktop의 게이트웨이(`172.30.0.1`)다. Caddy 주소(`172.30.0.10`)가 아니고 꾸민 X-Forwarded-For도 아니면 통과다. 실제 사용자 IP는 서버에서 9번으로 확인한다.
+5. 백업 스크립트 리허설: 스크립트는 저장소 루트의 `.env.prod`와 `docker/compose.prod.yml`을 읽으므로, 임시 폴더에 `scripts/backup.sh`·`docker/`를 복사하고 `.env.rehearsal`을 `.env.prod` 이름으로 둔다. 그리고 `COMPOSE_PROJECT_NAME=rentkeeper-rehearsal`로 실행한다(없으면 개발 DB 컨테이너에 붙는다). R2 업로드만 건너뛰려면 `PATH` 앞에 `amazon/aws-cli` 실행만 건너뛰는 `docker` 대리 스크립트를 둔다. 스크립트 자체는 고치지 않는다.
+   - Windows Git Bash에서는 `TZ=Asia/Seoul`을 몰라 파일 이름 시각이 UTC로 찍힌다. 서버(Ubuntu)에서는 서울 시각이다.

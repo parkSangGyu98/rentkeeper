@@ -1,0 +1,10 @@
+# 검색에 보일 곳은 첫 화면·이용약관·개인정보 처리방침뿐이다.
+# 로그인 뒤 화면(/app), 세입자 링크(/t), 가입·로그인·데모·메일 링크 주소는 모두 막는다.
+# (robots.txt는 접근 제어가 아니다. 막는 것은 로그인·토큰 검사가 하고, 세입자 링크는 noindex 헤더도 보낸다)
+User-agent: *
+Allow: /$
+Allow: /terms
+Allow: /privacy
+Allow: /css/
+Allow: /js/
+Disallow: /

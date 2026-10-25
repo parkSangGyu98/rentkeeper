@@ -10,7 +10,7 @@
 			<p class="page-lead" th:if="${view.thisMonth()}">이번 달</p>
 		</div>
 
-		<!-- 달 이동은 GET 링크 (주소로 저장·뒤로 가기 가능). 고른 상태는 그대로 둔다 -->
+		<!--/* 달 이동은 GET 링크 (주소로 저장·뒤로 가기 가능). 고른 상태는 그대로 둔다 */-->
 		<nav class="mb-6 flex flex-wrap gap-3" aria-label="달 이동">
 			<a th:href="@{${view.previousHref()}}" class="btn btn-secondary">이전 달</a>
 			<a th:unless="${view.thisMonth()}" th:href="@{${view.thisMonthHref()}}" class="btn btn-secondary">이번 달</a>
@@ -26,8 +26,8 @@
 			</dl>
 		</section>
 
-		<!-- 상태 고르기 (M3-b 결정 12). 건수와 위 합계는 고른 상태와 관계없이 달 전체.
-		     고른 탭은 꽉 찬 주요 버튼이 아니라 옅은 바탕(btn-selected)으로 표시한다 -->
+		<!--/* 상태 고르기 (M3-b 결정 12). 건수와 위 합계는 고른 상태와 관계없이 달 전체.
+		     고른 탭은 꽉 찬 주요 버튼이 아니라 옅은 바탕(btn-selected)으로 표시한다 */-->
 		<nav th:unless="${view.monthEmpty()}" class="mb-6 flex flex-wrap gap-2" aria-label="상태 고르기">
 			<a th:each="t : ${view.tabs()}" th:href="@{${t.href()}}"
 				th:class="${t.selected()} ? 'btn btn-selected' : 'btn btn-secondary'"
@@ -35,7 +35,7 @@
 				th:text="${t.label()} + ' ' + ${t.count()}">전체 3</a>
 		</nav>
 
-		<!-- 빈 상태: 달 전체가 비었는지, 고른 상태만 비었는지 구분한다 -->
+		<!--/* 빈 상태: 달 전체가 비었는지, 고른 상태만 비었는지 구분한다 */-->
 		<p th:if="${view.monthEmpty()}" class="card card-empty mb-6">
 			이 달에 받을 월세가 없어요.
 		</p>

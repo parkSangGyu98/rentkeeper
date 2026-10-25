@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<!--
+<!--/*
   세입자 링크 화면 레이아웃 (M4). 임대인 메뉴·로그인 버튼이 없다. 외부 주소(CDN 글꼴·스크립트)를 쓰지 않는다(TenantPageTests가 검사).
   각 페이지: <html th:replace="~{tenant/layout :: layout(~{::title}, ~{::main})}">
--->
+*/-->
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, content)">
 <head>
 <meta charset="UTF-8">
-<!-- 확대를 막지 않는다 (PRD 8.5) -->
+<!--/* 확대를 막지 않는다 (PRD 8.5) */-->
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- 검색엔진 색인 금지, 링크 주소가 다른 사이트로 새지 않게 (헤더로도 보낸다).
-     referrer는 same-origin: referrer를 아예 끄면 브라우저가 폼 제출의 Origin을 null로 보내 "입금했어요"가 막힌다 (ADR-026) -->
+<!--/* 검색엔진 색인 금지, 링크 주소가 다른 사이트로 새지 않게 (헤더로도 보낸다).
+     referrer는 same-origin: referrer를 아예 끄면 브라우저가 폼 제출의 Origin을 null로 보내 "입금했어요"가 막힌다 (ADR-026) */-->
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="same-origin">
 <title th:replace="${title}">월세 안내</title>
-<!-- 한글 글꼴 Pretendard (서버에 포함, 외부 주소 없음). 화면에 나온 글자의 조각만 받는다 (디자인 교체 결정 2) -->
+<!--/* 한글 글꼴 Pretendard (서버에 포함, 외부 주소 없음). 화면에 나온 글자의 조각만 받는다 (디자인 교체 결정 2) */-->
 <link rel="stylesheet" th:href="@{/css/fonts/pretendard/pretendardvariable-dynamic-subset.css}">
 <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>

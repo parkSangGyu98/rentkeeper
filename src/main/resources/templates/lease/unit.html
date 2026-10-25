@@ -13,7 +13,7 @@
 		</div>
 		<p class="mb-6 page-lead" th:text="${page.unit().type().label()}">원룸</p>
 
-		<!-- 나가는 날이 지났는데 종료 처리를 하지 않은 계약 (ADR-019) -->
+		<!--/* 나가는 날이 지났는데 종료 처리를 하지 않은 계약 (ADR-019) */-->
 		<div class="alert alert-error" role="alert" th:if="${page.staleActive()}">
 			나가는 날이 지났는데 종료 처리를 하지 않은 계약이 있어요. 아래 목록에서 확인해 주세요.
 		</div>

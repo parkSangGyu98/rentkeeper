@@ -31,7 +31,7 @@
 				<p id="email-error" class="form-error" th:if="${#fields.hasErrors('notificationEmail')}" th:errors="*{notificationEmail}">이메일 오류</p>
 			</div>
 
-			<!-- 초대 코드 (M6 결정 3). 칸 값은 다시 채우지 않는다 -->
+			<!--/* 초대 코드 (M6 결정 3). 칸 값은 다시 채우지 않는다 */-->
 			<div th:if="${inviteRequired}">
 				<label for="inviteCode" class="form-label">초대 코드</label>
 				<p id="inviteCode-hint" class="mb-2 note">지금은 초대받은 분만 가입할 수 있어요. 둘러보려면 첫 화면의 [데모로 둘러보기]를 눌러 주세요.</p>

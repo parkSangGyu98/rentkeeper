@@ -181,6 +181,51 @@ class ChargeEditTests {
 	}
 
 	@Test
+	void lastItemDeleteConfirmPageSendsBackToDetailWithGuide() throws Exception {
+		String confirmPath = "/app/charges/" + charge + "/items/" + feeItem + "/delete";
+		assertThat(mockMvc.perform(get(confirmPath).cookie(a.cookie())).andReturn().getResponse().getStatus())
+				.as("항목이 둘이면 확인 화면이 열린다").isEqualTo(200);
+
+		delete(rentItem, version());
+		MvcResult confirm = mockMvc.perform(get(confirmPath).cookie(a.cookie())).andReturn();
+
+		assertThat(confirm.getResponse().getRedirectedUrl()).isEqualTo("/app/charges/" + charge);
+		assertThat(confirm.getFlashMap().get("chargeAlert"))
+				.isEqualTo("마지막 항목은 지울 수 없어요. 이 달 월세를 받지 않으려면 [받을 월세 취소]를 써 주세요.");
+		assertThat(jdbc.queryForObject("select count(*) from charge_item where charge_id = ?", Long.class, charge))
+				.isEqualTo(1L);
+	}
+
+	@Test
+	void doubleSubmitWithTheSameSessionAnswersBothWithoutError() throws Exception {
+		// 같은 화면에서 버튼을 두 번 빠르게 누른 경우: 같은 세션으로 같은 요청이 동시에 온다. 두 응답 모두 안내 메시지를
+		// 세션(플래시)에 저장하므로 세션 속성 저장이 겹친다
+		ExecutorService executor = Executors.newFixedThreadPool(2);
+		try {
+			for (int round = 0; round < 10; round++) {
+				CountDownLatch start = new CountDownLatch(1);
+				List<Future<MvcResult>> results = new ArrayList<>();
+				for (int i = 0; i < 2; i++) {
+					results.add(executor.submit(() -> {
+						start.await();
+						return delete(feeItem, -1);
+					}));
+				}
+				start.countDown();
+				for (Future<MvcResult> result : results) {
+					MvcResult done = result.get(30, TimeUnit.SECONDS);
+					assertThat(done.getResponse().getRedirectedUrl()).as("%d번째", round + 1)
+							.isEqualTo("/app/charges/" + charge);
+				}
+			}
+		} finally {
+			executor.shutdownNow();
+		}
+		assertThat(jdbc.queryForObject("select count(*) from charge_item where charge_id = ?", Long.class, charge))
+				.as("오래된 version이라 아무것도 지워지지 않는다").isEqualTo(2L);
+	}
+
+	@Test
 	void deletingTwoLastItemsAtTheSameMomentLeavesOne() throws Exception {
 		// 두 기기(서로 다른 로그인 세션)에서 남은 두 항목을 하나씩 동시에 지운다
 		jakarta.servlet.http.Cookie other = mockMvc.perform(

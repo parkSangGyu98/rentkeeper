@@ -10,7 +10,7 @@
 			· <span th:text="${charge.monthText()}">2026년 10월</span> 받을 월세</p>
 
 		<div class="alert alert-info mb-6" role="status" th:if="${overpay}" th:text="${overpay}">남은 금액보다 많아요</div>
-		<!-- 세입자 신고 확인 (M4 결정 11): 통장에서 실제로 들어온 금액·날짜로 고쳐 기록한다 -->
+		<!--/* 세입자 신고 확인 (M4 결정 11): 통장에서 실제로 들어온 금액·날짜로 고쳐 기록한다 */-->
 		<div class="alert alert-info mb-6" role="status" th:if="${form.fromReport}">
 			세입자가 <strong th:text="${charge.reportedOnText()}">2026년 10월 17일</strong>에 입금했다고 알렸어요.
 			통장에서 들어온 금액과 날짜를 확인하고, 다르면 고쳐서 기록해 주세요.
@@ -22,7 +22,7 @@
 			<input type="hidden" th:field="*{overpayConfirmed}">
 			<input type="hidden" th:field="*{fromReport}">
 
-			<!-- [다 받았어요]: 남은 금액 그대로 -->
+			<!--/* [다 받았어요]: 남은 금액 그대로 */-->
 			<div th:if="${form.full}">
 				<p class="form-label">받은 금액</p>
 				<p class="stat-value" th:text="${charge.balanceText()}">550,000원</p>

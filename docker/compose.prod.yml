@@ -44,6 +44,9 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME}
       # 2GB 서버: 힙 상한을 두어 Postgres·Caddy와 메모리를 나눈다 (모자라면 4GB 서버로, ADR-030)
       JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--Xmx640m -XX:MaxMetaspaceSize=192m -XX:+ExitOnOutOfMemoryError}
+      # .env.prod에서 비우면 587(STARTTLS). 빈 값이 그대로 앱에 가면 application-prod.yml의 기본값(587)이 쓰이지 않고
+      # 메일 기본 포트 25로 붙는다(배포 리허설에서 확인). 클라우드 서버는 25번 밖으로 나가기를 막는 경우가 많다
+      MAIL_PORT: ${MAIL_PORT:-587}
     networks:
       - internal
     logging: *logging

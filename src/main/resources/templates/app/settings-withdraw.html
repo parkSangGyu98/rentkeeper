@@ -19,7 +19,7 @@
 
 		<div class="alert alert-error" role="alert" th:if="${error}" th:text="${error}">오류</div>
 
-		<!-- 이메일 가입 계정: 지금 비밀번호로 본인 확인 -->
+		<!--/* 이메일 가입 계정: 지금 비밀번호로 본인 확인 */-->
 		<form th:unless="${account.kakao}" th:action="@{/app/settings/withdraw}" method="post" class="card space-y-6" novalidate>
 			<div>
 				<label for="currentPassword" class="form-label">지금 비밀번호</label>
@@ -34,7 +34,7 @@
 			<button type="submit" class="btn btn-danger w-full">탈퇴하기</button>
 		</form>
 
-		<!-- 카카오 계정 1단계: 탈퇴 의사 확인 -->
+		<!--/* 카카오 계정 1단계: 탈퇴 의사 확인 */-->
 		<form th:if="${account.kakao and kakaoReauthReady == null}" th:action="@{/app/settings/withdraw/kakao}" method="post"
 			class="card space-y-6" novalidate>
 			<p>다음 단계에서 카카오 계정으로 다시 로그인해 본인 확인을 해요.</p>
@@ -45,7 +45,7 @@
 			<button type="submit" class="btn btn-danger w-full">다음</button>
 		</form>
 
-		<!-- 카카오 계정 2단계: 10분 안에 카카오 재로그인. 카카오 주소로는 폼을 보낼 수 없어(CSP) 링크로 이동한다 -->
+		<!--/* 카카오 계정 2단계: 10분 안에 카카오 재로그인. 카카오 주소로는 폼을 보낼 수 없어(CSP) 링크로 이동한다 */-->
 		<th:block th:if="${account.kakao and kakaoReauthReady != null}">
 			<p class="mb-4">아래 버튼을 눌러 카카오 계정으로 다시 로그인하면 바로 탈퇴가 처리돼요. 10분 안에 해 주세요.</p>
 			<div class="alert alert-info" role="status" th:if="${inAppBrowser}">

@@ -4,7 +4,7 @@
 <title th:text="|세입자 링크 - #{app.name}|">세입자 링크</title>
 </head>
 <body>
-	<!-- 새로 만든 세입자 링크 (M4 결정 2). 원문은 이 화면에만 있다. 리다이렉트하지 않고 POST 응답으로 그린다 -->
+	<!--/* 새로 만든 세입자 링크 (M4 결정 2). 원문은 이 화면에만 있다. 리다이렉트하지 않고 POST 응답으로 그린다 */-->
 	<main id="main" class="page">
 		<p class="mb-4"><a th:href="@{/app/leases/{id}(id=${lease.leaseId()})}" class="link"
 			th:text="${lease.unitName()} + ' · ' + ${lease.tenantName()} + '님 계약'">행복빌라 101호 · 홍길동님 계약</a></p>

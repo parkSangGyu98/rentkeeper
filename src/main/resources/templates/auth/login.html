@@ -11,7 +11,7 @@
 		<div class="alert alert-error" role="alert" th:if="${param.kakaoError}">카카오 로그인을 끝내지 못했어요. 다시 시도해 주세요.</div>
 		<div class="alert alert-error" role="alert" th:if="${param.withdrawMismatch}">탈퇴하려던 계정과 다른 카카오 계정으로 확인해서 탈퇴하지 않았어요. 안전을 위해 로그아웃했으니 다시 로그인해 주세요.</div>
 
-		<!-- 카카오 로그인은 폼 POST가 아니라 링크(GET)로 시작한다: 폼 제출 뒤 다른 사이트로 리다이렉트하면 CSP form-action에 막힌다 (ADR-014) -->
+		<!--/* 카카오 로그인은 폼 POST가 아니라 링크(GET)로 시작한다: 폼 제출 뒤 다른 사이트로 리다이렉트하면 CSP form-action에 막힌다 (ADR-014) */-->
 		<th:block th:if="${kakaoLoginEnabled}">
 			<a th:href="@{/oauth2/authorization/kakao}" class="btn btn-kakao w-full">카카오로 시작하기</a>
 			<p class="my-6 text-center note">또는 이메일로 로그인</p>
@@ -20,7 +20,7 @@
 		<div class="alert alert-info" role="status" th:if="${param.reset}">비밀번호를 바꿨어요. 새 비밀번호로 로그인해 주세요.</div>
 		<div class="alert alert-error" role="alert" th:if="${rememberMeReset}">보안을 위해 이 기기의 로그인 유지를 해제했어요. 다시 로그인해 주세요.</div>
 
-		<!-- th:action이 CSRF 토큰을 숨은 칸으로 자동으로 넣는다 -->
+		<!--/* th:action이 CSRF 토큰을 숨은 칸으로 자동으로 넣는다 */-->
 		<form th:action="@{/login}" method="post" class="card space-y-6" novalidate>
 			<div>
 				<label for="email" class="form-label">이메일</label>
@@ -32,7 +32,7 @@
 				<input id="password" name="password" type="password" class="form-input" autocomplete="current-password"
 					required>
 			</div>
-			<!-- 기본은 해제. 체크해야 30일 로그인 유지 쿠키를 발급한다 (ADR-013) -->
+			<!--/* 기본은 해제. 체크해야 30일 로그인 유지 쿠키를 발급한다 (ADR-013) */-->
 			<div class="flex items-start gap-3">
 				<input id="remember-me" name="remember-me" type="checkbox" class="mt-1 h-6 w-6 shrink-0 accent-brand-700"
 					aria-describedby="remember-me-hint">
@@ -43,7 +43,7 @@
 			<button type="submit" class="btn btn-primary w-full">로그인</button>
 		</form>
 
-		<!-- 계정 상태(잠김 여부)가 아니라 정책만 항상 안내한다 (ADR-012) -->
+		<!--/* 계정 상태(잠김 여부)가 아니라 정책만 항상 안내한다 (ADR-012) */-->
 		<p class="mt-6 note">비밀번호를 5번 틀리면 15분 동안 로그인이 제한돼요.</p>
 		<p class="mt-4">
 			<a th:href="@{/password-reset}" class="link">비밀번호가 기억나지 않나요?</a>
