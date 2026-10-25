@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<!--
+<!--/*
   공통 레이아웃. 각 페이지는 자기 <title>과 <main>을 넘겨 쓴다:
     <html th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
   CSP(script-src/style-src 'self') 때문에 인라인 스크립트·스타일 속성·이벤트 속성은 쓰지 않는다 (TemplateGuardTest가 검사).
--->
+*/-->
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
 	th:fragment="layout(title, content)">
 <head>
 <meta charset="UTF-8">
-<!-- 확대를 막지 않는다 (maximum-scale 없음, PRD 8.5) -->
+<!--/* 확대를 막지 않는다 (maximum-scale 없음, PRD 8.5) */-->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title th:replace="${title}">제목</title>
-<!-- 한글 글꼴 Pretendard (서버에 포함, 외부 주소 없음). 화면에 나온 글자의 조각만 받는다 (디자인 교체 결정 2) -->
+<!--/* 한글 글꼴 Pretendard (서버에 포함, 외부 주소 없음). 화면에 나온 글자의 조각만 받는다 (디자인 교체 결정 2) */-->
 <link rel="stylesheet" th:href="@{/css/fonts/pretendard/pretendardvariable-dynamic-subset.css}">
 <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
@@ -19,24 +19,24 @@
 	<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:bg-white focus:p-3">본문 바로가기</a>
 
 	<header class="border-b border-line bg-white">
-		<!-- 좁은 화면: 메뉴는 단어 중간에서 꺾지 않고(whitespace-nowrap) 항목째 다음 줄로 넘긴다(flex-wrap). 브라우저 확인 F2.
+		<!--/* 좁은 화면: 메뉴는 단어 중간에서 꺾지 않고(whitespace-nowrap) 항목째 다음 줄로 넘긴다(flex-wrap). 브라우저 확인 F2.
 		     임대인 메뉴는 넓은 화면(lg, 1024px~)에서 한 줄로 펼치고, 그보다 좁으면 [메뉴]로 접는다(JS 없이 details, 디자인 결정 4).
-		     두 메뉴 중 지금 폭에 맞지 않는 쪽은 display:none(hidden)이라 화면 읽기 프로그램에도 읽히지 않는다 -->
+		     두 메뉴 중 지금 폭에 맞지 않는 쪽은 display:none(hidden)이라 화면 읽기 프로그램에도 읽히지 않는다 */-->
 		<div class="relative mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 lg:max-w-6xl lg:px-8">
 			<a th:href="@{/}" class="whitespace-nowrap text-2xl font-semibold tracking-tight text-brand-700 no-underline" th:text="#{app.name}">서비스 이름</a>
-			<!-- 로그인 전: 로그인·가입 -->
+			<!--/* 로그인 전: 로그인·가입 */-->
 			<nav class="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="계정" sec:authorize="!isAuthenticated()">
 				<a th:href="@{/login}" class="btn btn-quiet whitespace-nowrap">로그인</a>
 				<a th:href="@{/signup}" class="btn btn-secondary whitespace-nowrap">가입하기</a>
 			</nav>
-			<!-- 카카오 가입 단계(아직 계정 없음)에서는 그만두기만 보여 준다 -->
+			<!--/* 카카오 가입 단계(아직 계정 없음)에서는 그만두기만 보여 준다 */-->
 			<nav class="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="계정" sec:authorize="hasAuthority('ROLE_KAKAO_SIGNUP')">
 				<form th:action="@{/logout}" method="post">
 					<button type="submit" class="btn btn-secondary whitespace-nowrap">가입 그만두기</button>
 				</form>
 			</nav>
 			<th:block sec:authorize="hasRole('LANDLORD')">
-				<!-- 넓은 화면(lg~): 한 줄 메뉴 -->
+				<!--/* 넓은 화면(lg~): 한 줄 메뉴 */-->
 				<nav id="menu-wide" class="hidden lg:flex lg:flex-wrap lg:items-center lg:gap-x-6 lg:gap-y-2" aria-label="메뉴">
 					<a th:href="@{/app}" class="whitespace-nowrap text-lg text-gray-700 no-underline">
 						<span sec:authentication="principal.displayName">홍길동</span>님
@@ -45,12 +45,12 @@
 					<a th:href="@{/app/charges}" class="nav-link whitespace-nowrap">받을 월세</a>
 					<a th:href="@{/app/properties}" class="nav-link whitespace-nowrap">내 건물</a>
 					<a th:href="@{/app/settings}" class="nav-link whitespace-nowrap">계정 설정</a>
-					<!-- 로그아웃은 POST만 받는다. th:action이 CSRF 토큰을 넣는다 -->
+					<!--/* 로그아웃은 POST만 받는다. th:action이 CSRF 토큰을 넣는다 */-->
 					<form th:action="@{/logout}" method="post">
 						<button type="submit" class="btn btn-secondary whitespace-nowrap">로그아웃</button>
 					</form>
 				</nav>
-				<!-- 좁은 화면(~1023px): [메뉴]를 누르면 머리글 아래로 메뉴 상자를 펼친다. [메뉴] 버튼은 로고 옆 제자리에 남는다 -->
+				<!--/* 좁은 화면(~1023px): [메뉴]를 누르면 머리글 아래로 메뉴 상자를 펼친다. [메뉴] 버튼은 로고 옆 제자리에 남는다 */-->
 				<details id="menu-narrow" class="lg:hidden">
 					<summary class="menu-toggle btn btn-secondary cursor-pointer list-none whitespace-nowrap">메뉴</summary>
 					<nav class="card absolute inset-x-4 top-full z-10 mt-2 flex flex-col gap-1 p-4" aria-label="메뉴">
@@ -68,7 +68,7 @@
 		</div>
 	</header>
 
-	<!-- 이메일 안내 띠 (EmailVerificationBannerAdvice). 인증 전에도 쓸 수 있지만 알림은 인증된 주소로만 간다 -->
+	<!--/* 이메일 안내 띠 (EmailVerificationBannerAdvice). 인증 전에도 쓸 수 있지만 알림은 인증된 주소로만 간다 */-->
 	<div class="banner" role="status" th:if="${emailBanner != null and emailBanner.missing}">
 		<div class="banner-inner">
 			<p class="flex-1">알림 받을 이메일이 아직 없어요. 이메일을 넣고 인증해야 월세 알림을 받을 수 있어요.</p>
@@ -81,20 +81,20 @@
 			<form th:action="@{/app/email-verification/resend}" method="post">
 				<button type="submit" class="btn btn-secondary">인증 메일 다시 받기</button>
 			</form>
-			<!-- 카카오 계정은 주소를 잘못 넣었을 때 여기서 고친다 (일반 계정은 계정 설정의 이메일 바꾸기) -->
+			<!--/* 카카오 계정은 주소를 잘못 넣었을 때 여기서 고친다 (일반 계정은 계정 설정의 이메일 바꾸기) */-->
 			<a th:if="${emailBanner.editable}" th:href="@{/app/settings/notification-email}"
 				class="link whitespace-nowrap">주소 고치기</a>
 		</div>
 	</div>
 
-	<!-- 데모 계정 띠 (M6 결정 3). 데모 계정이면 모든 화면 맨 위에 -->
+	<!--/* 데모 계정 띠 (M6 결정 3). 데모 계정이면 모든 화면 맨 위에 */-->
 	<div th:if="${demoExpiresAt}" id="demo-banner" class="banner" role="note">
 		<p class="banner-text">
 			데모입니다. 실제 정보를 입력하지 마세요. 이 데모는 <span th:text="${#temporals.format(demoExpiresAt, 'M월 d일 HH:mm')}">10월 25일 14:00</span>에 모두 지워져요.
 		</p>
 	</div>
 
-	<!-- 한 번만 보여 주는 안내 (리다이렉트 후 flash 속성) -->
+	<!--/* 한 번만 보여 주는 안내 (리다이렉트 후 flash 속성) */-->
 	<div class="mx-auto w-full max-w-2xl px-4 pt-6" th:if="${notice}">
 		<div class="alert alert-info mb-0" role="status" th:text="${notice}">안내</div>
 	</div>

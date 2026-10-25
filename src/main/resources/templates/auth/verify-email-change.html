@@ -9,7 +9,7 @@
 			<th:block th:case="'CONFIRM'">
 				<h1 class="page-title">이 주소로 이메일을 바꿀까요?</h1>
 				<p class="mb-8 text-gray-700">버튼을 누르면 로그인 이메일과 알림 받는 주소가 이 주소로 바뀌어요.</p>
-				<!-- 링크를 여는 것(GET)만으로는 바뀌지 않는다. 버튼(POST)을 눌러야 한다 (ADR-011) -->
+				<!--/* 링크를 여는 것(GET)만으로는 바뀌지 않는다. 버튼(POST)을 눌러야 한다 (ADR-011) */-->
 				<form th:action="@{/verify-email-change}" method="post">
 					<input type="hidden" name="token" th:value="${token}">
 					<button type="submit" class="btn btn-primary w-full">이메일 바꾸기 완료</button>

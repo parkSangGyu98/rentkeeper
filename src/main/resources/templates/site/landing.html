@@ -4,14 +4,14 @@
 <title th:text="|#{app.name} - 월세 관리를 쉽게|">월세 관리를 쉽게</title>
 </head>
 <body>
-	<!-- 첫 화면 (포트폴리오 첫인상): 한 줄 소개 → [데모로 둘러보기](가장 눈에 띄게) → 가입·로그인 → 기능 세 가지 카드.
-	     데모가 꺼져 있으면(운영 기본) [무료로 가입하기]가 주요 행동이 된다 (화면당 꽉 찬 버튼 1개) -->
+	<!--/* 첫 화면 (포트폴리오 첫인상): 한 줄 소개 → [데모로 둘러보기](가장 눈에 띄게) → 가입·로그인 → 기능 세 가지 카드.
+	     데모가 꺼져 있으면(운영 기본) [무료로 가입하기]가 주요 행동이 된다 (화면당 꽉 찬 버튼 1개) */-->
 	<main id="main" class="page-wide">
 		<section class="hero" aria-labelledby="landing-title">
 			<h1 id="landing-title" class="hero-title">월세 관리,<br>이제 엑셀 없이 하세요</h1>
 			<p class="hero-lead">호실별 월세를 정리하고, 받을 날짜와 계약 만료를 놓치지 않게 도와드려요.</p>
 
-			<!-- 방문자용 임시 데모 (M6 결정 3). 가짜 데이터가 든 계정을 하나 만들어 바로 들어간다 -->
+			<!--/* 방문자용 임시 데모 (M6 결정 3). 가짜 데이터가 든 계정을 하나 만들어 바로 들어간다 */-->
 			<form th:if="${demoEnabled}" th:action="@{/demo}" method="post" class="mb-6" id="demo-start">
 				<button type="submit" class="btn btn-primary btn-lg w-full sm:w-auto">데모로 둘러보기 (가입 없이)</button>
 				<p class="note mt-3">가짜 데이터가 든 데모 계정을 바로 만들어 드려요. 24시간 뒤 모두 지워져요. 실제 정보는 넣지 마세요.</p>

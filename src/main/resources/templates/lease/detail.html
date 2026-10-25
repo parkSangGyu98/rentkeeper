@@ -9,7 +9,7 @@
 		<h1 class="page-title"><span th:text="${lease.tenantName()}">홍길동</span>님 계약</h1>
 		<p class="mb-6"><span th:with="badge=${lease.active()} ? 'badge-occupied' : 'badge-vacant'" th:class="|badge ${badge}|"><th:block th:replace="~{fragments/icons :: status(${badge}, null)}"></th:block><span th:text="${lease.active()} ? '진행 중' : '종료됨'">진행 중</span></span></p>
 
-		<!-- 진행 중인 계약만 고칠 수 있다. 종료한 계약은 보기만 (M2 결정) -->
+		<!--/* 진행 중인 계약만 고칠 수 있다. 종료한 계약은 보기만 (M2 결정) */-->
 		<div class="mb-6 flex flex-wrap gap-3" th:if="${lease.active()}">
 			<a th:href="@{/app/leases/{id}/edit(id=${lease.id()})}" class="btn btn-secondary">계약 고치기</a>
 			<a th:href="@{/app/leases/{id}/rent-change(id=${lease.id()})}" class="btn btn-secondary">월세 바꾸기</a>
@@ -17,10 +17,10 @@
 			<a th:href="@{/app/leases/{id}/delete(id=${lease.id()})}" class="btn btn-danger-secondary">잘못 등록한 계약 지우기</a>
 		</div>
 		<p class="mb-6 note" th:unless="${lease.active()}">종료한 계약은 고칠 수 없어요. 계약 기간 안의 받을 월세는 직접 만들 수 있어요.</p>
-		<!-- 종료한 계약도 기간 안의 달은 만들 수 있다 (M3-b 결정 7) -->
+		<!--/* 종료한 계약도 기간 안의 달은 만들 수 있다 (M3-b 결정 7) */-->
 		<p class="mb-6"><a th:href="@{/app/leases/{id}/charges/new(id=${lease.id()})}" class="link">받을 월세 직접 만들기</a></p>
 
-		<!-- 받을 월세가 없는 달 (M3 결정 2, M3-b 결정 11): 이번 달은 납부일이 지났을 때, 지난 달은 최근 3개월만 -->
+		<!--/* 받을 월세가 없는 달 (M3 결정 2, M3-b 결정 11): 이번 달은 납부일이 지났을 때, 지난 달은 최근 3개월만 */-->
 		<section th:if="${lease.active() and lease.missing().any()}" class="card card-attention mb-6"
 			aria-labelledby="missing-heading">
 			<th:block th:if="${lease.missing().thisMonthMissing()}">
@@ -38,7 +38,7 @@
 			</div>
 		</section>
 
-		<!-- 세입자 링크 (M4 결정 1~4). 링크 주소는 만들 때만 보인다. 폼의 숨은 칸은 화면이 보던 열린 링크 ID -->
+		<!--/* 세입자 링크 (M4 결정 1~4). 링크 주소는 만들 때만 보인다. 폼의 숨은 칸은 화면이 보던 열린 링크 ID */-->
 		<section id="tenant-link" class="mb-6 card card-accent" aria-labelledby="tenant-link-heading">
 			<h2 id="tenant-link-heading" class="card-title">세입자 링크</h2>
 			<div class="alert alert-error mb-4" role="alert" th:if="${tenantLinkAlert}" th:text="${tenantLinkAlert}">안내</div>
@@ -61,12 +61,12 @@
 				<p class="mb-4">아직 세입자 링크가 없어요. 링크를 만들어 문자나 카카오톡으로 보내면, 세입자가 가입 없이 이번 달 월세와 입금 계좌를 볼 수 있어요.</p>
 				<form th:if="${tenantLink.withinPeriod()}" th:action="@{/app/leases/{id}/tenant-link(id=${lease.id()})}" method="post">
 					<input type="hidden" name="openLinkId" th:value="${tenantLink.openLinkIdParam()}">
-					<!-- 이번 달 받을 월세가 없으면 [이번 달 받을 월세 만들기]가 주요 행동이라 윤곽선으로 둔다 (화면당 꽉 찬 버튼 1개) -->
+					<!--/* 이번 달 받을 월세가 없으면 [이번 달 받을 월세 만들기]가 주요 행동이라 윤곽선으로 둔다 (화면당 꽉 찬 버튼 1개) */-->
 					<button type="submit" th:class="${lease.active() and lease.missing().thisMonthMissing()} ? 'btn btn-secondary' : 'btn btn-primary'">세입자 링크 만들기</button>
 				</form>
 				<p th:unless="${tenantLink.withinPeriod()}" class="font-semibold">계약이 끝나고 90일이 지나 세입자 링크를 만들 수 없어요.</p>
 			</th:block>
-			<!-- 알림(안내 문자)에 넣은 링크와 알림 멈춤 (M5 결정 7·8). 알림 링크 주소는 임대인에게도 보이지 않는다 -->
+			<!--/* 알림(안내 문자)에 넣은 링크와 알림 멈춤 (M5 결정 7·8). 알림 링크 주소는 임대인에게도 보이지 않는다 */-->
 			<p th:if="${!tenantLink.open() and tenantLink.notificationLinkOpen()}" class="mt-4">
 				안내 문자에 넣은 링크가 열려 있어요. <a th:href="@{/app/leases/{id}/tenant-link/close(id=${lease.id()})}" class="link">링크 닫기</a>
 			</p>
@@ -79,7 +79,7 @@
 			</div>
 		</section>
 
-		<!-- 넓은 화면(lg): 계약 정보 상자를 두 칸으로 -->
+		<!--/* 넓은 화면(lg): 계약 정보 상자를 두 칸으로 */-->
 		<div class="list-grid">
 		<section class="card" aria-labelledby="tenant-heading">
 			<h2 id="tenant-heading" class="card-title">세입자</h2>
@@ -87,7 +87,7 @@
 				<div><dt>이름</dt> <dd th:text="${lease.tenantName()}">홍길동</dd></div>
 				<div><dt>휴대폰</dt> <dd th:text="${lease.tenantPhone()}">010-1234-5678</dd></div>
 				<div th:if="${lease.tenantMemo()}"><dt>메모</dt> <dd class="whitespace-pre-line" th:text="${lease.tenantMemo()}">메모</dd></div>
-				<!-- 수신 거부 (TEN-6, M5 결정 9): 세입자만 바꿀 수 있고 임대인은 보기만 한다 -->
+				<!--/* 수신 거부 (TEN-6, M5 결정 9): 세입자만 바꿀 수 있고 임대인은 보기만 한다 */-->
 				<div th:if="${lease.tenantNotifyOptedOut()}" id="tenant-opted-out"><dt>안내 문자</dt> <dd>세입자가 안내 문자를 받지 않기로 했어요. 세입자 링크 화면에서 세입자가 다시 켤 수 있어요.</dd></div>
 			</dl>
 		</section>

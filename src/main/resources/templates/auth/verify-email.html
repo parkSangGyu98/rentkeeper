@@ -9,7 +9,7 @@
 			<th:block th:case="'CONFIRM'">
 				<h1 class="page-title">이메일 인증을 완료할까요?</h1>
 				<p class="mb-8 text-gray-700">아래 버튼을 누르면 인증이 끝나요.</p>
-				<!-- 링크를 여는 것(GET)만으로는 인증되지 않는다. 버튼(POST)을 눌러야 한다 (ADR-011) -->
+				<!--/* 링크를 여는 것(GET)만으로는 인증되지 않는다. 버튼(POST)을 눌러야 한다 (ADR-011) */-->
 				<form th:action="@{/verify-email}" method="post">
 					<input type="hidden" name="token" th:value="${token}">
 					<button type="submit" class="btn btn-primary w-full">인증 완료하기</button>

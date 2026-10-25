@@ -11,7 +11,7 @@
 
 		<div class="alert alert-error mb-6" role="alert" th:if="${error}" th:text="${error}">안내</div>
 
-		<!-- 달 고르기: 받을 월세가 없는 달만 (들어오는 달 ~ 다음 달, M3-b 결정 7) -->
+		<!--/* 달 고르기: 받을 월세가 없는 달만 (들어오는 달 ~ 다음 달, M3-b 결정 7) */-->
 		<section th:if="${view.month() == null}" aria-labelledby="months-heading">
 			<h2 id="months-heading" class="card-title">어느 달 받을 월세를 만들까요?</h2>
 			<p th:if="${view.months().isEmpty()}" class="card card-empty">
@@ -25,7 +25,7 @@
 			</ul>
 		</section>
 
-		<!-- 고른 달: 금액을 확인하고 만든다 (M3-b 결정 8) -->
+		<!--/* 고른 달: 금액을 확인하고 만든다 (M3-b 결정 8) */-->
 		<form th:if="${view.month() != null}" th:action="@{/app/leases/{id}/charges(id=${view.leaseId()})}" th:object="${form}"
 			method="post" class="card space-y-6" novalidate>
 			<input type="hidden" th:field="*{month}">

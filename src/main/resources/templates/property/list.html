@@ -7,11 +7,11 @@
 	<main id="main" class="page-wide">
 		<div class="page-head flex flex-wrap items-center justify-between gap-4">
 			<h1 class="page-title mb-0">내 건물</h1>
-			<!-- 빈 상태에서는 아래 [건물 등록하기]가 주요 행동이라 윤곽선으로 둔다 (화면당 꽉 찬 버튼 1개) -->
+			<!--/* 빈 상태에서는 아래 [건물 등록하기]가 주요 행동이라 윤곽선으로 둔다 (화면당 꽉 찬 버튼 1개) */-->
 			<a th:href="@{/app/properties/new}" th:class="${properties.isEmpty()} ? 'btn btn-secondary' : 'btn btn-primary'">건물 추가</a>
 		</div>
 
-		<!-- 빈 상태 (PRD 6.3) -->
+		<!--/* 빈 상태 (PRD 6.3) */-->
 		<section th:if="${properties.isEmpty()}" class="card card-empty text-center">
 			<p class="card-title">첫 건물을 등록해 보세요</p>
 			<p class="mb-6 text-gray-700">건물을 등록하고 호실을 추가하면, 호실마다 계약을 넣을 수 있어요.</p>

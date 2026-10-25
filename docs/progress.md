@@ -16,7 +16,7 @@
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
 | M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
 | 디자인 교체 | 구현 완료 (커밋 11 뒤 동작 확인 테스트·문구 통일 2건·디자인 자체 점검 완료, `fix/unknown-path-404` 커밋 4/4: 없는 주소 404·마지막 항목 확인 화면·두 번 누르기 500·정상 경로 회귀 테스트, 사람 확인 대기: 360·375px·세입자 화면) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
-| 배포 리허설 | `chore/deploy-rehearsal` 커밋 3/6: robots.txt, 메일 포트 빈 값 587 고침, 리허설 덮어쓰기 파일·runbook 7(복구)·13(리허설) | 병합 순서: `feature/design-refresh` → `fix/unknown-path-404` → 이 브랜치 |
+| 배포 리허설 | `chore/deploy-rehearsal` 커밋 4/6: robots.txt, 메일 포트 빈 값 587 고침, 리허설 덮어쓰기 파일·runbook 7·13, 템플릿 HTML 주석 106개를 Thymeleaf 주석으로 | 병합 순서: `feature/design-refresh` → `fix/unknown-path-404` → 이 브랜치 |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)

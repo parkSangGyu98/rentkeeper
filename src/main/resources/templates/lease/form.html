@@ -10,7 +10,7 @@
 		<p class="mb-6 text-gray-700">네 가지만 차례로 적어 주세요. 다음 화면에서 한 번 더 확인한 뒤 저장해요.</p>
 
 		<form th:action="@{/app/leases/confirm}" th:object="${form}" method="post" class="space-y-8" novalidate>
-			<!-- 기간 겹침 같은 칸이 아닌 오류 -->
+			<!--/* 기간 겹침 같은 칸이 아닌 오류 */-->
 			<div class="alert alert-error" role="alert" th:each="err : ${#fields.globalErrors()}" th:text="${err}">겹침</div>
 			<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('*') and !#fields.hasGlobalErrors()}">입력한 내용을 확인해 주세요. 빨간 글씨로 안내한 칸을 고치면 돼요.</div>
 			<input type="hidden" th:field="*{unitId}">

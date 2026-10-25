@@ -13,10 +13,10 @@
 				th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</a>
 		</p>
 
-		<!-- 충돌·취소 같은 안내 (M3-b 결정 4) -->
+		<!--/* 충돌·취소 같은 안내 (M3-b 결정 4) */-->
 		<div class="alert alert-error" role="alert" th:if="${chargeAlert}" th:text="${chargeAlert}">안내</div>
 
-		<!-- 세입자 "입금했어요" 신고 (M4 결정 7·10·11). 반려 뒤 다시 알리면 N번째가 늘어난다 -->
+		<!--/* 세입자 "입금했어요" 신고 (M4 결정 7·10·11). 반려 뒤 다시 알리면 N번째가 늘어난다 */-->
 		<section th:if="${charge.reported()}" class="card card-attention mb-6" aria-labelledby="report-heading">
 			<h2 id="report-heading" class="card-title">세입자가 입금했다고 알렸어요</h2>
 			<p class="mb-6"><strong th:text="${charge.reportCount()} + '번째 신고'">1번째 신고</strong> ·
@@ -42,13 +42,13 @@
 				<div th:if="${charge.overpaidText() != null}"><dt class="stat-label">더 받은 돈</dt> <dd class="stat-value" th:text="${charge.overpaidText()}">10,000원</dd></div>
 			</dl>
 			<div class="mt-6 flex flex-wrap gap-3" th:if="${charge.canPay()}">
-				<!-- 세입자 신고가 있으면 [입금 확인하기]가 주요 행동이라 이 버튼은 윤곽선으로 둔다 (화면당 꽉 찬 버튼 1개) -->
+				<!--/* 세입자 신고가 있으면 [입금 확인하기]가 주요 행동이라 이 버튼은 윤곽선으로 둔다 (화면당 꽉 찬 버튼 1개) */-->
 				<a th:href="@{/app/charges/{id}/payments/new(id=${charge.id()},full=true)}" th:class="${charge.reported()} ? 'btn btn-secondary' : 'btn btn-primary'">다 받았어요</a>
 				<a th:href="@{/app/charges/{id}/payments/new(id=${charge.id()})}" class="btn btn-secondary">일부 받았어요</a>
 			</div>
 		</section>
 
-		<!-- 넓은 화면(lg): 항목과 입금 기록을 두 칸으로 -->
+		<!--/* 넓은 화면(lg): 항목과 입금 기록을 두 칸으로 */-->
 		<div class="list-grid mb-6">
 		<section class="card" aria-labelledby="items-heading">
 			<h2 id="items-heading" class="card-title">항목</h2>
@@ -83,7 +83,7 @@
 				</li>
 			</ul>
 
-			<!-- 지운 기록은 접어서 보여 준다 (M3 결정 11) -->
+			<!--/* 지운 기록은 접어서 보여 준다 (M3 결정 11) */-->
 			<details th:unless="${charge.deletedPayments().isEmpty()}" class="mt-6">
 				<summary class="cursor-pointer py-2 font-semibold">지운 입금 기록 <span th:text="${charge.deletedPayments().size()}">1</span>건</summary>
 				<ul class="mt-2 space-y-2 text-gray-700">
@@ -96,7 +96,7 @@
 		</section>
 		</div>
 
-		<!-- 바뀐 기록 (M3-b 커밋 4). 길어질 수 있어 접어 둔다 -->
+		<!--/* 바뀐 기록 (M3-b 커밋 4). 길어질 수 있어 접어 둔다 */-->
 		<section class="card mb-6" aria-labelledby="history-heading">
 			<h2 id="history-heading" class="card-title">바뀐 기록</h2>
 			<details class="mb-2">
@@ -124,7 +124,7 @@
 			</details>
 		</section>
 
-		<!-- 입금 기록이 없을 때만 취소할 수 있다 (M3 결정 7) -->
+		<!--/* 입금 기록이 없을 때만 취소할 수 있다 (M3 결정 7) */-->
 		<p th:if="${charge.canCancel()}">
 			<a th:href="@{/app/charges/{id}/cancel(id=${charge.id()})}" class="link-danger">받을 월세 취소</a>
 		</p>

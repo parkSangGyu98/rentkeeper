@@ -4,7 +4,7 @@
 <title>월세 안내</title>
 </head>
 <body>
-	<!-- 세입자 링크 첫 화면 (TEN-1·2, M4 결정 5·6). 이름·예금주는 가린 값, 계좌번호는 입금에 필요해 전체를 보인다 -->
+	<!--/* 세입자 링크 첫 화면 (TEN-1·2, M4 결정 5·6). 이름·예금주는 가린 값, 계좌번호는 입금에 필요해 전체를 보인다 */-->
 	<main id="main" class="page-tenant">
 		<h1 class="page-title" th:text="${lease.unitName()}">행복빌라 101호</h1>
 		<p class="mb-6 text-title"><span th:text="${lease.maskedTenantName()}">홍*동</span>님, 안녕하세요.</p>
@@ -25,7 +25,7 @@
 			<p th:if="${c.partlyConfirmed()}" class="mb-4">
 				전체 <span th:text="${c.totalText()}">550,000원</span> 중 <strong th:text="${c.paidText()}">200,000원</strong>이 확인됐어요.
 			</p>
-			<!-- "입금했어요" (M4 결정 7·10): 반려 뒤에는 사유 없이 중립 문구만 -->
+			<!--/* "입금했어요" (M4 결정 7·10): 반려 뒤에는 사유 없이 중립 문구만 */-->
 			<p th:if="${c.showRejectedNotice()}" class="alert mb-4 border-amber-600 bg-amber-50">
 				집주인이 아직 입금을 확인하지 못했어요. 이미 보내셨다면 집주인에게 직접 알려 주세요.
 			</p>
@@ -43,21 +43,21 @@
 			</details>
 		</section>
 
-		<!-- 보내실 계좌 (TEN-2). 복사 버튼은 /js/copy.js, 안 되면 글자를 길게 눌러 복사 -->
+		<!--/* 보내실 계좌 (TEN-2). 복사 버튼은 /js/copy.js, 안 되면 글자를 길게 눌러 복사 */-->
 		<section class="mb-6 card card-accent" aria-labelledby="account-heading">
 			<h2 id="account-heading" class="mb-3 text-title font-semibold">보내실 계좌</h2>
 			<p class="stat-label mb-1" th:text="${lease.bankName()}">국민은행</p>
 			<p id="account-number" class="amount-hero mb-4 select-all break-all" th:text="${lease.accountNumber()}">1234567890</p>
 			<p class="mb-4">예금주 <span th:text="${lease.maskedAccountHolder()}">김*대</span></p>
 			<p class="flex flex-wrap items-center gap-3">
-				<!-- 꽉 찬 버튼은 [입금했어요] 하나만 둔다 (화면당 주요 행동 1개) -->
+				<!--/* 꽉 찬 버튼은 [입금했어요] 하나만 둔다 (화면당 주요 행동 1개) */-->
 				<button type="button" class="btn btn-secondary" data-copy-target="account-number" data-copy-done="copy-done">계좌번호 복사</button>
 				<span id="copy-done" class="font-semibold" role="status" aria-live="polite"></span>
 			</p>
 		</section>
 
 		<p class="mb-4"><a th:href="@{/t/{token}/history(token=${token})}" class="btn btn-secondary w-full">지난 기록 보기 (최근 12개월)</a></p>
-		<!-- 안내 문자 그만 받기·다시 받기 (TEN-6, M5 결정 9). 링크가 아니라 세입자에 저장한다 -->
+		<!--/* 안내 문자 그만 받기·다시 받기 (TEN-6, M5 결정 9). 링크가 아니라 세입자에 저장한다 */-->
 		<section class="mb-4 border-t border-line pt-6" aria-label="안내 문자">
 			<a th:unless="${optedOut}" th:href="@{/t/{token}/optout(token=${token})}" class="btn btn-secondary w-full">안내 문자 그만 받기</a>
 			<th:block th:if="${optedOut}">

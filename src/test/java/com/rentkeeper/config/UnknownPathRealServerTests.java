@@ -226,6 +226,20 @@ class UnknownPathRealServerTests {
 		}
 	}
 
+	@Test
+	void renderedPagesHaveNoHtmlComments() throws Exception {
+		// 템플릿 설명은 Thymeleaf 주석이라 렌더 때 지워진다. 실제로 내려간 HTML에 주석(내부 메모)이 없는지 본다
+		// (모든 템플릿 원본은 TemplateGuardTest가 검사한다)
+		String session = login();
+		String[][] cases = {{"/", null}, {"/login", null}, {"/signup", null}, {"/terms", null}, {"/privacy", null},
+				{"/no-such-page", null}, {"/app/dashboard", session}, {"/app/no-such-page", session},
+				{"/t/abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG", null}};
+		for (String[] c : cases) {
+			HttpResponse<String> page = get(c[0], c[1]);
+			assertThat(page.body()).as(c[0]).contains("<html").doesNotContain("<!--");
+		}
+	}
+
 	private static final String FONT_CHUNK = "/css/fonts/pretendard/woff2-dynamic-subset/PretendardVariable.subset.0.woff2";
 
 	private HttpResponse<String> get(String path, String cookie) throws Exception {

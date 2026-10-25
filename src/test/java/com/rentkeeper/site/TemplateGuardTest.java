@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
  * <li>{@code th:utext}: HTML 이스케이프를 끄므로 XSS 위험 → 금지</li>
  * <li>인라인 {@code <script>}, {@code style=""}, {@code onclick=""} 등:
  * CSP(script-src/style-src 'self')에 막힌다 → 금지</li>
+ * <li>HTML 주석 {@code <!-- -->}: 렌더된 화면에 그대로 나간다 → 렌더 때 지워지는 Thymeleaf
+ * 주석({@code <!--/*}로 시작)만 쓴다</li>
  * </ul>
  */
 class TemplateGuardTest {
@@ -32,7 +34,10 @@ class TemplateGuardTest {
 			new Rule("style 속성 금지(CSP)", Pattern.compile("\\s(th:)?style\\s*=", Pattern.CASE_INSENSITIVE)),
 			new Rule("<style> 태그 금지(CSP)", Pattern.compile("<style[\\s>]", Pattern.CASE_INSENSITIVE)),
 			new Rule("인라인 이벤트 속성 금지(CSP)", Pattern.compile("\\s(th:)?on[a-z]+\\s*=", Pattern.CASE_INSENSITIVE)),
-			new Rule("javascript: 링크 금지(CSP)", Pattern.compile("javascript:", Pattern.CASE_INSENSITIVE)));
+			new Rule("javascript: 링크 금지(CSP)", Pattern.compile("javascript:", Pattern.CASE_INSENSITIVE)),
+			// HTML 주석은 렌더된 화면에 그대로 나가 내부 메모가 보인다.
+			// 설명은 Thymeleaf 주석(<!--/* */-->)으로 써서 렌더 때 지운다
+			new Rule("HTML 주석 금지(브라우저로 나감)", Pattern.compile("<!--(?!/\\*)")));
 
 	@Test
 	void templatesFollowSecurityRules() throws IOException {
@@ -64,6 +69,8 @@ class TemplateGuardTest {
 		assertThat(matches("<div style=\"color:red\">")).contains("style 속성 금지(CSP)");
 		assertThat(matches("<button onclick=\"go()\">")).contains("인라인 이벤트 속성 금지(CSP)");
 		assertThat(matches("<a href=\"javascript:go()\">")).contains("javascript: 링크 금지(CSP)");
+		assertThat(matches("<!-- 내부 메모 -->")).contains("HTML 주석 금지(브라우저로 나감)");
+		assertThat(matches("<!--/* 내부 메모 */-->")).isEmpty();
 	}
 
 	private static List<String> matches(String html) {

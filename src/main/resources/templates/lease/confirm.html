@@ -8,7 +8,7 @@
 		<h1 class="page-title">이대로 등록할까요?</h1>
 		<p class="mb-6 text-title font-semibold" th:text="${unit.displayName()}">행복빌라 101호</p>
 
-		<!-- 같은 연락처의 세입자가 이미 있다 (M2 결정 6) -->
+		<!--/* 같은 연락처의 세입자가 이미 있다 (M2 결정 6) */-->
 		<div class="alert alert-info" role="status" th:if="${existingTenant != null}">
 			<p class="mb-1 font-bold">이미 등록된 세입자로 계약할까요?</p>
 			<p>같은 휴대폰 번호로 <strong th:text="${existingTenant.name()}">홍길동</strong>
@@ -16,7 +16,7 @@
 				등록하면 이 세입자의 계약으로 넣고, 지금 입력한 이름·세입자 메모는 쓰지 않아요.</p>
 		</div>
 
-		<!-- 이번 달 납부일이 이미 지나 이번 달분은 자동으로 만들지 않는다 (M3 결정 2). 등록하면 계약 상세의 배너에서 만든다 -->
+		<!--/* 이번 달 납부일이 이미 지나 이번 달분은 자동으로 만들지 않는다 (M3 결정 2). 등록하면 계약 상세의 배너에서 만든다 */-->
 		<div class="alert alert-info mb-6" role="status" th:if="${thisMonthNotAutomatic}">
 			<p class="mb-2 text-title font-semibold">이번 달 월세는 자동으로 만들어지지 않아요.</p>
 			<p>이번 달 납부일이 이미 지났기 때문이에요. 다음 달부터는 자동으로 만들어져요.
@@ -55,7 +55,7 @@
 			</div>
 		</dl>
 
-		<!-- 입력값은 세션에 두지 않고 숨은 칸으로 다시 보낸다 (세션은 DB에 평문으로 저장되므로) -->
+		<!--/* 입력값은 세션에 두지 않고 숨은 칸으로 다시 보낸다 (세션은 DB에 평문으로 저장되므로) */-->
 		<form th:action="@{/app/leases}" th:object="${form}" method="post" class="mb-4">
 			<th:block th:replace="~{lease/fields :: hidden}"></th:block>
 			<input type="hidden" name="useExistingTenant" th:value="${existingTenant != null}">
