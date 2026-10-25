@@ -17,6 +17,7 @@
 | M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
 | 디자인 교체 | 구현 완료 (커밋 11 뒤 동작 확인 테스트·문구 통일 2건·디자인 자체 점검 완료, `fix/unknown-path-404` 커밋 4/4: 없는 주소 404·마지막 항목 확인 화면·두 번 누르기 500·정상 경로 회귀 테스트, **사용자 화면 확인 완료(2026-10-25), 섞은 안 확정**. 남은 사람 확인: 글자 200%·키보드 초점·데모로 막힌 화면·POST 뒤 화면) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
 | 배포 리허설 | `chore/deploy-rehearsal` 커밋 6/6: robots.txt, 메일 포트 빈 값 587 고침, 리허설 덮어쓰기 파일·runbook 7·13, 템플릿 HTML 주석 106개를 Thymeleaf 주석으로, 디자인 확정 기록, README·기술 노트(`docs/portfolio-notes.md`) | 병합 순서: `feature/design-refresh` → `fix/unknown-path-404` → 이 브랜치 |
+| 포트폴리오 공개 | 계획 변경(2026-10-25): 실서버에 배포하지 않고 저장소를 공개해 포트폴리오로 쓴다. `docs/portfolio-readme` 커밋 1/1: README 다시 쓰기, 데모 캡처 8장(`docs/screenshots/`) | 배포 문서(deploy-checklist·runbook)는 배포 전제 그대로 둔다. 공개 전 점검(비밀값·작성자 이메일)은 보고만 |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
