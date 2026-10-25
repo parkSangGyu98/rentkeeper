@@ -54,6 +54,15 @@ class DeploymentFilesTest {
 	}
 
 	@Test
+	void emptyMailPortFallsBackTo587() throws IOException {
+		// .env.prod.example은 "비우면 587"이라고 안내한다. 빈 값이 앱에 그대로 가면 Spring 기본값이 쓰이지 않고
+		// 25번으로 붙으므로 compose가 빈 값을 587로 바꿔 넣는다 (배포 리허설에서 25번으로 붙는 것을 확인)
+		Map<String, Object> app = map(map(yaml("docker/compose.prod.yml"), "services"), "app");
+
+		assertThat(map(app, "environment")).containsEntry("MAIL_PORT", "${MAIL_PORT:-587}");
+	}
+
+	@Test
 	void caddyHidesActuatorAndMasksTenantTokensInLogs() throws IOException {
 		String caddyfile = read("docker/Caddyfile");
 
