@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>세입자 신고 반려 - RentKeeper</title>
+<title th:text="|세입자 신고 반려 - #{app.name}|">세입자 신고 반려</title>
 </head>
 <body>
 	<!-- 세입자 "입금했어요" 신고 반려 (M4 결정 10). 사유는 상태 이력에만 남고 세입자에게는 보이지 않는다 -->
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<h1 class="mb-2 text-3xl font-bold">세입자 신고를 반려할까요?</h1>
-		<p class="mb-6 text-xl"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
+	<main id="main" class="page">
+		<h1 class="page-title">세입자 신고를 반려할까요?</h1>
+		<p class="mb-6 text-title"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
 			· <span th:text="${charge.monthText()}">2026년 10월</span> 받을 월세</p>
-		<ul class="mb-6 list-disc space-y-1 pl-6 text-lg text-gray-700">
+		<ul class="mb-6 list-disc space-y-1 pl-6 text-gray-700">
 			<li>통장에 입금이 없을 때만 반려해 주세요. 입금이 있으면 [입금 확인하기]로 기록해 주세요.</li>
 			<li>반려하면 세입자 화면에는 "집주인이 아직 입금을 확인하지 못했어요. 이미 보내셨다면 집주인에게 직접 알려 주세요."라고 보여요. 사유는 세입자에게 보이지 않아요.</li>
 			<li>세입자는 다시 "입금했어요"를 누를 수 있어요.</li>
 		</ul>
-		<form th:action="@{/app/charges/{id}/report/reject(id=${charge.id()})}" method="post" class="space-y-6" novalidate>
+		<form th:action="@{/app/charges/{id}/report/reject(id=${charge.id()})}" method="post" class="card space-y-6" novalidate>
 			<input type="hidden" name="version" th:value="${version}">
 			<div>
 				<label for="reason" class="form-label">반려 사유</label>
-				<p id="reason-hint" class="mb-2 text-base text-gray-700">예: 통장에 입금이 없음. 주민번호·계좌번호는 적지 마세요.</p>
+				<p id="reason-hint" class="mb-2 note">예: 통장에 입금이 없음. 주민번호·계좌번호는 적지 마세요.</p>
 				<input id="reason" name="reason" type="text" th:value="${reason}" class="form-input" aria-describedby="reason-hint"
 					th:attr="aria-invalid=${reasonError != null}">
 				<p class="form-error" th:if="${reasonError}" th:text="${reasonError}">오류</p>

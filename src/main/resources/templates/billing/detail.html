@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>받을 월세 - RentKeeper</title>
+<title th:text="|받을 월세 - #{app.name}|">받을 월세</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<p class="mb-2 text-lg"><a th:href="@{/app/charges(month=${charge.month()})}" class="font-semibold text-brand-700 underline"
+	<main id="main" class="page-wide">
+		<p class="mb-4"><a th:href="@{/app/charges(month=${charge.month()})}" class="link"
 			th:text="${charge.monthText()} + ' 받을 월세 목록'">2026년 10월 받을 월세 목록</a></p>
-		<h1 class="mb-1 text-3xl font-bold"><span th:text="${charge.monthText()}">2026년 10월</span> 받을 월세</h1>
-		<p class="mb-4 text-xl">
-			<a th:href="@{/app/leases/{id}(id=${charge.leaseId()})}" class="font-semibold text-gray-900 underline"
+		<h1 class="page-title"><span th:text="${charge.monthText()}">2026년 10월</span> 받을 월세</h1>
+		<p class="mb-8 text-title">
+			<a th:href="@{/app/leases/{id}(id=${charge.leaseId()})}" class="row-title"
 				th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</a>
 		</p>
 
 		<!-- 충돌·취소 같은 안내 (M3-b 결정 4) -->
-		<div class="alert alert-error mb-6 text-lg" role="alert" th:if="${chargeAlert}" th:text="${chargeAlert}">안내</div>
+		<div class="alert alert-error" role="alert" th:if="${chargeAlert}" th:text="${chargeAlert}">안내</div>
 
 		<!-- 세입자 "입금했어요" 신고 (M4 결정 7·10·11). 반려 뒤 다시 알리면 N번째가 늘어난다 -->
-		<section th:if="${charge.reported()}" class="mb-6 rounded-lg border-4 border-amber-500 bg-amber-50 p-5" aria-labelledby="report-heading">
-			<h2 id="report-heading" class="mb-2 text-2xl font-bold">세입자가 입금했다고 알렸어요</h2>
-			<p class="mb-4 text-lg"><strong th:text="${charge.reportCount()} + '번째 신고'">1번째 신고</strong> ·
+		<section th:if="${charge.reported()}" class="card card-attention mb-6" aria-labelledby="report-heading">
+			<h2 id="report-heading" class="card-title">세입자가 입금했다고 알렸어요</h2>
+			<p class="mb-6"><strong th:text="${charge.reportCount()} + '번째 신고'">1번째 신고</strong> ·
 				<span th:text="${charge.reportedOnText()}">2026년 10월 17일</span>. 통장에서 입금을 확인해 주세요.</p>
 			<div class="flex flex-wrap gap-3">
 				<a th:href="@{/app/charges/{id}/payments/new(id=${charge.id()},report=true)}" class="btn btn-primary">입금 확인하기</a>
@@ -28,61 +28,64 @@
 		</section>
 
 		<div class="mb-6 flex flex-wrap items-center gap-3">
-			<span th:class="${charge.statusBadge()}" th:text="${charge.statusLabel()}">받을 차례</span>
-			<span class="text-lg">납부일 <strong th:text="${charge.dueDateText()}">2026년 10월 5일</strong></span>
+			<span th:class="${charge.statusBadge()}"><th:block th:replace="~{fragments/icons :: status(${charge.statusBadge()}, ${charge.status().name()})}"></th:block><span th:text="${charge.statusLabel()}">받을 차례</span></span>
+			<span>납부일 <strong th:text="${charge.dueDateText()}">2026년 10월 5일</strong></span>
 		</div>
-		<p th:if="${charge.canceled()}" class="mb-6 text-lg">취소 사유: <span th:text="${charge.cancelReason()}">잘못 만듦</span></p>
+		<p th:if="${charge.canceled()}" class="mb-6">취소 사유: <span th:text="${charge.cancelReason()}">잘못 만듦</span></p>
 
-		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="money-heading">
-			<h2 id="money-heading" class="mb-3 text-xl font-bold">금액</h2>
-			<dl class="space-y-2 text-lg">
-				<div><dt class="inline font-semibold">받을 돈</dt> <dd class="inline" th:text="${charge.totalText()}">550,000원</dd></div>
-				<div><dt class="inline font-semibold">받은 돈</dt> <dd class="inline" th:text="${charge.paidText()}">0원</dd></div>
-				<div><dt class="inline font-semibold">남은 돈</dt> <dd class="inline text-xl font-bold" th:text="${charge.balanceText()}">550,000원</dd></div>
-				<div th:if="${charge.overpaidText() != null}"><dt class="inline font-semibold">더 받은 돈</dt> <dd class="inline" th:text="${charge.overpaidText()}">10,000원</dd></div>
+		<section class="card mb-6" aria-labelledby="money-heading">
+			<h2 id="money-heading" class="card-title">금액</h2>
+			<dl class="stat-list">
+				<div><dt class="stat-label">받을 돈</dt> <dd class="stat-value" th:text="${charge.totalText()}">550,000원</dd></div>
+				<div><dt class="stat-label">받은 돈</dt> <dd class="stat-value" th:text="${charge.paidText()}">0원</dd></div>
+				<div class="stat-key"><dt class="stat-label">남은 돈</dt> <dd class="stat-value" th:text="${charge.balanceText()}">550,000원</dd></div>
+				<div th:if="${charge.overpaidText() != null}"><dt class="stat-label">더 받은 돈</dt> <dd class="stat-value" th:text="${charge.overpaidText()}">10,000원</dd></div>
 			</dl>
-			<div class="mt-5 flex flex-wrap gap-3" th:if="${charge.canPay()}">
-				<a th:href="@{/app/charges/{id}/payments/new(id=${charge.id()},full=true)}" class="btn btn-primary">다 받았어요</a>
+			<div class="mt-6 flex flex-wrap gap-3" th:if="${charge.canPay()}">
+				<!-- 세입자 신고가 있으면 [입금 확인하기]가 주요 행동이라 이 버튼은 윤곽선으로 둔다 (화면당 꽉 찬 버튼 1개) -->
+				<a th:href="@{/app/charges/{id}/payments/new(id=${charge.id()},full=true)}" th:class="${charge.reported()} ? 'btn btn-secondary' : 'btn btn-primary'">다 받았어요</a>
 				<a th:href="@{/app/charges/{id}/payments/new(id=${charge.id()})}" class="btn btn-secondary">일부 받았어요</a>
 			</div>
 		</section>
 
-		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="items-heading">
-			<h2 id="items-heading" class="mb-3 text-xl font-bold">항목</h2>
-			<ul class="space-y-3 text-lg">
-				<li th:each="item : ${charge.items()}" class="border-b border-gray-200 pb-2">
-					<div class="flex flex-wrap justify-between gap-2">
+		<!-- 넓은 화면(lg): 항목과 입금 기록을 두 칸으로 -->
+		<div class="list-grid mb-6">
+		<section class="card" aria-labelledby="items-heading">
+			<h2 id="items-heading" class="card-title">항목</h2>
+			<ul class="row-list">
+				<li th:each="item : ${charge.items()}">
+					<div class="line-item">
 						<span th:text="${item.label()}">월세</span>
-						<span class="font-semibold" th:text="${item.amountText()}">500,000원</span>
+						<span class="row-value" th:text="${item.amountText()}">500,000원</span>
 					</div>
-					<p th:if="${item.memo()}" class="text-base text-gray-700" th:text="${item.memo()}">메모</p>
-					<div class="mt-1 flex flex-wrap gap-4" th:unless="${charge.canceled()}">
-						<a th:href="@{/app/charges/{id}/items/{itemId}/edit(id=${charge.id()},itemId=${item.id()})}" class="font-semibold text-brand-700 underline">고치기</a>
-						<a th:if="${charge.items().size() > 1}" th:href="@{/app/charges/{id}/items/{itemId}/delete(id=${charge.id()},itemId=${item.id()})}" class="font-semibold text-brand-700 underline">지우기</a>
+					<p th:if="${item.memo()}" class="row-meta" th:text="${item.memo()}">메모</p>
+					<div class="mt-2 flex flex-wrap gap-6" th:unless="${charge.canceled()}">
+						<a th:href="@{/app/charges/{id}/items/{itemId}/edit(id=${charge.id()},itemId=${item.id()})}" class="link">고치기</a>
+						<a th:if="${charge.items().size() > 1}" th:href="@{/app/charges/{id}/items/{itemId}/delete(id=${charge.id()},itemId=${item.id()})}" class="link-danger">지우기</a>
 					</div>
 				</li>
 			</ul>
-			<a th:unless="${charge.canceled()}" th:href="@{/app/charges/{id}/items/new(id=${charge.id()})}" class="btn btn-secondary mt-4">항목 추가</a>
+			<a th:unless="${charge.canceled()}" th:href="@{/app/charges/{id}/items/new(id=${charge.id()})}" class="btn btn-secondary mt-6">항목 추가</a>
 		</section>
 
-		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="payments-heading">
-			<h2 id="payments-heading" class="mb-3 text-xl font-bold">입금 기록</h2>
-			<p th:if="${charge.activePayments().isEmpty()}" class="text-lg text-gray-700">아직 입금 기록이 없어요.</p>
-			<ul class="space-y-3 text-lg" th:unless="${charge.activePayments().isEmpty()}">
-				<li th:each="p : ${charge.activePayments()}" class="border-b border-gray-200 pb-2">
+		<section class="card" aria-labelledby="payments-heading">
+			<h2 id="payments-heading" class="card-title">입금 기록</h2>
+			<p th:if="${charge.activePayments().isEmpty()}" class="empty-text">아직 입금 기록이 없어요.</p>
+			<ul class="row-list" th:unless="${charge.activePayments().isEmpty()}">
+				<li th:each="p : ${charge.activePayments()}">
 					<p><strong th:text="${p.amountText()}">550,000원</strong> · <span th:text="${p.paidOnText()} + ' 받음'">2026년 10월 5일 받음</span></p>
-					<p th:if="${p.memo()}" class="text-base text-gray-700" th:text="${p.memo()}">현금으로 받음</p>
-					<p th:if="${p.replacesId() != null}" class="text-base text-gray-700">고친 기록이에요.</p>
-					<div class="mt-1 flex flex-wrap gap-4" th:unless="${charge.canceled()}">
-						<a th:href="@{/app/charges/{id}/payments/{pid}/correct(id=${charge.id()},pid=${p.id()})}" class="font-semibold text-brand-700 underline">고치기</a>
-						<a th:href="@{/app/charges/{id}/payments/{pid}/delete(id=${charge.id()},pid=${p.id()})}" class="font-semibold text-brand-700 underline">지우기</a>
+					<p th:if="${p.memo()}" class="row-meta" th:text="${p.memo()}">현금으로 받음</p>
+					<p th:if="${p.replacesId() != null}" class="row-meta">고친 기록이에요.</p>
+					<div class="mt-2 flex flex-wrap gap-6" th:unless="${charge.canceled()}">
+						<a th:href="@{/app/charges/{id}/payments/{pid}/correct(id=${charge.id()},pid=${p.id()})}" class="link">고치기</a>
+						<a th:href="@{/app/charges/{id}/payments/{pid}/delete(id=${charge.id()},pid=${p.id()})}" class="link-danger">지우기</a>
 					</div>
 				</li>
 			</ul>
 
 			<!-- 지운 기록은 접어서 보여 준다 (M3 결정 11) -->
-			<details th:unless="${charge.deletedPayments().isEmpty()}" class="mt-4 text-lg">
-				<summary class="cursor-pointer font-semibold">지운 입금 기록 <span th:text="${charge.deletedPayments().size()}">1</span>건</summary>
+			<details th:unless="${charge.deletedPayments().isEmpty()}" class="mt-6">
+				<summary class="cursor-pointer py-2 font-semibold">지운 입금 기록 <span th:text="${charge.deletedPayments().size()}">1</span>건</summary>
 				<ul class="mt-2 space-y-2 text-gray-700">
 					<li th:each="p : ${charge.deletedPayments()}">
 						<span class="line-through" th:text="${p.amountText()} + ' · ' + ${p.paidOnText()} + ' 받음'">550,000원 · 2026년 10월 5일 받음</span>
@@ -91,28 +94,29 @@
 				</ul>
 			</details>
 		</section>
+		</div>
 
 		<!-- 바뀐 기록 (M3-b 커밋 4). 길어질 수 있어 접어 둔다 -->
-		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="history-heading">
-			<h2 id="history-heading" class="mb-3 text-xl font-bold">바뀐 기록</h2>
-			<details class="mb-3 text-lg">
-				<summary class="cursor-pointer font-semibold">상태 기록 <span th:text="${charge.statusHistory().size()}">3</span>건</summary>
+		<section class="card mb-6" aria-labelledby="history-heading">
+			<h2 id="history-heading" class="card-title">바뀐 기록</h2>
+			<details class="mb-2">
+				<summary class="cursor-pointer py-2 font-semibold">상태 기록 <span th:text="${charge.statusHistory().size()}">3</span>건</summary>
 				<ol class="mt-2 space-y-2">
-					<li th:each="h : ${charge.statusHistory()}" class="border-b border-gray-200 pb-2">
+					<li th:each="h : ${charge.statusHistory()}" class="border-b border-line pb-2">
 						<p><strong th:text="${h.changeText()}">받을 차례 → 다 받음</strong></p>
-						<p class="text-base text-gray-700">
+						<p class="row-meta">
 							<span th:text="${h.atText()}">2026년 10월 5일 03:00</span> · <span th:text="${h.actorText()}">내가 바꿈</span><span
 								th:if="${h.reasonText()}" th:text="' · ' + ${h.reasonText()}"> · 입금 기록</span>
 						</p>
 					</li>
 				</ol>
 			</details>
-			<details class="text-lg">
-				<summary class="cursor-pointer font-semibold">항목 기록 <span th:text="${charge.itemHistory().size()}">2</span>건</summary>
+			<details>
+				<summary class="cursor-pointer py-2 font-semibold">항목 기록 <span th:text="${charge.itemHistory().size()}">2</span>건</summary>
 				<ol class="mt-2 space-y-2">
-					<li th:each="h : ${charge.itemHistory()}" class="border-b border-gray-200 pb-2">
+					<li th:each="h : ${charge.itemHistory()}" class="border-b border-line pb-2">
 						<p><strong th:text="${h.changeText()}">추가: 월세 500,000원</strong></p>
-						<p class="text-base text-gray-700">
+						<p class="row-meta">
 							<span th:text="${h.atText()}">2026년 10월 5일 03:00</span> · <span th:text="${h.actorText()}">자동</span>
 						</p>
 					</li>
@@ -121,8 +125,8 @@
 		</section>
 
 		<!-- 입금 기록이 없을 때만 취소할 수 있다 (M3 결정 7) -->
-		<p th:if="${charge.canCancel()}" class="text-lg">
-			<a th:href="@{/app/charges/{id}/cancel(id=${charge.id()})}" class="font-semibold text-brand-700 underline">받을 월세 취소</a>
+		<p th:if="${charge.canCancel()}">
+			<a th:href="@{/app/charges/{id}/cancel(id=${charge.id()})}" class="link-danger">받을 월세 취소</a>
 		</p>
 	</main>
 </body>

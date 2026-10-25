@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>계약 고치기 - RentKeeper</title>
+<title th:text="|계약 고치기 - #{app.name}|">계약 고치기</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<p class="mb-2 text-lg"><a th:href="@{/app/leases/{id}(id=${view.leaseId()})}" class="font-semibold text-brand-700 underline">계약으로 돌아가기</a></p>
-		<h1 class="mb-1 text-3xl font-bold">계약 고치기</h1>
-		<p class="mb-6 text-lg text-gray-700">
+	<main id="main" class="page">
+		<p class="mb-4"><a th:href="@{/app/leases/{id}(id=${view.leaseId()})}" class="link">계약으로 돌아가기</a></p>
+		<h1 class="page-title">계약 고치기</h1>
+		<p class="mb-6 text-gray-700">
 			<span th:text="${view.unitName()}">행복빌라 101호</span> ·
 			들어오는 날 <span th:text="${#temporals.format(view.startDate(), 'yyyy년 M월 d일')}">2026년 1월 1일</span> (호실과 들어오는 날은 바꿀 수 없어요)
 		</p>
@@ -18,9 +18,9 @@
 			</div>
 			<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('*') and !#fields.hasGlobalErrors()}">입력한 내용을 확인해 주세요. 빨간 글씨로 안내한 칸을 고치면 돼요.</div>
 
-			<fieldset class="space-y-5 rounded-lg border-2 border-gray-200 bg-white p-5">
-				<legend class="px-2 text-xl font-bold">세입자</legend>
-				<p class="text-base text-gray-700" th:if="${view.otherLeasesOfTenant() > 0}">
+			<fieldset class="card space-y-6">
+				<legend class="card-title">세입자</legend>
+				<p class="note" th:if="${view.otherLeasesOfTenant() > 0}">
 					이 세입자의 다른 계약 <span th:text="${view.otherLeasesOfTenant()}">1</span>건에도 함께 바뀌어요 (같은 사람).
 				</p>
 				<div>
@@ -40,14 +40,14 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="space-y-5 rounded-lg border-2 border-gray-200 bg-white p-5">
-				<legend class="px-2 text-xl font-bold">금액</legend>
+			<fieldset class="card space-y-6">
+				<legend class="card-title">금액</legend>
 				<div>
 					<label for="deposit" class="form-label">보증금 (원)</label>
 					<input id="deposit" type="text" inputmode="numeric" th:field="*{deposit}" class="form-input">
 					<p class="form-error" th:if="${#fields.hasErrors('deposit')}" th:errors="*{deposit}">오류</p>
 				</div>
-				<p class="text-base text-gray-700">아래 월세·관리비는 <strong>첫 달(들어오는 달)</strong> 금액이에요. 잘못 넣었을 때만 고치세요. 앞으로 월세를 올리거나 내리려면 계약 화면의 [월세 바꾸기]를 쓰세요.</p>
+				<p class="note">아래 월세·관리비는 <strong>첫 달(들어오는 달)</strong> 금액이에요. 잘못 넣었을 때만 고치세요. 앞으로 월세를 올리거나 내리려면 계약 화면의 [월세 바꾸기]를 쓰세요.</p>
 				<div>
 					<label for="firstMonthlyRent" class="form-label">첫 달 월세 (원)</label>
 					<input id="firstMonthlyRent" type="text" inputmode="numeric" th:field="*{firstMonthlyRent}" class="form-input">
@@ -68,7 +68,7 @@
 				</div>
 				<div>
 					<label for="issueDaysBefore" class="form-label">납부일 며칠 전에 받을 월세를 만들까요?</label>
-					<p id="issue-hint" class="mb-2 text-base text-gray-700">바꾸면 아직 만들지 않은 달부터 적용돼요.</p>
+					<p id="issue-hint" class="mb-2 note">바꾸면 아직 만들지 않은 달부터 적용돼요.</p>
 					<select id="issueDaysBefore" name="issueDaysBefore" class="form-input" aria-describedby="issue-hint">
 						<option th:each="d : ${#numbers.sequence(0, 28)}" th:value="${d}"
 							th:text="${d == 0} ? '납부일 당일' : '납부일 ' + ${d} + '일 전'"
@@ -78,18 +78,18 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="space-y-5 rounded-lg border-2 border-gray-200 bg-white p-5">
-				<legend class="px-2 text-xl font-bold">기간</legend>
+			<fieldset class="card space-y-6">
+				<legend class="card-title">기간</legend>
 				<div>
 					<label for="endDate" class="form-label">나가는 날</label>
-					<p id="end-hint" class="mb-2 text-base text-gray-700">늘리거나 당길 수 있어요. 이미 나갔다면 [계약 종료]를 쓰세요.</p>
+					<p id="end-hint" class="mb-2 note">늘리거나 당길 수 있어요. 이미 나갔다면 [계약 종료]를 쓰세요.</p>
 					<input id="endDate" type="date" th:field="*{endDate}" class="form-input" aria-describedby="end-hint">
 					<p class="form-error" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}">오류</p>
 				</div>
 			</fieldset>
 
-			<fieldset class="space-y-5 rounded-lg border-2 border-gray-200 bg-white p-5">
-				<legend class="px-2 text-xl font-bold">월세 받을 계좌</legend>
+			<fieldset class="card space-y-6">
+				<legend class="card-title">월세 받을 계좌</legend>
 				<div>
 					<label for="bankName" class="form-label">은행</label>
 					<input id="bankName" type="text" th:field="*{bankName}" class="form-input">
@@ -107,7 +107,7 @@
 				</div>
 				<div>
 					<label for="memo" class="form-label">계약 메모 (선택)</label>
-					<p id="memo-hint" class="mb-2 text-base text-gray-700">주민번호·계좌번호는 적지 마세요.</p>
+					<p id="memo-hint" class="mb-2 note">주민번호·계좌번호는 적지 마세요.</p>
 					<textarea id="memo" th:field="*{memo}" rows="2" class="form-input py-3" aria-describedby="memo-hint"></textarea>
 					<p class="form-error" th:if="${#fields.hasErrors('memo')}" th:errors="*{memo}">오류</p>
 				</div>

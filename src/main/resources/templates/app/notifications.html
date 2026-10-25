@@ -1,23 +1,23 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>보낸 알림 - RentKeeper</title>
+<title th:text="|보낸 알림 - #{app.name}|">보낸 알림</title>
 </head>
 <body>
 	<!-- 알림 이력 (NOTI-7). 본문은 저장하지 않아 보이지 않는다: 종류·받는 사람·상태·시각만 -->
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<h1 class="mb-2 text-3xl font-bold">보낸 알림</h1>
-		<p class="mb-6 text-lg text-gray-700">최근 90일 동안 만든 알림이에요. 알림 내용은 저장하지 않아 여기서 다시 볼 수 없어요.</p>
+	<main id="main" class="page-wide">
+		<h1 class="page-title">보낸 알림</h1>
+		<p class="mb-6 text-gray-700">최근 90일 동안 만든 알림이에요. 알림 내용은 저장하지 않아 여기서 다시 볼 수 없어요.</p>
 
-		<p th:if="${history.rows().isEmpty()}" class="mb-6 rounded-lg border-2 border-dashed border-gray-400 bg-white p-5 text-lg">
+		<p th:if="${history.rows().isEmpty()}" class="mb-6 card card-empty">
 			아직 알림이 없어요.
 		</p>
 
-		<ul th:unless="${history.rows().isEmpty()}" class="mb-6 space-y-3">
-			<li th:each="row : ${history.rows()}" class="rounded-lg border-2 border-gray-200 bg-white p-4">
-				<p class="text-lg font-semibold"><span th:text="${row.typeText()}">받을 월세 안내</span> · <span th:text="${row.recipientText()}">행복빌라 101호 세입자 (문자)</span></p>
-				<p class="text-lg" th:classappend="${row.sent()} ? 'text-gray-900' : 'text-gray-700'" th:text="${row.statusText()}">보냈어요</p>
-				<p class="text-base text-gray-700" th:text="${#temporals.format(row.at(), 'M월 d일 HH:mm')}">10월 17일 09:00</p>
+		<ul th:unless="${history.rows().isEmpty()}" class="stack mb-6">
+			<li th:each="row : ${history.rows()}" class="card">
+				<p class="font-semibold"><span th:text="${row.typeText()}">받을 월세 안내</span> · <span th:text="${row.recipientText()}">행복빌라 101호 세입자 (문자)</span></p>
+				<p th:classappend="${row.sent()} ? 'text-gray-900' : 'text-gray-700'" th:text="${row.statusText()}">보냈어요</p>
+				<p class="note" th:text="${#temporals.format(row.at(), 'M월 d일 HH:mm')}">10월 17일 09:00</p>
 			</li>
 		</ul>
 

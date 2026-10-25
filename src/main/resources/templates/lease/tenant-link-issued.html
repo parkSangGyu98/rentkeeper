@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>세입자 링크 - RentKeeper</title>
+<title th:text="|세입자 링크 - #{app.name}|">세입자 링크</title>
 </head>
 <body>
 	<!-- 새로 만든 세입자 링크 (M4 결정 2). 원문은 이 화면에만 있다. 리다이렉트하지 않고 POST 응답으로 그린다 -->
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<p class="mb-2 text-lg"><a th:href="@{/app/leases/{id}(id=${lease.leaseId()})}" class="font-semibold text-brand-700 underline"
+	<main id="main" class="page">
+		<p class="mb-4"><a th:href="@{/app/leases/{id}(id=${lease.leaseId()})}" class="link"
 			th:text="${lease.unitName()} + ' · ' + ${lease.tenantName()} + '님 계약'">행복빌라 101호 · 홍길동님 계약</a></p>
-		<h1 class="mb-4 text-3xl font-bold">세입자 링크를 만들었어요</h1>
+		<h1 class="page-title">세입자 링크를 만들었어요</h1>
 
-		<div class="alert alert-info mb-6 text-lg" role="status">
+		<div class="alert alert-info mb-6" role="status">
 			이 링크는 <strong>지금만 보여요.</strong> 아래 [링크 복사]를 눌러 세입자에게 문자나 카카오톡으로 보내 주세요.
 			이 화면을 새로고침하거나 닫으면 다시 볼 수 없어요.
 		</div>
@@ -19,10 +19,10 @@
 		<input id="tenant-link-value" type="text" readonly class="form-input mb-3" th:value="${link}" value="http://localhost:8080/t/...">
 		<p class="mb-6 flex flex-wrap items-center gap-3">
 			<button type="button" class="btn btn-primary" data-copy-target="tenant-link-value" data-copy-done="copy-done">링크 복사</button>
-			<span id="copy-done" class="text-lg font-semibold" role="status" aria-live="polite"></span>
+			<span id="copy-done" class="font-semibold" role="status" aria-live="polite"></span>
 		</p>
 
-		<ul class="mb-8 list-disc space-y-1 pl-6 text-lg text-gray-700">
+		<ul class="mb-8 list-disc space-y-1 pl-6 text-gray-700">
 			<li>세입자는 가입 없이 이 링크로 이번 달 월세, 입금 계좌를 보고 "입금했어요"를 알릴 수 있어요.</li>
 			<li><span th:text="${#temporals.format(usableUntil, 'yyyy년 M월 d일')}">2027년 3월 31일</span>까지 열 수 있어요 (계약이 끝나고 90일).</li>
 			<li>링크를 아는 사람은 누구나 열 수 있어요. 세입자가 아닌 사람에게 보내지 마세요. 잘못 보냈다면 계약 화면에서 [링크 닫기]를 눌러 주세요.</li>

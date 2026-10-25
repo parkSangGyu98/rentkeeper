@@ -1,5 +1,8 @@
 package com.rentkeeper.auth.mail;
 
+import java.util.Locale;
+
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 import com.rentkeeper.common.config.AppProperties;
@@ -11,32 +14,38 @@ import com.rentkeeper.common.mail.EmailMessage;
 @Component
 public class AccountEmails {
 
-	private static final String SUBJECT_PREFIX = "[RentKeeper] ";
-
 	private final AppProperties appProperties;
 
-	public AccountEmails(AppProperties appProperties) {
+	/** 서비스 이름 (messages의 app.name, 디자인 교체 결정 3). 화면과 같은 한 곳에서 읽는다 */
+	private final String serviceName;
+
+	/** 제목 머리말 (예: "[RentKeeper] ") */
+	private final String subjectPrefix;
+
+	public AccountEmails(AppProperties appProperties, MessageSource messages) {
 		this.appProperties = appProperties;
+		this.serviceName = messages.getMessage("app.name", null, Locale.KOREAN);
+		this.subjectPrefix = "[" + serviceName + "] ";
 	}
 
 	public EmailMessage emailVerification(String to, String name, String token) {
 		String link = appProperties.tokenLink("/verify-email", token);
-		return new EmailMessage(to, SUBJECT_PREFIX + "이메일 인증을 완료해 주세요", """
+		return new EmailMessage(to, subjectPrefix + "이메일 인증을 완료해 주세요", """
 				안녕하세요, %s님.
 
-				RentKeeper에 가입해 주셔서 감사합니다.
+				%s에 가입해 주셔서 감사합니다.
 				아래 링크를 누른 뒤, 열린 화면에서 [인증 완료하기] 버튼을 눌러 주세요.
 
 				%s
 
 				이 링크는 24시간 동안 쓸 수 있어요.
 				본인이 가입하지 않았다면 이 메일은 무시하셔도 됩니다.
-				""".formatted(name, link));
+				""".formatted(name, serviceName, link));
 	}
 
 	public EmailMessage passwordReset(String to, String name, String token) {
 		String link = appProperties.tokenLink("/password-reset/confirm", token);
-		return new EmailMessage(to, SUBJECT_PREFIX + "비밀번호 재설정 안내", """
+		return new EmailMessage(to, subjectPrefix + "비밀번호 재설정 안내", """
 				안녕하세요, %s님.
 
 				비밀번호 재설정을 요청하셨어요.
@@ -51,10 +60,10 @@ public class AccountEmails {
 
 	public EmailMessage emailChangeConfirmation(String newEmail, String name, String token) {
 		String link = appProperties.tokenLink("/verify-email-change", token);
-		return new EmailMessage(newEmail, SUBJECT_PREFIX + "새 이메일 주소를 확인해 주세요", """
+		return new EmailMessage(newEmail, subjectPrefix + "새 이메일 주소를 확인해 주세요", """
 				안녕하세요, %s님.
 
-				RentKeeper 로그인 이메일을 이 주소로 바꾸려고 하셨어요.
+				%s 로그인 이메일을 이 주소로 바꾸려고 하셨어요.
 				아래 링크를 누른 뒤, 열린 화면에서 [이메일 바꾸기 완료] 버튼을 눌러 주세요.
 				버튼을 누르기 전까지는 예전 이메일로 로그인해요.
 
@@ -62,44 +71,44 @@ public class AccountEmails {
 
 				이 링크는 24시간 동안 쓸 수 있어요.
 				본인이 요청하지 않았다면 이 메일은 무시하셔도 됩니다.
-				""".formatted(name, link));
+				""".formatted(name, serviceName, link));
 	}
 
 	/** 이전 주소로 보내는 보안 안내. 이전 주소가 인증돼 있었을 때만 보낸다 */
 	public EmailMessage emailChanged(String previousEmail, String name, String newEmail) {
-		return new EmailMessage(previousEmail, SUBJECT_PREFIX + "로그인 이메일이 바뀌었어요", """
+		return new EmailMessage(previousEmail, subjectPrefix + "로그인 이메일이 바뀌었어요", """
 				안녕하세요, %s님.
 
-				RentKeeper 로그인 이메일이 %s(으)로 바뀌었어요.
+				%s 로그인 이메일이 %s(으)로 바뀌었어요.
 				앞으로는 새 이메일로 로그인하고 알림도 새 이메일로 받아요.
 
 				본인이 바꾼 것이 아니라면 바로 문의해 주세요.
-				""".formatted(name, newEmail));
+				""".formatted(name, serviceName, newEmail));
 	}
 
 	/** 탈퇴 안내 (ADR-015). 인증된 주소로만 보낸다 */
 	public EmailMessage withdrawn(String to, String name) {
-		return new EmailMessage(to, SUBJECT_PREFIX + "탈퇴 처리됐어요", """
+		return new EmailMessage(to, subjectPrefix + "탈퇴 처리됐어요", """
 				안녕하세요, %s님.
 
-				RentKeeper 회원 탈퇴가 처리됐어요. 모든 기기에서 로그아웃됐고, 더 이상 로그인할 수 없어요.
+				%s 회원 탈퇴가 처리됐어요. 모든 기기에서 로그아웃됐고, 더 이상 로그인할 수 없어요.
 				계정 정보는 30일 뒤에 완전히 지워요. 탈퇴를 되돌리는 기능은 없어요.
 				다시 이용하시려면 언제든 새로 가입하실 수 있어요.
 
 				본인이 탈퇴한 것이 아니라면 바로 문의해 주세요.
-				""".formatted(name));
+				""".formatted(name, serviceName));
 	}
 
 	/** 보안 안내 메일. 인증된 주소로만 보낸다 (호출하는 쪽이 findVerifiedEmail로 주소를 얻는다) */
 	public EmailMessage passwordChanged(String to, String name) {
-		return new EmailMessage(to, SUBJECT_PREFIX + "비밀번호가 변경됐어요", """
+		return new EmailMessage(to, subjectPrefix + "비밀번호가 변경됐어요", """
 				안녕하세요, %s님.
 
-				방금 RentKeeper 비밀번호가 변경됐어요. 안전을 위해 모든 기기에서 로그아웃됐어요.
+				방금 %s 비밀번호가 변경됐어요. 안전을 위해 모든 기기에서 로그아웃됐어요.
 
 				본인이 바꾼 것이 아니라면, 로그인 화면의 [비밀번호가 기억나지 않나요?]에서
 				바로 비밀번호를 다시 정해 주세요.
-				""".formatted(name));
+				""".formatted(name, serviceName));
 	}
 
 }

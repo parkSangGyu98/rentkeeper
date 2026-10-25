@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>계약 확인 - RentKeeper</title>
+<title th:text="|계약 확인 - #{app.name}|">계약 확인</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<h1 class="mb-2 text-3xl font-bold">이대로 등록할까요?</h1>
-		<p class="mb-6 text-xl font-semibold" th:text="${unit.displayName()}">행복빌라 101호</p>
+	<main id="main" class="page">
+		<h1 class="page-title">이대로 등록할까요?</h1>
+		<p class="mb-6 text-title font-semibold" th:text="${unit.displayName()}">행복빌라 101호</p>
 
 		<!-- 같은 연락처의 세입자가 이미 있다 (M2 결정 6) -->
 		<div class="alert alert-info" role="status" th:if="${existingTenant != null}">
@@ -18,39 +18,39 @@
 
 		<!-- 이번 달 납부일이 이미 지나 이번 달분은 자동으로 만들지 않는다 (M3 결정 2). 등록하면 계약 상세의 배너에서 만든다 -->
 		<div class="alert alert-info mb-6" role="status" th:if="${thisMonthNotAutomatic}">
-			<p class="mb-2 text-2xl font-bold">이번 달 월세는 자동으로 만들어지지 않아요.</p>
-			<p class="text-lg">이번 달 납부일이 이미 지났기 때문이에요. 다음 달부터는 자동으로 만들어져요.
+			<p class="mb-2 text-title font-semibold">이번 달 월세는 자동으로 만들어지지 않아요.</p>
+			<p>이번 달 납부일이 이미 지났기 때문이에요. 다음 달부터는 자동으로 만들어져요.
 				등록하면 다음 화면에서 바로 만들 수 있어요.</p>
 		</div>
 
-		<dl class="mb-8 space-y-4 rounded-lg border-2 border-gray-200 bg-white p-5 text-lg">
+		<dl class="card kv-list mb-8">
 			<div th:if="${existingTenant == null}">
-				<dt class="font-semibold">세입자</dt>
+				<dt>세입자</dt>
 				<dd th:text="${registration.tenantName().value()} + ' · ' + ${registration.tenantPhone().formatted()}">홍길동 · 010-1234-5678</dd>
 			</div>
 			<div>
-				<dt class="font-semibold">보증금</dt>
+				<dt>보증금</dt>
 				<dd th:text="${registration.depositText()}">10,000,000원</dd>
 			</div>
 			<div>
-				<dt class="font-semibold">월세 · 관리비</dt>
+				<dt>월세 · 관리비</dt>
 				<dd th:text="${registration.rentText()} + ' · 관리비 ' + ${registration.feeText()}">500,000원 · 50,000원</dd>
 			</div>
 			<div>
-				<dt class="font-semibold">월세 받는 날</dt>
+				<dt>월세 받는 날</dt>
 				<dd th:text="${registration.dueDayText()}">매달 5일</dd>
 			</div>
 			<div>
-				<dt class="font-semibold">받을 월세 만드는 날</dt>
+				<dt>받을 월세 만드는 날</dt>
 				<dd th:text="${registration.issueDaysText()}">납부일 7일 전</dd>
 			</div>
 			<div>
-				<dt class="font-semibold">기간</dt>
+				<dt>기간</dt>
 				<dd>들어오는 날 <span th:text="${#temporals.format(registration.terms().startDate(), 'yyyy년 M월 d일')}">2026년 1월 1일</span>
 					· 나가는 날 <span th:text="${#temporals.format(registration.terms().endDate(), 'yyyy년 M월 d일')}">2027년 1월 1일</span></dd>
 			</div>
 			<div>
-				<dt class="font-semibold">월세 받을 계좌</dt>
+				<dt>월세 받을 계좌</dt>
 				<dd th:text="${registration.terms().bankName()} + ' ' + ${registration.terms().accountNumber().digits()} + ' (예금주 ' + ${registration.terms().accountHolder().value()} + ')'">국민은행 123456789 (예금주 김임대)</dd>
 			</div>
 		</dl>

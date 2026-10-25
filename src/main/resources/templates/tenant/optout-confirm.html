@@ -5,14 +5,16 @@
 </head>
 <body>
 	<!-- 안내 문자 그만 받기 확인 (TEN-6, M5 결정 9). 잘못 누르는 것을 막으려고 한 번 더 묻는다 -->
-	<main id="main" class="mx-auto w-full max-w-xl flex-1 px-4 py-6">
-		<h1 class="mb-4 text-3xl font-bold">안내 문자를 그만 받을까요?</h1>
-		<p class="mb-3 text-lg">누르시면 월세 안내 문자(보내실 금액, 보내실 날짜 안내)를 더 보내지 않아요.</p>
-		<p class="mb-6 text-lg">이 링크 화면은 그대로 열 수 있고, 마음이 바뀌면 언제든 다시 받을 수 있어요.</p>
+	<main id="main" class="page-tenant">
+		<div class="card">
+		<h1 class="page-title">안내 문자를 그만 받을까요?</h1>
+		<p class="mb-3">누르시면 월세 안내 문자(보내실 금액, 보내실 날짜 안내)를 더 보내지 않아요.</p>
+		<p class="mb-6">이 링크 화면은 그대로 열 수 있고, 마음이 바뀌면 언제든 다시 받을 수 있어요.</p>
 		<form th:action="@{/t/{token}/optout(token=${token})}" method="post" class="mb-4">
 			<button type="submit" class="btn btn-primary w-full">네, 그만 받을게요</button>
 		</form>
 		<a th:href="@{/t/{token}(token=${token})}" class="btn btn-secondary w-full">아니요, 돌아갈게요</a>
+		</div>
 	</main>
 </body>
 </html>

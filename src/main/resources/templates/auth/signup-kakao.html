@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>카카오로 가입하기 - RentKeeper</title>
+<title th:text="|카카오로 가입하기 - #{app.name}|">카카오로 가입하기</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<h1 class="mb-2 text-3xl font-bold">거의 다 됐어요!</h1>
-		<p class="mb-8 text-lg text-gray-700">아래 내용만 확인해 주세요.</p>
+	<main id="main" class="page">
+		<h1 class="page-title">거의 다 됐어요!</h1>
+		<p class="mb-8 text-gray-700">아래 내용만 확인해 주세요.</p>
 
 		<div class="alert alert-error" role="alert" th:if="${alreadyRegistered}">
-			이미 가입을 마친 카카오 계정이에요. <a th:href="@{/login}" class="font-semibold underline">다시 로그인</a>해 주세요.
+			이미 가입을 마친 카카오 계정이에요. <a th:href="@{/login}" class="link">다시 로그인</a>해 주세요.
 		</div>
 		<div class="alert alert-error" role="alert" th:if="${#fields.hasErrors('${form.*}')}">입력한 내용을 확인해 주세요. 빨간 글씨로 안내한 칸을 고치면 돼요.</div>
 
-		<form th:action="@{/signup/kakao}" th:object="${form}" method="post" class="space-y-6" novalidate>
+		<form th:action="@{/signup/kakao}" th:object="${form}" method="post" class="card space-y-6" novalidate>
 			<div>
 				<label for="name" class="form-label">이름(호칭)</label>
-				<p id="name-hint" class="mb-2 text-base text-gray-700">화면에서 부를 이름이에요. 예: 김임대, 행복빌라 사장님</p>
+				<p id="name-hint" class="mb-2 note">화면에서 부를 이름이에요. 예: 김임대, 행복빌라 사장님</p>
 				<input id="name" type="text" th:field="*{name}" class="form-input" autocomplete="name" required
 					th:attr="aria-invalid=${#fields.hasErrors('name')},aria-describedby=${#fields.hasErrors('name')} ? 'name-hint name-error' : 'name-hint'">
 				<p id="name-error" class="form-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">이름 오류</p>
@@ -24,7 +24,7 @@
 
 			<div>
 				<label for="notificationEmail" class="form-label">알림 받을 이메일 (선택)</label>
-				<p id="email-hint" class="mb-2 text-base text-gray-700">월세 알림을 받을 이메일이에요. 확인 메일을 보내 드려요. 비워 두면 나중에 입력할 수 있어요.</p>
+				<p id="email-hint" class="mb-2 note">월세 알림을 받을 이메일이에요. 확인 메일을 보내 드려요. 비워 두면 나중에 입력할 수 있어요.</p>
 				<input id="notificationEmail" type="email" th:field="*{notificationEmail}" class="form-input" autocomplete="email"
 					inputmode="email"
 					th:attr="aria-invalid=${#fields.hasErrors('notificationEmail')},aria-describedby=${#fields.hasErrors('notificationEmail')} ? 'email-hint email-error' : 'email-hint'">
@@ -34,7 +34,7 @@
 			<!-- 초대 코드 (M6 결정 3). 칸 값은 다시 채우지 않는다 -->
 			<div th:if="${inviteRequired}">
 				<label for="inviteCode" class="form-label">초대 코드</label>
-				<p id="inviteCode-hint" class="mb-2 text-base text-gray-700">지금은 초대받은 분만 가입할 수 있어요. 둘러보려면 첫 화면의 [데모로 둘러보기]를 눌러 주세요.</p>
+				<p id="inviteCode-hint" class="mb-2 note">지금은 초대받은 분만 가입할 수 있어요. 둘러보려면 첫 화면의 [데모로 둘러보기]를 눌러 주세요.</p>
 				<input id="inviteCode" type="text" name="inviteCode" class="form-input" autocomplete="off" required
 					th:attr="aria-invalid=${inviteError != null},aria-describedby=${inviteError != null} ? 'inviteCode-hint inviteCode-error' : 'inviteCode-hint'">
 				<p id="inviteCode-error" class="form-error" th:if="${inviteError}" th:text="${inviteError}">초대 코드 오류</p>
@@ -42,11 +42,11 @@
 
 			<div>
 				<div class="flex items-start gap-3">
-					<input id="agreeTerms" type="checkbox" th:field="*{agreeTerms}" class="mt-1 h-6 w-6 shrink-0"
+					<input id="agreeTerms" type="checkbox" th:field="*{agreeTerms}" class="mt-1 h-6 w-6 shrink-0 accent-brand-700"
 						th:attr="aria-invalid=${#fields.hasErrors('agreeTerms')},aria-describedby=${#fields.hasErrors('agreeTerms')} ? 'agreeTerms-error'">
-					<label for="agreeTerms" class="text-lg">
-						<a th:href="@{/terms}" target="_blank" rel="noopener" class="font-semibold text-brand-700 underline">이용약관</a>과
-						<a th:href="@{/privacy}" target="_blank" rel="noopener" class="font-semibold text-brand-700 underline">개인정보처리방침</a>에
+					<label for="agreeTerms">
+						<a th:href="@{/terms}" target="_blank" rel="noopener" class="link">이용약관</a>과
+						<a th:href="@{/privacy}" target="_blank" rel="noopener" class="link">개인정보처리방침</a>에
 						동의해요 (필수)
 					</label>
 				</div>

@@ -111,7 +111,7 @@ class DashboardTests {
 		assertThat(page).as("① 확인 기다리는 입금 신고").contains("확인 기다리는 입금 신고 <span>1건</span>").contains("행복빌라 103호 · 이세입님")
 				.contains("<strong>2번째 신고</strong>").contains("10월 16일 알림");
 		assertThat(page).as("② 이번 달 (취소 제외)").contains("받을 월세 <span>3건</span>")
-				.contains("<dd class=\"inline\">1,450,000원</dd>").contains("<dd class=\"inline\">500,000원</dd>")
+				.contains("<dd class=\"stat-value\">1,450,000원</dd>").contains("<dd class=\"stat-value\">500,000원</dd>")
 				.contains("950,000원");
 		assertThat(page).as("③ 납부일 지남 (모든 달)").contains("납부일 지남 <span>2건</span>").contains("<strong>850,000원</strong>")
 				.contains("<strong>53일 지남</strong>").contains("<strong>22일 지남</strong>");
@@ -126,6 +126,7 @@ class DashboardTests {
 	@Test
 	void choosingAPropertyCountsOnlyItsUnits() throws Exception {
 		String lovePage = page("/app/dashboard?propertyId=" + love);
+		assertThat(lovePage).as("건물 고르기 버튼은 무엇을 보는지 드러낸다").contains(">이 건물 보기</button>");
 		assertThat(lovePage).contains("selected=\"selected\">사랑빌라</option>").contains("확인 기다리는 입금 신고 <span>0건</span>")
 				.contains("받을 월세 <span>0건</span>").contains("납부일 지남 <span>0건</span>")
 				.contains("90일 안에 끝나는 계약 <span>0건</span>").contains("호실 <span>1개</span> 중 <strong>공실 1개</strong>")

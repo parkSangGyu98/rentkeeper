@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>입금 기록 고치기 - RentKeeper</title>
+<title th:text="|입금 기록 고치기 - #{app.name}|">입금 기록 고치기</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<h1 class="mb-2 text-3xl font-bold">입금 기록 고치기</h1>
-		<p class="mb-2 text-xl"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
+	<main id="main" class="page">
+		<h1 class="page-title">입금 기록 고치기</h1>
+		<p class="mb-2 text-title"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
 			· <span th:text="${charge.monthText()}">2026년 10월</span></p>
-		<p class="mb-6 text-lg text-gray-700">지금 기록: <span th:text="${payment.amountText()}">550,000원</span> · <span th:text="${payment.paidOnText()} + ' 받음'">2026년 10월 5일 받음</span>.
+		<p class="mb-6 text-gray-700">지금 기록: <span th:text="${payment.amountText()}">550,000원</span> · <span th:text="${payment.paidOnText()} + ' 받음'">2026년 10월 5일 받음</span>.
 			고치면 지금 기록은 지운 기록으로 남고, 고친 내용으로 새 기록이 생겨요.</p>
 
-		<div class="alert alert-info mb-6 text-lg" role="status" th:if="${overpay}" th:text="${overpay}">남은 금액보다 많아요</div>
+		<div class="alert alert-info mb-6" role="status" th:if="${overpay}" th:text="${overpay}">남은 금액보다 많아요</div>
 
-		<form th:action="@{/app/charges/{id}/payments/{pid}/correct(id=${charge.id()},pid=${payment.id()})}" th:object="${form}" method="post" class="space-y-6" novalidate>
+		<form th:action="@{/app/charges/{id}/payments/{pid}/correct(id=${charge.id()},pid=${payment.id()})}" th:object="${form}" method="post" class="card space-y-6" novalidate>
 			<input type="hidden" th:field="*{version}">
 			<input type="hidden" th:field="*{overpayConfirmed}">
 			<div>
@@ -30,13 +30,13 @@
 			</div>
 			<div>
 				<label for="memo" class="form-label">메모 (없으면 비워 두세요)</label>
-				<p id="memo-hint" class="mb-2 text-base text-gray-700">주민번호·계좌번호는 적지 마세요.</p>
+				<p id="memo-hint" class="mb-2 note">주민번호·계좌번호는 적지 마세요.</p>
 				<input id="memo" type="text" th:field="*{memo}" class="form-input" aria-describedby="memo-hint">
 				<p class="form-error" th:if="${#fields.hasErrors('memo')}" th:errors="*{memo}">오류</p>
 			</div>
 			<div>
 				<label for="reason" class="form-label">고치는 사유</label>
-				<p id="reason-hint" class="mb-2 text-base text-gray-700">예: 금액을 잘못 입력함</p>
+				<p id="reason-hint" class="mb-2 note">예: 금액을 잘못 입력함</p>
 				<input id="reason" type="text" th:field="*{reason}" class="form-input" aria-describedby="reason-hint"
 					th:attr="aria-invalid=${#fields.hasErrors('reason')}">
 				<p class="form-error" th:if="${#fields.hasErrors('reason')}" th:errors="*{reason}">오류</p>

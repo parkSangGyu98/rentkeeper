@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>이메일 인증 - RentKeeper</title>
+<title th:text="|이메일 인증 - #{app.name}|">이메일 인증</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+	<main id="main" class="page">
 		<th:block th:switch="${state}">
 			<th:block th:case="'CONFIRM'">
-				<h1 class="mb-4 text-3xl font-bold">이메일 인증을 완료할까요?</h1>
-				<p class="mb-8 text-lg text-gray-700">아래 버튼을 누르면 인증이 끝나요.</p>
+				<h1 class="page-title">이메일 인증을 완료할까요?</h1>
+				<p class="mb-8 text-gray-700">아래 버튼을 누르면 인증이 끝나요.</p>
 				<!-- 링크를 여는 것(GET)만으로는 인증되지 않는다. 버튼(POST)을 눌러야 한다 (ADR-011) -->
 				<form th:action="@{/verify-email}" method="post">
 					<input type="hidden" name="token" th:value="${token}">
@@ -17,14 +17,14 @@
 			</th:block>
 
 			<th:block th:case="'DONE'">
-				<h1 class="mb-4 text-3xl font-bold">이메일 인증이 끝났어요</h1>
-				<p class="mb-8 text-lg text-gray-700">이제 월세 알림을 이 이메일로 받을 수 있어요.</p>
+				<h1 class="page-title">이메일 인증이 끝났어요</h1>
+				<p class="mb-8 text-gray-700">이제 월세 알림을 이 이메일로 받을 수 있어요.</p>
 				<a th:href="@{/app}" class="btn btn-primary">내 화면으로</a>
 			</th:block>
 
 			<th:block th:case="*">
-				<h1 class="mb-4 text-3xl font-bold">링크가 만료됐거나 이미 사용됐어요</h1>
-				<p class="mb-8 text-lg text-gray-700">로그인한 뒤 화면 위쪽의 [인증 메일 다시 받기]를 눌러 새 링크를 받아 주세요. 인증 링크는 24시간 동안 쓸 수 있어요.</p>
+				<h1 class="page-title">링크가 만료됐거나 이미 사용됐어요</h1>
+				<p class="mb-8 text-gray-700">로그인한 뒤 화면 위쪽의 [인증 메일 다시 받기]를 눌러 새 링크를 받아 주세요. 인증 링크는 24시간 동안 쓸 수 있어요.</p>
 				<a th:href="@{/login}" class="btn btn-primary">로그인하기</a>
 			</th:block>
 		</th:block>

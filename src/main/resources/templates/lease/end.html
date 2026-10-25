@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>계약 종료 - RentKeeper</title>
+<title th:text="|계약 종료 - #{app.name}|">계약 종료</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<h1 class="mb-4 text-3xl font-bold">계약을 종료할까요?</h1>
-		<p class="mb-2 text-xl font-semibold"><span th:text="${lease.unit().displayName()}">행복빌라 101호</span> · <span th:text="${lease.tenantName()}">홍길동</span>님</p>
-		<ul class="mb-6 list-disc space-y-1 pl-6 text-lg text-gray-700">
+	<main id="main" class="page">
+		<h1 class="page-title">계약을 종료할까요?</h1>
+		<p class="mb-2 text-title font-semibold"><span th:text="${lease.unit().displayName()}">행복빌라 101호</span> · <span th:text="${lease.tenantName()}">홍길동</span>님</p>
+		<ul class="mb-6 list-disc space-y-1 pl-6 text-gray-700">
 			<li>종료하면 이후 월세를 만들지 않고, 호실이 공실이 돼요.</li>
 			<li>이미 받지 못한 월세 기록은 그대로 남아요.</li>
 			<li>종료한 계약은 다시 고치거나 되돌릴 수 없어요.</li>
@@ -15,10 +15,10 @@
 
 		<div class="alert alert-error" role="alert" th:if="${error}" th:text="${error}">오류</div>
 
-		<form th:action="@{/app/leases/{id}/end(id=${lease.id()})}" method="post" class="mb-4 space-y-6" novalidate>
+		<form th:action="@{/app/leases/{id}/end(id=${lease.id()})}" method="post" class="card mb-4 space-y-6" novalidate>
 			<div>
 				<label for="endedOn" class="form-label">실제로 끝난 날</label>
-				<p id="ended-hint" class="mb-2 text-base text-gray-700">들어오는 날부터 오늘까지 중에서 골라 주세요. 앞으로 나갈 예정이면 [계약 고치기]에서 나가는 날을 바꾸세요.</p>
+				<p id="ended-hint" class="mb-2 note">들어오는 날부터 오늘까지 중에서 골라 주세요. 앞으로 나갈 예정이면 [계약 고치기]에서 나가는 날을 바꾸세요.</p>
 				<input id="endedOn" name="endedOn" type="date" th:value="${endedOn}" th:attr="max=${today}" class="form-input" aria-describedby="ended-hint">
 			</div>
 			<button type="submit" class="btn btn-danger w-full">네, 종료할게요</button>

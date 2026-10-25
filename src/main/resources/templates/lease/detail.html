@@ -1,37 +1,37 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>계약 상세 - RentKeeper</title>
+<title th:text="|계약 상세 - #{app.name}|">계약 상세</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<p class="mb-2 text-lg"><a th:href="@{/app/units/{id}(id=${lease.unit().id()})}" class="font-semibold text-brand-700 underline" th:text="${lease.unit().displayName()}">행복빌라 101호</a></p>
-		<h1 class="mb-1 text-3xl font-bold"><span th:text="${lease.tenantName()}">홍길동</span>님 계약</h1>
-		<p class="mb-4 text-lg font-semibold" th:text="${lease.active()} ? '진행 중' : '종료됨'">진행 중</p>
+	<main id="main" class="page-wide">
+		<p class="mb-4"><a th:href="@{/app/units/{id}(id=${lease.unit().id()})}" class="link" th:text="${lease.unit().displayName()}">행복빌라 101호</a></p>
+		<h1 class="page-title"><span th:text="${lease.tenantName()}">홍길동</span>님 계약</h1>
+		<p class="mb-6"><span th:with="badge=${lease.active()} ? 'badge-occupied' : 'badge-vacant'" th:class="|badge ${badge}|"><th:block th:replace="~{fragments/icons :: status(${badge}, null)}"></th:block><span th:text="${lease.active()} ? '진행 중' : '종료됨'">진행 중</span></span></p>
 
 		<!-- 진행 중인 계약만 고칠 수 있다. 종료한 계약은 보기만 (M2 결정) -->
 		<div class="mb-6 flex flex-wrap gap-3" th:if="${lease.active()}">
 			<a th:href="@{/app/leases/{id}/edit(id=${lease.id()})}" class="btn btn-secondary">계약 고치기</a>
 			<a th:href="@{/app/leases/{id}/rent-change(id=${lease.id()})}" class="btn btn-secondary">월세 바꾸기</a>
-			<a th:href="@{/app/leases/{id}/end(id=${lease.id()})}" class="btn btn-secondary">계약 종료</a>
-			<a th:href="@{/app/leases/{id}/delete(id=${lease.id()})}" class="btn btn-secondary">잘못 등록한 계약 지우기</a>
+			<a th:href="@{/app/leases/{id}/end(id=${lease.id()})}" class="btn btn-danger-secondary">계약 종료</a>
+			<a th:href="@{/app/leases/{id}/delete(id=${lease.id()})}" class="btn btn-danger-secondary">잘못 등록한 계약 지우기</a>
 		</div>
-		<p class="mb-6 text-base text-gray-700" th:unless="${lease.active()}">종료한 계약은 고칠 수 없어요. 계약 기간 안의 받을 월세는 직접 만들 수 있어요.</p>
+		<p class="mb-6 note" th:unless="${lease.active()}">종료한 계약은 고칠 수 없어요. 계약 기간 안의 받을 월세는 직접 만들 수 있어요.</p>
 		<!-- 종료한 계약도 기간 안의 달은 만들 수 있다 (M3-b 결정 7) -->
-		<p class="mb-6"><a th:href="@{/app/leases/{id}/charges/new(id=${lease.id()})}" class="font-semibold text-brand-700 underline text-lg">받을 월세 직접 만들기</a></p>
+		<p class="mb-6"><a th:href="@{/app/leases/{id}/charges/new(id=${lease.id()})}" class="link">받을 월세 직접 만들기</a></p>
 
 		<!-- 받을 월세가 없는 달 (M3 결정 2, M3-b 결정 11): 이번 달은 납부일이 지났을 때, 지난 달은 최근 3개월만 -->
-		<section th:if="${lease.active() and lease.missing().any()}" class="mb-6 rounded-lg border-4 border-amber-500 bg-amber-50 p-5"
+		<section th:if="${lease.active() and lease.missing().any()}" class="card card-attention mb-6"
 			aria-labelledby="missing-heading">
 			<th:block th:if="${lease.missing().thisMonthMissing()}">
-				<h2 id="missing-heading" class="mb-2 text-2xl font-bold">이번 달 받을 월세가 아직 없어요</h2>
-				<p class="mb-4 text-lg">이번 달 납부일(<span th:text="${lease.missing().thisMonthDueText()}">10월 5일</span>)이 지났는데 받을 월세가 만들어지지 않았어요.
+				<h2 id="missing-heading" class="mb-2 text-title font-semibold">이번 달 받을 월세가 아직 없어요</h2>
+				<p class="mb-4">이번 달 납부일(<span th:text="${lease.missing().thisMonthDueText()}">10월 5일</span>)이 지났는데 받을 월세가 만들어지지 않았어요.
 					계약을 등록하기 전에 납부일이 지난 달은 자동으로 만들어지지 않아요. 다음 달부터는 자동으로 만들어져요.</p>
 				<a th:href="@{/app/leases/{id}/charges/new(id=${lease.id()},month=${lease.missing().thisMonthParam()})}"
 					class="btn btn-primary">이번 달 받을 월세 만들기</a>
 			</th:block>
-			<h2 id="missing-heading" class="mb-2 text-2xl font-bold" th:unless="${lease.missing().thisMonthMissing()}">받을 월세가 없는 지난 달이 있어요</h2>
-			<div th:unless="${lease.missing().recentMonths().isEmpty()}" class="mt-4 text-lg">
+			<h2 id="missing-heading" class="mb-2 text-title font-semibold" th:unless="${lease.missing().thisMonthMissing()}">받을 월세가 없는 지난 달이 있어요</h2>
+			<div th:unless="${lease.missing().recentMonths().isEmpty()}" class="mt-4">
 				<p class="mb-3">받을 월세가 없는 지난 달 <strong th:text="${lease.missing().recentMonths().size()} + '개'">2개</strong>:
 					<span th:text="${lease.missing().recentMonthsText()}">2026년 8월, 9월</span></p>
 				<a th:href="@{/app/leases/{id}/charges/new(id=${lease.id()})}" class="btn btn-secondary">다른 달 받을 월세 만들기</a>
@@ -39,67 +39,70 @@
 		</section>
 
 		<!-- 세입자 링크 (M4 결정 1~4). 링크 주소는 만들 때만 보인다. 폼의 숨은 칸은 화면이 보던 열린 링크 ID -->
-		<section id="tenant-link" class="mb-6 rounded-lg border-2 border-brand-700 bg-white p-5" aria-labelledby="tenant-link-heading">
-			<h2 id="tenant-link-heading" class="mb-3 text-xl font-bold">세입자 링크</h2>
-			<div class="alert alert-error mb-4 text-lg" role="alert" th:if="${tenantLinkAlert}" th:text="${tenantLinkAlert}">안내</div>
+		<section id="tenant-link" class="mb-6 card card-accent" aria-labelledby="tenant-link-heading">
+			<h2 id="tenant-link-heading" class="card-title">세입자 링크</h2>
+			<div class="alert alert-error mb-4" role="alert" th:if="${tenantLinkAlert}" th:text="${tenantLinkAlert}">안내</div>
 			<th:block th:if="${tenantLink.open()}">
-				<p class="mb-3 text-lg" th:if="${tenantLink.withinPeriod()}">링크가 열려 있어요. 세입자는 이 링크로 가입 없이 이번 달 월세와 입금 계좌를 볼 수 있어요.</p>
-				<p class="mb-3 text-lg font-semibold" th:unless="${tenantLink.withinPeriod()}">링크를 쓸 수 있는 기간이 지나 세입자가 열 수 없어요.</p>
-				<dl class="mb-3 space-y-1 text-lg">
-					<div><dt class="inline font-semibold">만든 날</dt> <dd class="inline" th:text="${#temporals.format(tenantLink.createdOn(), 'yyyy년 M월 d일')}">2026년 10월 23일</dd></div>
-					<div><dt class="inline font-semibold">세입자가 마지막으로 열어 본 날</dt>
-						<dd class="inline" th:text="${tenantLink.lastUsedOn() != null} ? ${#temporals.format(tenantLink.lastUsedOn(), 'yyyy년 M월 d일')} : '아직 열어 보지 않았어요'">아직 열어 보지 않았어요</dd></div>
-					<div th:if="${tenantLink.usableUntil() != null}"><dt class="inline font-semibold">열 수 있는 마지막 날</dt> <dd class="inline" th:text="${#temporals.format(tenantLink.usableUntil(), 'yyyy년 M월 d일')}">2027년 3월 31일</dd></div>
+				<p class="mb-3" th:if="${tenantLink.withinPeriod()}">링크가 열려 있어요. 세입자는 이 링크로 가입 없이 이번 달 월세와 입금 계좌를 볼 수 있어요.</p>
+				<p class="mb-3 font-semibold" th:unless="${tenantLink.withinPeriod()}">링크를 쓸 수 있는 기간이 지나 세입자가 열 수 없어요.</p>
+				<dl class="kv-list mb-4">
+					<div><dt>만든 날</dt> <dd th:text="${#temporals.format(tenantLink.createdOn(), 'yyyy년 M월 d일')}">2026년 10월 23일</dd></div>
+					<div><dt>세입자가 마지막으로 열어 본 날</dt>
+						<dd th:text="${tenantLink.lastUsedOn() != null} ? ${#temporals.format(tenantLink.lastUsedOn(), 'yyyy년 M월 d일')} : '아직 열어 보지 않았어요'">아직 열어 보지 않았어요</dd></div>
+					<div th:if="${tenantLink.usableUntil() != null}"><dt>열 수 있는 마지막 날</dt> <dd th:text="${#temporals.format(tenantLink.usableUntil(), 'yyyy년 M월 d일')}">2027년 3월 31일</dd></div>
 				</dl>
-				<p class="mb-4 text-base text-gray-700">링크 주소는 만들 때만 보여요. 잃어버렸으면 새 링크를 만들어 다시 보내 주세요.</p>
+				<p class="mb-4 note">링크 주소는 만들 때만 보여요. 잃어버렸으면 새 링크를 만들어 다시 보내 주세요.</p>
 				<div class="flex flex-wrap gap-3">
 					<a th:if="${tenantLink.withinPeriod()}" th:href="@{/app/leases/{id}/tenant-link/reissue(id=${lease.id()})}" class="btn btn-secondary">새 링크 만들기</a>
 					<a th:href="@{/app/leases/{id}/tenant-link/close(id=${lease.id()})}" class="btn btn-secondary">링크 닫기</a>
 				</div>
 			</th:block>
 			<th:block th:unless="${tenantLink.open()}">
-				<p class="mb-4 text-lg">아직 세입자 링크가 없어요. 링크를 만들어 문자나 카카오톡으로 보내면, 세입자가 가입 없이 이번 달 월세와 입금 계좌를 볼 수 있어요.</p>
+				<p class="mb-4">아직 세입자 링크가 없어요. 링크를 만들어 문자나 카카오톡으로 보내면, 세입자가 가입 없이 이번 달 월세와 입금 계좌를 볼 수 있어요.</p>
 				<form th:if="${tenantLink.withinPeriod()}" th:action="@{/app/leases/{id}/tenant-link(id=${lease.id()})}" method="post">
 					<input type="hidden" name="openLinkId" th:value="${tenantLink.openLinkIdParam()}">
-					<button type="submit" class="btn btn-primary">세입자 링크 만들기</button>
+					<!-- 이번 달 받을 월세가 없으면 [이번 달 받을 월세 만들기]가 주요 행동이라 윤곽선으로 둔다 (화면당 꽉 찬 버튼 1개) -->
+					<button type="submit" th:class="${lease.active() and lease.missing().thisMonthMissing()} ? 'btn btn-secondary' : 'btn btn-primary'">세입자 링크 만들기</button>
 				</form>
-				<p th:unless="${tenantLink.withinPeriod()}" class="text-lg font-semibold">계약이 끝나고 90일이 지나 세입자 링크를 만들 수 없어요.</p>
+				<p th:unless="${tenantLink.withinPeriod()}" class="font-semibold">계약이 끝나고 90일이 지나 세입자 링크를 만들 수 없어요.</p>
 			</th:block>
 			<!-- 알림(안내 문자)에 넣은 링크와 알림 멈춤 (M5 결정 7·8). 알림 링크 주소는 임대인에게도 보이지 않는다 -->
-			<p th:if="${!tenantLink.open() and tenantLink.notificationLinkOpen()}" class="mt-4 text-lg">
-				안내 문자에 넣은 링크가 열려 있어요. <a th:href="@{/app/leases/{id}/tenant-link/close(id=${lease.id()})}" class="underline">링크 닫기</a>
+			<p th:if="${!tenantLink.open() and tenantLink.notificationLinkOpen()}" class="mt-4">
+				안내 문자에 넣은 링크가 열려 있어요. <a th:href="@{/app/leases/{id}/tenant-link/close(id=${lease.id()})}" class="link">링크 닫기</a>
 			</p>
-			<div th:if="${tenantLink.notificationsPaused()}" id="tenant-notify-paused" class="mt-4 rounded-lg border-2 border-amber-500 bg-amber-50 p-4">
-				<p class="mb-2 text-lg font-semibold">세입자 안내 문자를 멈췄어요.</p>
-				<p class="mb-3 text-lg">[링크 닫기]를 눌러 세입자에게 월세 안내 문자를 보내지 않고 있어요. 다시 보내려면 아래 버튼을 눌러 주세요. 다음 안내 문자에는 새 링크가 들어가요.</p>
+			<div th:if="${tenantLink.notificationsPaused()}" id="tenant-notify-paused" class="card card-attention mt-4 p-4">
+				<p class="mb-2 font-semibold">세입자 안내 문자를 멈췄어요.</p>
+				<p class="mb-3">[링크 닫기]를 눌러 세입자에게 월세 안내 문자를 보내지 않고 있어요. 다시 보내려면 아래 버튼을 눌러 주세요. 다음 안내 문자에는 새 링크가 들어가요.</p>
 				<form th:action="@{/app/leases/{id}/tenant-notifications/resume(id=${lease.id()})}" method="post">
 					<button type="submit" class="btn btn-secondary">알림 다시 켜기</button>
 				</form>
 			</div>
 		</section>
 
-		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="tenant-heading">
-			<h2 id="tenant-heading" class="mb-3 text-xl font-bold">세입자</h2>
-			<dl class="space-y-2 text-lg">
-				<div><dt class="inline font-semibold">이름</dt> <dd class="inline" th:text="${lease.tenantName()}">홍길동</dd></div>
-				<div><dt class="inline font-semibold">휴대폰</dt> <dd class="inline" th:text="${lease.tenantPhone()}">010-1234-5678</dd></div>
-				<div th:if="${lease.tenantMemo()}"><dt class="font-semibold">메모</dt> <dd class="whitespace-pre-line" th:text="${lease.tenantMemo()}">메모</dd></div>
+		<!-- 넓은 화면(lg): 계약 정보 상자를 두 칸으로 -->
+		<div class="list-grid">
+		<section class="card" aria-labelledby="tenant-heading">
+			<h2 id="tenant-heading" class="card-title">세입자</h2>
+			<dl class="kv-list">
+				<div><dt>이름</dt> <dd th:text="${lease.tenantName()}">홍길동</dd></div>
+				<div><dt>휴대폰</dt> <dd th:text="${lease.tenantPhone()}">010-1234-5678</dd></div>
+				<div th:if="${lease.tenantMemo()}"><dt>메모</dt> <dd class="whitespace-pre-line" th:text="${lease.tenantMemo()}">메모</dd></div>
 				<!-- 수신 거부 (TEN-6, M5 결정 9): 세입자만 바꿀 수 있고 임대인은 보기만 한다 -->
-				<div th:if="${lease.tenantNotifyOptedOut()}" id="tenant-opted-out"><dt class="inline font-semibold">안내 문자</dt> <dd class="inline">세입자가 안내 문자를 받지 않기로 했어요. 세입자 링크 화면에서 세입자가 다시 켤 수 있어요.</dd></div>
+				<div th:if="${lease.tenantNotifyOptedOut()}" id="tenant-opted-out"><dt>안내 문자</dt> <dd>세입자가 안내 문자를 받지 않기로 했어요. 세입자 링크 화면에서 세입자가 다시 켤 수 있어요.</dd></div>
 			</dl>
 		</section>
 
-		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="money-heading">
-			<h2 id="money-heading" class="mb-3 text-xl font-bold">금액</h2>
-			<dl class="space-y-2 text-lg">
-				<div><dt class="inline font-semibold">보증금</dt> <dd class="inline"><span th:text="${lease.depositText()}">10,000,000원</span> (<span th:text="${lease.depositKorean()}">1,000만 원</span>)</dd></div>
+		<section class="card" aria-labelledby="money-heading">
+			<h2 id="money-heading" class="card-title">금액</h2>
+			<dl class="kv-list">
+				<div><dt>보증금</dt> <dd><span th:text="${lease.depositText()}">10,000,000원</span> (<span th:text="${lease.depositKorean()}">1,000만 원</span>)</dd></div>
 				<th:block th:if="${lease.currentRent() != null}">
-					<div><dt class="inline font-semibold">월세</dt> <dd class="inline"><span th:text="${lease.currentRent().rentText()}">500,000원</span> (<span th:text="${lease.currentRent().rentKorean()}">50만 원</span>)</dd></div>
-					<div><dt class="inline font-semibold">관리비</dt> <dd class="inline" th:text="${lease.currentRent().feeText()}">50,000원</dd></div>
-					<div><dt class="inline font-semibold">한 달 합계</dt> <dd class="inline" th:text="${lease.currentRent().totalText()}">550,000원</dd></div>
+					<div><dt>월세</dt> <dd><span th:text="${lease.currentRent().rentText()}">500,000원</span> (<span th:text="${lease.currentRent().rentKorean()}">50만 원</span>)</dd></div>
+					<div><dt>관리비</dt> <dd th:text="${lease.currentRent().feeText()}">50,000원</dd></div>
+					<div><dt>한 달 합계</dt> <dd th:text="${lease.currentRent().totalText()}">550,000원</dd></div>
 				</th:block>
-				<div><dt class="inline font-semibold">받는 날</dt> <dd class="inline" th:text="${lease.dueDayText()}">매달 5일</dd></div>
-				<div><dt class="inline font-semibold">받을 월세 만드는 날</dt> <dd class="inline" th:text="${lease.issueDaysText()}">납부일 7일 전</dd></div>
+				<div><dt>받는 날</dt> <dd th:text="${lease.dueDayText()}">매달 5일</dd></div>
+				<div><dt>받을 월세 만드는 날</dt> <dd th:text="${lease.issueDaysText()}">납부일 7일 전</dd></div>
 			</dl>
 			<div class="mt-4" th:unless="${lease.upcomingRent().isEmpty()}">
 				<p class="font-semibold">앞으로 바뀌는 금액</p>
@@ -107,31 +110,31 @@
 					<li th:each="r : ${lease.upcomingRent()}">
 						<span th:text="${r.monthText()} + ' 월세 ' + ${r.rentText()} + ', 관리비 ' + ${r.feeText()}">2027년 1월부터 ...</span>
 						<a th:if="${r.cancellable()}" th:href="@{/app/leases/{id}/rent-history/{h}/cancel(id=${lease.id()}, h=${r.id()})}"
-							class="ml-2 font-semibold text-brand-700 underline">취소</a>
+							class="ml-2 link">취소</a>
 					</li>
 				</ul>
 			</div>
 		</section>
 
-		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="period-heading">
-			<h2 id="period-heading" class="mb-3 text-xl font-bold">기간</h2>
-			<dl class="space-y-2 text-lg">
-				<div><dt class="inline font-semibold">들어오는 날</dt> <dd class="inline" th:text="${#temporals.format(lease.startDate(), 'yyyy년 M월 d일')}">2026년 1월 1일</dd></div>
-				<div><dt class="inline font-semibold">나가는 날</dt> <dd class="inline" th:text="${#temporals.format(lease.endDate(), 'yyyy년 M월 d일')}">2027년 1월 1일</dd></div>
-				<div th:if="${lease.endedOn()}"><dt class="inline font-semibold">실제로 끝난 날</dt> <dd class="inline" th:text="${#temporals.format(lease.endedOn(), 'yyyy년 M월 d일')}">2026년 6월 30일</dd></div>
+		<section class="card" aria-labelledby="period-heading">
+			<h2 id="period-heading" class="card-title">기간</h2>
+			<dl class="kv-list">
+				<div><dt>들어오는 날</dt> <dd th:text="${#temporals.format(lease.startDate(), 'yyyy년 M월 d일')}">2026년 1월 1일</dd></div>
+				<div><dt>나가는 날</dt> <dd th:text="${#temporals.format(lease.endDate(), 'yyyy년 M월 d일')}">2027년 1월 1일</dd></div>
+				<div th:if="${lease.endedOn()}"><dt>실제로 끝난 날</dt> <dd th:text="${#temporals.format(lease.endedOn(), 'yyyy년 M월 d일')}">2026년 6월 30일</dd></div>
 			</dl>
 		</section>
 
-		<section class="mb-6 rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="account-heading">
-			<h2 id="account-heading" class="mb-3 text-xl font-bold">월세 받을 계좌</h2>
-			<p class="text-lg" th:text="${lease.bankName()} + ' ' + ${lease.accountNumber()}">국민은행 123456789</p>
-			<p class="text-lg">예금주 <span th:text="${lease.accountHolder()}">김임대</span></p>
-			<p class="mt-3 whitespace-pre-line text-base text-gray-700" th:if="${lease.memo()}" th:text="${lease.memo()}">계약 메모</p>
+		<section class="card" aria-labelledby="account-heading">
+			<h2 id="account-heading" class="card-title">월세 받을 계좌</h2>
+			<p th:text="${lease.bankName()} + ' ' + ${lease.accountNumber()}">국민은행 123456789</p>
+			<p>예금주 <span th:text="${lease.accountHolder()}">김임대</span></p>
+			<p class="mt-3 whitespace-pre-line note" th:if="${lease.memo()}" th:text="${lease.memo()}">계약 메모</p>
 		</section>
 
-		<section class="rounded-lg border-2 border-gray-200 bg-white p-5" aria-labelledby="history-heading">
-			<h2 id="history-heading" class="mb-3 text-xl font-bold">월세 변경 이력</h2>
-			<ul class="space-y-1 text-lg">
+		<section class="card" aria-labelledby="history-heading">
+			<h2 id="history-heading" class="card-title">월세 변경 이력</h2>
+			<ul class="space-y-1">
 				<li th:each="r : ${lease.rentHistory()}">
 					<span th:text="${r.monthText()}">2026년 1월부터</span>:
 					월세 <span th:text="${r.rentText()}">500,000원</span>, 관리비 <span th:text="${r.feeText()}">50,000원</span>
@@ -139,6 +142,7 @@
 				</li>
 			</ul>
 		</section>
+		</div>
 	</main>
 </body>
 </html>

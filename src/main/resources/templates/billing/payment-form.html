@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
 <head>
-<title>입금 기록 - RentKeeper</title>
+<title th:text="|입금 기록 - #{app.name}|">입금 기록</title>
 </head>
 <body>
-	<main id="main" class="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-		<h1 class="mb-2 text-3xl font-bold" th:text="${form.fromReport} ? '세입자 입금 확인' : (${form.full} ? '다 받았어요' : '일부 받았어요')">다 받았어요</h1>
-		<p class="mb-6 text-xl"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
+	<main id="main" class="page">
+		<h1 class="page-title" th:text="${form.fromReport} ? '세입자 입금 확인' : (${form.full} ? '다 받았어요' : '일부 받았어요')">다 받았어요</h1>
+		<p class="mb-6 text-title"><span th:text="${charge.unitName()} + ' · ' + ${charge.tenantName()} + '님'">행복빌라 101호 · 홍길동님</span>
 			· <span th:text="${charge.monthText()}">2026년 10월</span> 받을 월세</p>
 
-		<div class="alert alert-info mb-6 text-lg" role="status" th:if="${overpay}" th:text="${overpay}">남은 금액보다 많아요</div>
+		<div class="alert alert-info mb-6" role="status" th:if="${overpay}" th:text="${overpay}">남은 금액보다 많아요</div>
 		<!-- 세입자 신고 확인 (M4 결정 11): 통장에서 실제로 들어온 금액·날짜로 고쳐 기록한다 -->
-		<div class="alert alert-info mb-6 text-lg" role="status" th:if="${form.fromReport}">
+		<div class="alert alert-info mb-6" role="status" th:if="${form.fromReport}">
 			세입자가 <strong th:text="${charge.reportedOnText()}">2026년 10월 17일</strong>에 입금했다고 알렸어요.
 			통장에서 들어온 금액과 날짜를 확인하고, 다르면 고쳐서 기록해 주세요.
 		</div>
 
-		<form th:action="@{/app/charges/{id}/payments(id=${charge.id()})}" th:object="${form}" method="post" class="space-y-6" novalidate>
+		<form th:action="@{/app/charges/{id}/payments(id=${charge.id()})}" th:object="${form}" method="post" class="card space-y-6" novalidate>
 			<input type="hidden" th:field="*{version}">
 			<input type="hidden" th:field="*{full}">
 			<input type="hidden" th:field="*{overpayConfirmed}">
@@ -25,13 +25,13 @@
 			<!-- [다 받았어요]: 남은 금액 그대로 -->
 			<div th:if="${form.full}">
 				<p class="form-label">받은 금액</p>
-				<p class="text-2xl font-bold" th:text="${charge.balanceText()}">550,000원</p>
+				<p class="stat-value" th:text="${charge.balanceText()}">550,000원</p>
 				<input type="hidden" th:field="*{amount}">
 				<p class="form-error" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}">오류</p>
 			</div>
 			<div th:unless="${form.full}">
 				<label for="amount" class="form-label">받은 금액 (원)</label>
-				<p id="amount-hint" class="mb-2 text-base text-gray-700">남은 금액은 <strong th:text="${charge.balanceText()}">550,000원</strong>이에요. 예: 200,000</p>
+				<p id="amount-hint" class="mb-2 note">남은 금액은 <strong th:text="${charge.balanceText()}">550,000원</strong>이에요. 예: 200,000</p>
 				<input id="amount" type="text" inputmode="numeric" th:field="*{amount}" class="form-input" aria-describedby="amount-hint"
 					th:attr="aria-invalid=${#fields.hasErrors('amount')}">
 				<p class="form-error" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}">오류</p>
@@ -46,7 +46,7 @@
 
 			<div>
 				<label for="memo" class="form-label">메모 (없으면 비워 두세요)</label>
-				<p id="memo-hint" class="mb-2 text-base text-gray-700">예: 현금으로 받음. 주민번호·계좌번호는 적지 마세요.</p>
+				<p id="memo-hint" class="mb-2 note">예: 현금으로 받음. 주민번호·계좌번호는 적지 마세요.</p>
 				<input id="memo" type="text" th:field="*{memo}" class="form-input" aria-describedby="memo-hint">
 				<p class="form-error" th:if="${#fields.hasErrors('memo')}" th:errors="*{memo}">오류</p>
 			</div>
