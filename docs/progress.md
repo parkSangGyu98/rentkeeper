@@ -16,7 +16,7 @@
 | M5 알림 | 구현 완료 (2026-10-24, M5: 커밋 8/8 완료). 브라우저 확인 전 (아래 "M5 브라우저 확인"), 마이그레이션 V19~V21 개발자 검토 완료 (`docs/m5-migration-review.md`, 로컬 DB v21 적용 확인) | 브랜치 `feature/m5-notifications`, 아래 "M5에서 확정한 결정"·"M5 구현 결과 메모" |
 | M6 배포 | 코드 준비 완료 (2026-10-24, M6: 커밋 8/8 완료). 다음은 사람이 서버 준비·첫 배포(`docs/deploy-checklist.md`), V22 개발자 검토 완료·로컬 DB 적용 확인(`docs/m6-migration-review.md`) | 브랜치 `feature/m6-deploy`, 아래 "M6에서 확정한 결정"·"M6 구현 결과 메모" |
 | 디자인 교체 | 구현 완료 (커밋 11 뒤 동작 확인 테스트·문구 통일 2건·디자인 자체 점검 완료, `fix/unknown-path-404` 커밋 4/4: 없는 주소 404·마지막 항목 확인 화면·두 번 누르기 500·정상 경로 회귀 테스트, 사람 확인 대기: 360·375px·세입자 화면) | 브랜치 `feature/design-refresh`, 아래 "디자인 교체에서 확정한 결정" |
-| 배포 리허설 | `chore/deploy-rehearsal` 커밋 2/4: robots.txt, 메일 포트 빈 값 587 고침(리허설에서 25번으로 붙는 것 발견) | 병합 순서: `feature/design-refresh` → `fix/unknown-path-404` → 이 브랜치 |
+| 배포 리허설 | `chore/deploy-rehearsal` 커밋 3/6: robots.txt, 메일 포트 빈 값 587 고침, 리허설 덮어쓰기 파일·runbook 7(복구)·13(리허설) | 병합 순서: `feature/design-refresh` → `fix/unknown-path-404` → 이 브랜치 |
 
 ## 저장소 공개 전 할 일
 - [ ] 커밋 author 이메일을 GitHub noreply(`<id>+<username>@users.noreply.github.com`)로 교체 (현재는 전역 git 설정 이메일로 커밋됨)
@@ -1081,6 +1081,25 @@ SELECT id, notify_opt_out_at FROM tenant WHERE notify_opt_out_at IS NOT NULL;
 9. `style(app): 알림·설정 화면`
 10. `style(site): 확인·수정·오류·약관 화면`
 11. `docs: 디자인 교체 결과와 사람 확인 목록` (ADR-032)
+
+### 로컬 배포 리허설 (2026-10-25, `chore/deploy-rehearsal`)
+로컬 Docker에서 운영 구성(`compose.prod.yml` + `docker/compose.rehearsal.yml`, 127.0.0.1의 8081·8443, `DOMAIN=localhost`)을 그대로 띄웠다. 이미지는 로컬에서 빌드했다(535MB, jar 69MB). 임시 값은 그 자리에서 만들고 끝나면 지웠다.
+
+| 항목 | 결과 |
+|---|---|
+| 컨테이너 | postgres·app·caddy 모두 healthy, 운영 프로필, 빈 DB에 V1~V22 적용 |
+| 보안 헤더 (HTTPS) | CSP·HSTS·nosniff·X-Frame-Options DENY·Referrer-Policy, 로그인 쿠키 Secure·HttpOnly·SameSite=Lax |
+| `/t/**` | 유효한 링크 200·없는 링크 404 모두 `same-origin`·noindex·no-store, Set-Cookie 없음 |
+| 바깥 `/actuator` | `/actuator`, `/health`, `/env`, `/health/liveness` 모두 404 |
+| 클라이언트 IP | 레이트 리미트 키가 Caddy 주소가 아닌 요청 출발지(Docker Desktop 게이트웨이). 밖에서·내부 다른 컨테이너에서 꾸민 X-Forwarded-For는 무시 |
+| Caddy 로그 | 링크·쿼리·Referer·앱 중지(502) 오류 로그까지 토큰 0건, Cookie·Set-Cookie 0건 |
+| 데모·초대 코드 가입 화면 | 운영 프로필에서 데모 시작 → 대시보드 200, `/signup` 200 |
+| 메모리 (가벼운 부하 뒤) | 앱 515MiB, Postgres 62MiB, Caddy 19MiB |
+| 메일 포트 | `MAIL_PORT`를 비우면 25번으로 붙음 → `compose.prod.yml`에서 고침(커밋 2) |
+| 백업·복구 | `scripts/backup.sh`(고치지 않음, R2 업로드만 건너뜀) → gpg 52KB → 복호화 → 빈 DB 복구: 표 24개 행 수 같음, 같은 키로 띄운 앱의 계약 화면 4개 원본과 같음, 이름 칸은 `v1:` 암호문 |
+
+- runbook 7(복구)을 실제 절차에 맞게 고쳤다: `--batch` 복호화는 암호를 묻지 못해 실패하므로 암호를 파일 디스크립터로 넘김, Git Bash의 `MSYS_NO_PATHCONV=1`, 모든 표 건수 SQL, 운영 이미지로 띄우되 메일·카카오 값은 가짜. runbook 13(로컬 배포 리허설)을 새로 썼다.
+- 리허설에서만 생기는 차이: 리다이렉트 주소에 포트가 빠진다(`https://localhost/…`, 운영은 443이라 문제없음). Git Bash는 `TZ=Asia/Seoul`을 몰라 백업 파일 이름 시각이 UTC다.
 
 ## M6로 이월
 - **M5에서 넘김 (알림)**
